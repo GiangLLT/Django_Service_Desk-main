@@ -1,0 +1,172 @@
+{% extends 'Master_page.html' %}
+
+{% load humanize %}
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Production List</span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h4 class="card-title card-title-edit">Product Data List</h4>
+              {% comment %} <p class="card-description">A basic data list T001</p> {% endcomment %}
+              {% comment %} <div id="js-grid" class="pt-3"></div> {% endcomment %}
+
+              <form method="get">
+                <iv class="form-group">
+                  <div class="row">
+                    <div class="col">
+                      <label for="Material">Material</label>
+                    <input type="text" class="form-control" id="SearchMaterial" name="SearchMaterial"  value="{{ request.GET.SearchMaterial }}" placeholder="Material Name">
+                    </div>
+                    <div class="col">
+                      {% comment %} <label for="Category">Category Name</label>
+                    <input type="text" class="form-control" id="SearchCategory" name="SearchCategory" value="{{ request.GET.SearchCategory }}" placeholder="Category Name"> {% endcomment %}
+                    <select class="form-select" aria-label="Default select example" id="SearchCategory" name="SearchCategory" value="{{ request.GET.SearchCategory }}">
+                      <option selected value="">select menu</option>
+                        {% for c in combobox %}
+                          <option value="{{c.name}}">{{c.name}}</option>
+                        {%endfor%}
+                    </select>
+
+
+                    {% comment %} <div class="btn-group">
+                      <button type="button" class="btn btn-secondary">Dropdown</button>
+                      <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" id="dropdownMenuSplitButton4" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      </button> {% endcomment %}
+                      
+                      {% comment %} <div class="dropdown-menu" aria-labelledby="dropdownMenuSplitButton4">
+                        {% for c in combobox %}
+                          <a class="dropdown-item" href="#">{{c.name}}</a>
+                        {%endfor%}
+                       <h6 class="dropdown-header">Settings</h6>
+                        <a class="dropdown-item" href="#">Action</a>
+                        <a class="dropdown-item" href="#">Another action</a>
+                        <a class="dropdown-item" href="#">Something else here</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#">Separated link</a>
+                      </div>
+                    </div> {% endcomment %}
+                    
+                  {% comment %} </div>            {% endcomment %}
+                  </div>   
+                  
+                  <div class="row">
+                    <div class="col">                   
+                    </div>
+                    <div class="col">                    
+                    </div>
+                    <div class="col col-button">
+                      <button type="submit" class="btn btn-danger btn-icon-text" value="Search">
+                        <i class="ti-search btn-icon-prepend"></i>                                                    
+                        Search
+                      </button> 
+                    </div>
+                  </div>    
+
+                </div> 
+              </form>
+
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Hoverable Table</h4>
+                    <p class="card-description">
+                      Add class <code>.table-hover</code>
+                    </p>
+                    <div class="table-responsive">
+                      <table class="table table-hover">
+                        <thead>
+                          <tr>
+                            <th>Material</th>
+                            <th>Category ID</th>
+                            <th>Category Name</th>
+                            <th>Price</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                            {%if data != "" or data is not None %}
+                                {% for d in page_obj %}
+                                <tr>
+                                    <td>{{ d.name }}</td>
+                                    <td>{{ d.id }}</td>
+                                    <td>{{ d.category }}</td>
+                                    <td id="price-format">{{ d.price |floatformat:0 |intcomma }} <b>VNĐ</b></td>
+                                    <td>
+                                      <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon">
+                                        <i class="ti-plus text-danger"></i>
+                                      </button>
+                                      <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon">
+                                        <i class="ti-trash text-danger"></i>
+                                      </button>
+                                      <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon">
+                                        <i class="ti-pencil-alt text-danger"></i>
+                                      </button>
+
+                                    </td>
+                                </tr>
+                                {%endfor%}
+                            {%endif%}
+                        </tbody>
+                      </table>
+                      {% comment %} <div class="pagination">
+                        <span class="step-links">
+                            {% if page_obj.has_previous %}
+                                <a href="?page=1">&laquo; First</a>
+                                <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                            {% endif %}
+                      
+                            <span class="current-page">
+                                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                            </span>
+                      
+                            {% if page_obj.has_next %}
+                                <a href="?page={{ page_obj.next_page_number }}">next</a>
+                                <a href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+                            {% endif %}
+                        </span>
+                      </div> {% endcomment %}
+
+                    </div>
+                    <div class="pagination">
+                        <span class="step-links">
+                          {% if page_obj.has_previous %}
+                            <a href="?page=1">&laquo; First</a>
+                            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                          {% else %}
+                            <span class="disabled">&laquo; First</span>
+                            <span class="disabled">previous</span>
+                          {% endif %}
+                      
+                          {% for i in page_obj.paginator.page_range %}
+                            {% if page_obj.number == i %}
+                              <span class="current-page">{{ i }}</span>
+                            {% else %}
+                              <a href="?page={{ i }}">{{ i }}</a>
+                            {% endif %}
+                          {% endfor %}
+                      
+                          {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}">next</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+                          {% else %}
+                            <span class="disabled">next</span>
+                            <span class="disabled">Last &raquo;</span>
+                          {% endif %}
+                        </span>
+                      </div>
+                      
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+    </div>
+{% endblock %}

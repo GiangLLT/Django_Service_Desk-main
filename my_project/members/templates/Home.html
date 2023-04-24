@@ -1,0 +1,30 @@
+{% extends 'Base_template.html' %}
+
+{% block content %}
+    <h1>Data List</h1>
+    <ul>
+        {%if data != "" or data is not None %}
+            {% for datas in data %}
+                {%if datas.BUKRS == "0001" %}
+                    <li>{{ datas.BUKRS }} - {{ datas.BUTXT }} - <b> Status: Done</b></li>
+                {%elif datas.BUKRS != "0001" %}
+                    <li>{{ datas.BUKRS }} - {{ datas.BUTXT }} - <b> Status: Not Yet</b></li>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </ul>
+{% endblock %}
+
+
+
+
+{% comment %} <!DOCTYPE html>
+<html>
+<body>
+
+<h1>Hello World!</h1>
+<p>Welcome to my first Django project!</p>
+
+</body>
+</html> {% endcomment %}
+

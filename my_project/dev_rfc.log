@@ -1,0 +1,20 @@
+
+**** Log file opened at 2023-03-20 13:28:23.950703 UTC+07:00 (SE Asia Standard Time), Encoding UTF-8
+NW RFC Library: SDK variant, Release 750 Patch Level 11
+Compilation date          : Jan 14 2023 01:04:49
+CPIC library              : 753.2022.12.23 version 3
+NI library                : 40
+Kernel Release            : 753 Patch Level 1115
+Current working directory : C:\Data\Document\Another_Code\Python_Ex\Python_Django\my_project
+Program                   : python
+Process ID                : 10064
+User                      : Admin
+Hardware                  : PC with Windows NT 8x AMD64 Level 6 (Mod 140 Step 1)
+Operating_system          : Windows NT 10.0
+Hostname                  : DESKTOP-DG7M7Q3
+IP address                : 192.168.19.168
+IPv6 address              : fe80::8d51:a0d3:8808:f31
+Global trace level        : 0
+
+2023-03-20 13:28:23.944420 [17852] >> Info entry
+	Did not find config file C:\Data\Document\Another_Code\Python_Ex\Python_Django\my_project\sapnwrfc.ini.

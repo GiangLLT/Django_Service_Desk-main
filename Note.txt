@@ -1,0 +1,11 @@
+py -m venv Web_Django - Create project
+
+py -m pip install Django -  Install Django
+
+django-admin --version - check django version
+
+django-admin startproject my_project - project django
+
+py C:\Data\Document\Another_Code\Python_Ex\Python_Django\my_project\manage.py runserver 
+
+py C:\Data\Document\Another_Code\Python_Ex\Python_Django\my_project\manage.py startapp members

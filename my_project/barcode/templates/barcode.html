@@ -1,0 +1,62 @@
+
+{%load static %}
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="">
+        <style>
+            .table {
+                border-collapse: collapse;
+            }
+            
+            th, td {
+                border: 1px solid black;
+                padding: 5px;
+            }
+            
+            th {
+                background-color: lightgray;
+            }
+        </style>
+    </head>
+    <body>
+        <form>
+            <label for="barcode">Barcode:</label>
+            <input type="text" id="barcode-search" name="barcode">
+            {% comment %} <button type="submit">Submit</button> {% endcomment %}
+          </form>
+          
+          <table id="mara-table">
+            <thead>
+              <tr>
+                <th>Article</th>
+                <th>Barcode</th>
+                <th>Quantity</th>
+                <th>Art type</th>
+                <th>Unit</th>
+                <th>Category</th>
+                <th>Old Art</th>
+                <th>Season</th>
+                <th>Create on</th>
+                <th>Create by</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% comment %} load data {% endcomment %}
+            </tbody>
+          </table>
+        
+        {% comment %} <script type="text/javascript" src="{% static 'js/jquery-3.6.4.min.js' %}"  async defer></script>
+        <script type="text/javascript" src="{% static 'js/ajax.js' %}"  async defer></script> {% endcomment %}
+        <script type="text/javascript" src="{% static 'js/jquery-3.6.4.min.js' %}" ></script>
+        <script type="text/javascript" src="{% static 'js/ajax.js' %}" ></script>
+    </body>
+</html>
+

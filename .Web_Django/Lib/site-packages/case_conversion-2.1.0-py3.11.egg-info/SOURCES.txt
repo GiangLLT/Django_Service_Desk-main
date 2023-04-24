@@ -1,0 +1,10 @@
+setup.cfg
+setup.py
+case_conversion/__init__.py
+case_conversion/case_conversion.py
+case_conversion/case_parse.py
+case_conversion.egg-info/PKG-INFO
+case_conversion.egg-info/SOURCES.txt
+case_conversion.egg-info/dependency_links.txt
+case_conversion.egg-info/requires.txt
+case_conversion.egg-info/top_level.txt

@@ -1,0 +1,234 @@
+{% extends 'Master_page.html' %}
+{%load static %}
+{% load humanize %}
+
+{% comment %} <script type="text/javascript" src="{% static 'js/jquery-3.6.4.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'js/ajax.js' %}"></script> {% endcomment %}
+
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Production List</span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <h4 class="card-title card-title-edit">Product Data List</h4>
+              {% comment %} <p class="card-description">A basic data list T001</p> {% endcomment %}
+              {% comment %} <div id="js-grid" class="pt-3"></div> {% endcomment %}
+
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Hoverable Table</h4>
+                    <p class="card-description">
+                      Add class <code>.table-hover</code>
+                    </p>
+                    <div class="table-responsive">
+
+                        <table id="product-table" class="table table-hover">
+                            <thead>
+                              <tr>
+                                <th>Name</th>
+                                <th>Categrory</th>
+                                <th>Price</th>
+                                <th>Action</th>
+                              </tr>
+                              <tr>
+                                <th>
+                                  <input type="text" class="form-control" id="search-name" name="search-name"  placeholder="Material Name">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-cate" name="search-cate"  placeholder="Categrory">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-price" name="search-price"  placeholder="Price">
+                                </th>
+                                <th>
+                                  {% comment %} Action {% endcomment %}
+                                  <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon" id="addProduct">
+                                    <i class="ti-plus text-danger"></i>
+                                  </button> 
+                                  <!-- Modal Create Product -->
+                                  <div class="modal fade" id="addProductModal" tabindex="-1" role="dialog" aria-labelledby="addProductModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="addProductModalLabel">Add Product</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                          </button>
+                                        </div>
+                                        <form id="addProductForm">
+                                          {% csrf_token %}
+                                          <div class="modal-body">
+                                            <div class="form-group">
+                                              <label for="name">Material Name</label>
+                                              <input type="text" class="form-control" id="input_Material" name="name" required>
+                                            </div>
+                                            <div class="form-group">
+                                              <label for="category">Category</label>
+                                              {% comment %} <input type="text" class="form-control" id="category" name="category" required> {% endcomment %}
+                                              <select class="form-select input_Category" aria-label="Default select example" id="input_Category" name="category" required>
+                                                <option selected value="">select menu</option>
+                                              </select>
+                                            </div>
+                                            <div class="form-group">
+                                              <label for="price">Price</label>
+                                              <input type="number" class="form-control" id="input_price" name="price" required>
+                                            </div>
+                                          </div>
+                                          <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary close" data-dismiss="modal"><i class="ti-close btn-icon-prepend"></i> CLOSE</button>
+                                            <button type="submit" class="btn btn-primary btn-MD" id="addProduct-button"><i class="ti-save btn-icon-prepen"></i>   SAVE</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal Create Product -->   
+                                  
+                                  <!-- Modal Update Product -->
+                                  <div class="modal fade updateProductModal" id="updateProductModal" tabindex="-1" role="dialog" aria-labelledby="updateProductModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="updateProductModalLabel">Update Product</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                          </button>
+                                        </div>
+                                        <form id="updateProductForm">
+                                          {% csrf_token %}
+                                          <div class="modal-body">
+                                            <input type="text" class="form-control input_IDproduct" id="input_IDproduct" name="id" required hidden>
+                                            <div class="form-group grp_Material">
+                                              <label for="name">Material Name</label>      
+                                              <input type="text" class="form-control input_Material" id="input_Material" name="name" required>
+                                            </div>
+                                            <div class="form-group grp_Category">
+                                              <label for="category">Category</label>
+                                              {% comment %} <input type="text" class="form-control" id="category" name="category" required> {% endcomment %}
+                                              <select class="form-select input_Category" aria-label="Default select example" id="input_Category" name="category" required>
+                                                <option selected value="">select menu</option>
+                                              </select>
+                                            </div>
+                                            <div class="form-group grp_price">
+                                              <label for="price">Price</label>
+                                              <input type="number" class="form-control input_price" id="input_price" name="price" required>
+                                            </div>
+                                          </div>
+                                          <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary close" data-dismiss="modal"><i class="ti-close btn-icon-prepend"></i> CLOSE</button>
+                                            <button type="submit" class="btn btn-primary" id="updateProduct-button"><i class="ti-pencil-alt btn-icon-prepend"> UPDATE </i></button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal Update Product -->
+                                </th>
+                              </tr>  
+                            </thead>
+                            {% comment %} <tfoot>
+                                <tr>
+                                  <td colspan="3">
+                                    <input type="text" id="search-box" placeholder="Search...">
+                                  </td>
+                                  <td>
+                                    <button id="delete-selected">Delete</button>
+                                  </td>
+                                </tr>  
+                            </tfoot> {% endcomment %}
+                            <tbody>
+                                {% comment %} Load data {% endcomment %}
+                            </tbody>                          
+                          </table>
+                          
+                          
+                          
+                      {% comment %} <table class="table table-hover">
+                        <thead>
+                          <tr>
+                            <th>Material</th>
+                            <th>Category ID</th>
+                            <th>Category Name</th>
+                            <th>Price</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                            {%if data != "" or data is not None %}
+                                {% for d in page_obj %}
+                                <tr>
+                                    <td>{{ d.name }}</td>
+                                    <td>{{ d.id }}</td>
+                                    <td>{{ d.category }}</td>
+                                    <td id="price-format">{{ d.price |floatformat:0 |intcomma }} <b>VNĐ</b></td>
+                                    <td>
+                                      <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon">
+                                        <i class="ti-plus text-danger"></i>
+                                      </button>
+                                      <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon">
+                                        <i class="ti-trash text-danger"></i>
+                                      </button>
+                                      <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon">
+                                        <i class="ti-pencil-alt text-danger"></i>
+                                      </button>
+
+                                    </td>
+                                </tr>
+                                {%endfor%}
+                            {%endif%}
+                        </tbody>
+                      </table>
+                       {% endcomment %}
+                    </div>
+                    
+
+                    {% comment %} Phân Trang - pagination {% endcomment %}
+                    <ul class="pagination" id="pagination"></ul>
+                    {% comment %} Phân Trang - pagination {% endcomment %}
+
+                    {% comment %} <div class="pagination">
+                        <span class="step-links">
+                          {% if page_obj.has_previous %}
+                            <a href="?page=1">&laquo; First</a>
+                            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                          {% else %}
+                            <span class="disabled">&laquo; First</span>
+                            <span class="disabled">previous</span>
+                          {% endif %}
+                      
+                          {% for i in page_obj.paginator.page_range %}
+                            {% if page_obj.number == i %}
+                              <span class="current-page">{{ i }}</span>
+                            {% else %}
+                              <a href="?page={{ i }}">{{ i }}</a>
+                            {% endif %}
+                          {% endfor %}
+                      
+                          {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}">next</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+                          {% else %}
+                            <span class="disabled">next</span>
+                            <span class="disabled">Last &raquo;</span>
+                          {% endif %}
+                        </span>
+                      </div> {% endcomment %}
+                      
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+    </div>
+
+{% endblock %}

@@ -1,0 +1,43 @@
+<!-- Import MSAL.js -->
+{%load static %}
+{% load humanize %}
+<script type="text/javascript" src="https://alcdn.msauth.net/browser/2.3.0/js/msal-browser.js"></script>
+<script type="module">
+    {% comment %} import * as msal from '@azure/msal-browser'; {% endcomment %}
+    {% comment %} tenant_id = 'c43d3f81-f57a-48cc-8b07-74b39935d876'; {% endcomment %}
+    // Configure MSAL.js with your app's information from Azure Portal
+    const msalConfig = {
+      auth: {
+        clientId: '5c17ff26-50a1-4003-bc31-f0545709c2f7',
+        authority: 'https://login.microsoftonline.com/c43d3f81-f57a-48cc-8b07-74b39935d876',
+        redirectUri: 'http://localhost:8000/danh-sach-test/'
+      }
+    };
+    const msalInstance = new msal.PublicClientApplication(msalConfig);
+  
+    // Handle button click event
+    const loginButton = document.getElementById('login-button');
+    loginButton.addEventListener('click', () => {
+      msalInstance
+        .loginPopup()
+        .then(response => {
+          // Handle successful login
+          console.log('Login successful:', response);
+          // Get access token
+          return msalInstance.acquireTokenSilent({
+            scopes: ['user.read']
+          });
+        })
+        .then(accessTokenResponse => {
+          // Handle access token response
+          console.log('Access token:', accessTokenResponse.accessToken);
+        })
+        .catch(error => {
+          // Handle login or access token error
+          console.log('Error:', error);
+        });
+    });
+  </script>
+  
+  <!-- Add button to your HTML -->
+  <button id="login-button">Login with Office 365</button>

@@ -1,0 +1,122 @@
+.card-title-edit{
+    color: #2C46B7 !important;
+    font-size: 30px !important;
+}
+.col-button{
+    text-align: right;
+    margin: 10px 0 0 0;
+    padding: 20px 0 0 0 ;
+}
+.btn-rounded{
+  margin-right: 5px;
+}
+
+/* form modal */
+.title-modal{
+  font-size: 30px;
+  color: white;
+}
+.header-modal{
+  background-color: #1F3BB3;
+  margin: 2px;
+}
+
+/* #price-format{
+    text-align: right;
+} */
+/* css phân trang html */
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.pagination a {
+  color: #555;
+  background-color: #f2f2f2;
+  border-color: #ddd;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin: 0 4px;
+  text-decoration: none;
+  transition: all .2s ease-in-out;
+}
+
+.pagination a:hover {
+  background-color: #ddd;
+  border-color: #ccc;
+}
+
+.pagination .current-page {
+  background-color: #1F3BB3;
+  border-color: #1F3BB3;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin: 0 4px;
+  font-weight: bold;
+}
+
+.pagination .disabled {
+  pointer-events: none;
+  opacity: .5;
+}
+/* css phân trang html */
+
+
+/* css phân trang ajax */
+
+#pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+#pagination .page-link {
+  color: #333;
+  background-color: #fff;
+  border-color: #ccc;
+  padding: 10px 15px;
+  border-radius: 5px;
+  margin-right: 5px;
+  transition: all 0.3s ease-in-out;
+}
+
+#pagination .page-link:hover {
+  color: #fff;
+  background-color: #2C46B7;
+  border-color: #2C46B7;
+}
+
+#pagination .page-item.active .page-link {
+  background-color: #2C46B7;
+  border-color: #2C46B7;
+  color: #fff;
+}
+/* css phân trang ajax */
+
+/* Login */
+.avatar-container{
+  width: 85%;
+    position: relative;
+}
+.avatar-title{
+  width: 40px;
+    height: 40px;
+    position: inherit;
+    left: 40%;
+    border: 1px solid white;
+    background-color: #1F3BB3;
+    text-align: center;
+    color: white;
+    font-weight: bolder;
+    font-size: 20px;
+    border-radius: 100%;
+}
+.background-img{
+  background: url("../Asset/img/SAP-background.jpg") !important;
+  background-size: cover !important; /* Hiển thị hình ảnh vừa khung */
+  background-position: center center !important; /* Căn giữa hình ảnh */
+  max-width: 100% !important;
+}
