@@ -18,6 +18,7 @@ urlpatterns = [
 
     #login office 365
     path('login/', views.Login_page, name='login'),
+    path('system/callback/', views.login_system, name='login_system'),
     path('login/callback/', views.microsoft_login_token, name='login_callback'),    
     path('google/callback/', views.google_login, name='google_login'),
     path('facebook/callback/', views.facebook_login, name='facebook_login'),

@@ -425,14 +425,78 @@ $(document).ready(function() {
 }
 
 
+//login system
+$('#login-system').click(function(event) {
+  event.preventDefault();
+  var Email = document.getElementById("InputEmail").value;
+  // const InputEmail = Email.value;
+  var Password = document.getElementById("InputPassword").value;
+  var rememberCheckbox = document.getElementById("checkbox-remember");
+  var Remember = rememberCheckbox.checked ? true : false;
+  if (!validateEmail(Email)) {
+    // Email không hợp lệ
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...', 
+        text: "Email Error",
+        // footer: '<a href="">Why do I have this issue?</a>'
+      })
+    }
+  else {
+    // Email hợp lệ
+    $.ajax({
+      url: '/system/callback/',
+      dataType: 'json',
+      method: 'POST',
+      data: {
+        "email": Email,
+        "pass": Password,
+        "checkbox": Remember
+      },
+      success: function(response) {
+        if (response.success) {
+          window.location.href = "/danh-sach-test/";
+        
+          // Swal.fire(
+          //   'success',
+          //   'Login Sucess',
+          //   'success'
+          // )
+        }
+        else{
+          Swal.fire({
+            icon: 'error',
+            title: 'Oops...', 
+            text: response.error,
+            // footer: '<a href="">Why do I have this issue?</a>'
+          })
+        }
+      },
+      error: function(rs, e) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...', 
+          text: response.error,
+          // footer: '<a href="">Why do I have this issue?</a>'
+        })
+      }
+  });
+  }
+});
+
+function validateEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
 
 
+//Login Microsoft 
 $('#login-button').click(function(event) {
   // event.preventDefault();
   microsoft_login();
 });
 
-//Login Microsoft 
+
 function microsoft_login() {
   var clientId = '5c17ff26-50a1-4003-bc31-f0545709c2f7'; // Replace with your own client ID
   var redirectUri = 'https://localhost:8000/login/callback/'; // Replace with your own redirect URI

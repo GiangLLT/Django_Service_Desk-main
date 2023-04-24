@@ -85,10 +85,11 @@ def load_data(request):
     # data = template.render(context, request)
 
 def load_Product(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
     cookie_facebook_data   = GetCookie(request, 'cookie_facebook_data')
     cookie_google_data     = GetCookie(request, 'cookie_google_data')
-    if(cookie_microsoft_data or cookie_google_data or cookie_facebook_data):
+    if(cookie_microsoft_data or cookie_google_data or cookie_facebook_data or cookie_system_data):
         return render(request, 'ajax.html')
     else:
         return redirect('/login/')
@@ -198,6 +199,57 @@ def update_product(request):
 
 
 #function Login
+@csrf_exempt
+def login_system(request):
+    try:
+        if request.method == 'POST':
+            email = request.POST.get('email')
+            password = request.POST.get('pass')
+            remember = request.POST.get('checkbox')
+            user = Users.objects.filter(Mail = email, Password = password, User_Status = True)
+            if(user):
+                 # Lưu dữ liệu vào session
+                 for user in user:
+                    request.session['UserInfo'] = {
+                        'ID_user': user.ID_user,
+                        'Mail': user.Mail,
+                        'FullName': user.FullName,
+                        'displayName': user.displayName,
+                        'Avatar': user.Avatar,
+                        'Photo': user.displayName[0] +user.FullName[0],
+                    }
+                    session_data = json.dumps(request.session['UserInfo'])
+
+                    # Lưu chuỗi JSON vào cookie
+                    # Lưu access_token vào cookie (lưu ý: cần kiểm tra tính bảo mật của cookie)
+                    if(remember == 'true'):
+                        url_redirect = '/danh-sach-test/'
+                        response = HttpResponse('cookie success')
+                        response = SetCookie(response , 'cookie_system_data', session_data, url_redirect)
+                        response = DeleteCookie(response , 'cookie_microsoft_data')
+                        response = DeleteCookie(response , 'cookie_google_data')
+                        response = DeleteCookie(response , 'cookie_facebook_data')
+                        return response                               
+                 return JsonResponse({
+                'success': True,
+                'message': 'Login Successed',}) 
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Login Failed',})
+    except Users.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'User does not exist',
+        })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Login Failed: {str(ex)}',
+        })
+
+
+
 # Page Login account office 365
 def microsoft_login_token(request):
     code = request.GET.get('code')
@@ -312,6 +364,7 @@ def microsoft_login_token(request):
     response = SetCookie(response , 'cookie_microsoft_data', session_data, url_redirect)
     response = DeleteCookie(response , 'cookie_google_data')
     response = DeleteCookie(response , 'cookie_facebook_data')  
+    response = DeleteCookie(response , 'cookie_system_data')  
     return response
 
 #Login account google
@@ -397,6 +450,7 @@ def google_login(request):
             response = SetCookie(response , 'cookie_google_data', session_data, url_redirect)
             response = DeleteCookie(response , 'cookie_microsoft_data')
             response = DeleteCookie(response , 'cookie_facebook_data')
+            response = DeleteCookie(response , 'cookie_system_data')
             return response
         else:
             return HttpResponseRedirect('/login/')
@@ -430,6 +484,7 @@ def facebook_login(request):
 
 
 def Login_page(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
     cookie_facebook_data   = GetCookie(request, 'cookie_facebook_data')
     cookie_google_data     = GetCookie(request, 'cookie_google_data')
@@ -468,11 +523,23 @@ def Login_page(request):
             'Photo': response_data.get('displayName')[0] + response_data.get('FullName')[0],
         }
         return redirect('/danh-sach-test/')
+    elif(cookie_system_data):
+        response_data = json.loads(cookie_system_data)
+        request.session['UserInfo'] = {
+            'ID_user': response_data.get('ID_user'),
+            'Mail': response_data.get('Mail'),
+            'FullName': response_data.get('FullName'),
+            'displayName': response_data.get('displayName'),
+            'Avatar': response_data.get('Avatar'),
+            'Photo': response_data.get('displayName')[0] + response_data.get('FullName')[0],
+        }
+        return redirect('/danh-sach-test/')
     else:
         #load template in folder teamplates
         template =  loader.get_template('Login.html')
         return HttpResponse(template.render())
 #function Login
+
 
 #function check
 def logout(request):
