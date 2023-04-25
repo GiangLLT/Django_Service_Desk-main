@@ -44,7 +44,6 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
 
     'web_api',
-    'members',
     'Admin',
     'barcode',
 
