@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'web_api',
     'Admin',
     'barcode',
+    'POS',
 
     'rest_framework', #API
     'rest_framework_swagger',  # Thêm vào danh sách ứng dụng

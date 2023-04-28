@@ -1,0 +1,116 @@
+{%load static %}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Order Thức Ăn</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% comment %} CSS {% endcomment %}
+	<link rel="stylesheet" href="{% static 'css/css-pos.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Castoro+Titling&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'Sweetalert2/Css/sweetalert2.min.css' %}">
+    <link rel="stylesheet" href="{% static 'star_admin/vendors/ti-icons/css/themify-icons.css' %}">
+    {% comment %} CSS {% endcomment %}
+</head>
+<body>
+	<header>
+		<div class="logo">
+			<img src="{% static '/Asset/img/logo.png' %}" alt="Logo" id="image-logo">
+		</div>
+		<nav>
+			<ul>
+				<li><a href="#">Trang Chủ</a></li>
+				<li><a href="#">Thực Đơn</a></li>
+				<li><a href="#">Giới Thiệu</a></li>
+				<li><a href="#">Liên Hệ</a></li>
+			</ul>
+		</nav>
+	</header>
+	<main>
+		<div class="left">
+			<h2>Danh Sách Bàn</h2>
+			<ul>
+				<li><a href="#">Bàn 1</a></li>
+				<li><a href="#">Bàn 2</a></li>
+				<li><a href="#">Bàn 3</a></li>
+				<li><a href="#">Bàn 4</a></li>
+				<li><a href="#">Bàn 5</a></li>
+			</ul>
+		</div>
+		<div class="right">
+			<div class="customer-info">
+				<h2>Thông Tin Khách Hàng</h2>
+				<form>
+					<label for="name">Họ Tên:</label>
+					<input type="text" id="name" name="name"><br>
+
+					<label for="phone">Số Điện Thoại:</label>
+					<input type="tel" id="phone" name="phone"><br>
+
+					<label for="address">Địa Chỉ:</label>
+					<input type="text" id="address" name="address"><br>
+
+					<label for="note">Ghi Chú:</label>
+					<textarea id="note" name="note"></textarea><br>
+
+					<input type="submit" value="Đặt Hàng">
+				</form>
+			</div>
+			<div class="order-list">
+				<h2>Danh Sách Đặt Hàng</h2>
+				<ul>
+					<li>Phở Bò x 2</li>
+					<li>Bún Chả Hà Nội x 1</li>
+					<li>Gỏi Cuốn x 3</li>
+				</ul>
+			</div>
+			<div class="menu">
+				<h2>Danh Mục Thực Đơn</h2>
+				<ul>
+					<li><a href="#">Món Ngon</a></li>
+					<li><a href="#">Đồ Uống</a></li>
+					<li><a href="#">Món Khai Vị</a></li>
+					<li><a href="#">Món Chính</a>
+                    </ul>
+                    <h3>Món Ngon</h3>
+                    <ul>
+                        <li>Phở Bò</li>
+                        <li>Bún Chả Hà Nội</li>
+                        <li>Bánh Mì Thịt Nướng</li>
+                        <li>Gỏi Cuốn</li>
+                    </ul>
+                    <h3>Đồ Uống</h3>
+                    <ul>
+                        <li>Nước Cam Ép</li>
+                        <li>Trà Đào</li>
+                        <li>Cà Phê Sữa Đá</li>
+                        <li>Soda Chanh</li>
+                    </ul>
+                    <h3>Món Khai Vị</h3>
+                    <ul>
+                        <li>Gỏi Ngó Sen</li>
+                        <li>Gà Nướng Xả</li>
+                        <li>Chả Giò</li>
+                        <li>Đậu Hủ Chiên Sả</li>
+                    </ul>
+                    <h3>Món Chính</h3>
+                    <ul>
+                        <li>Gà Xào Sả Ớt</li>
+                        <li>Cá Kho Tộ</li>
+                        <li>Thịt Kho Tàu</li>
+                        <li>Tôm Rim</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+        <footer>
+            <p>© 2023 Order Thức Ăn</p>
+        </footer>
+        {% comment %} Javascript {% endcomment %}
+        <script type="text/javascript" src="{% static 'js/jquery-3.6.4.min.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/Pos-login.js' %}"></script>
+        <script src="{% static 'Sweetalert2/Js/sweetalert2.all.min.js' %}"></script>
+        {% comment %} Javascript {% endcomment %}
+    </body>
+</html>             
