@@ -878,9 +878,6 @@ $('#button-login-btn').click(function(event) {
   });
 });     
 
-
-
-
 });
 
 

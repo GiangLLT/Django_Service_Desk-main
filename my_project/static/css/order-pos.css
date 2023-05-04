@@ -1,0 +1,589 @@
+/* Order CSS */
+/* General Styles */
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+body {
+    font-family: 'Be Vietnam Pro', sans-serif;
+	font-size: 16px;
+	line-height: 1.5;
+    /* background-image: linear-gradient(-135deg, #0F5372, #0F7A8C);
+    color: white; */
+}
+
+/* Header Styles */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    /* background-color: #333; */
+    background-image: linear-gradient(135deg, #C82A2E, #F15A24);
+    color: #fff;
+}
+
+nav {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 28%;
+    height: 100vh;
+    background-image: linear-gradient(-135deg, #0F5372, #0F7A8C);
+    background-color: white;
+    overflow: hidden;
+    transition: all 0.3s ease-in-out;
+    z-index: 9;
+}
+
+nav.active {
+    left: 0;
+}
+
+ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.menu-design li {
+    /* display: inline-block; */
+    display: block;
+    margin: 0 10px;
+    font-size: 18px;
+    line-height: 50px;
+    /* font-family: 'Castoro Titling', cursive; */
+}
+
+.menu-design .close-btn{
+    margin-top: 10px;
+  
+}
+
+li .close-button{
+    font-size: 30px;
+    position: inherit;
+    right: 0%;
+    padding-left: 90%;
+    color: #C82A2E;
+    /* padding-right: 10px;
+    padding-top: 10px; */
+}
+
+.menu-design a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.menu-toggle {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 24px;
+    cursor: pointer;
+}
+
+.menu-toggle span {
+    width: 24px;
+    height: 2px;
+    background-color: #fff;
+    display: block;
+    transition: all 0.3s ease-in-out;
+}
+
+.menu-toggle.active span:first-child {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.menu-toggle.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.menu-toggle.active span:last-child {
+    transform: rotate(-45deg) translate(5px, -5px);
+}
+
+.menu-design i {
+    display: inline-block; /* Để icon hiển thị trên cùng 1 dòng với text */
+    vertical-align: middle; /* Để icon căn giữa theo chiều dọc với text */
+    margin-right: 10px; /* Để tạo khoảng cách giữa icon và text */
+    font-size: 35px; /* Để điều chỉnh kích thước của icon */
+  }
+  @media only screen and (min-width: 100px) and  (max-width: 768px){
+    nav {
+        height: auto;
+        width: 100%;
+        z-index: 9;
+    }
+}
+
+@media only screen and (max-width: 100px) {
+    nav {
+        position: relative;
+        height: auto;
+        width: 100%;
+        background-color: transparent;
+    }
+
+    nav.active {
+        background-color: #333;
+    }
+
+    nav.active li {
+        display: block;
+        margin: 20px 0;
+    }
+}
+
+
+
+/* Section Styles */
+
+.buttons {
+    flex: 1;
+    background-color: transparent;
+    padding: 20px;
+    position: absolute;
+    right: 0;
+}
+
+.buttons button {
+	margin-right: 10px;
+	background-color: #333;
+	color: #fff;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 5px;
+	cursor: pointer;
+}
+
+.content {
+	flex: 3;
+	/* padding: 20px; */
+	background-color: #fff;
+	color: #333;
+}
+
+.content p {
+	margin-bottom: 20px;
+}
+
+
+
+/* CSS for the food list section */
+section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px;
+    }
+
+    .left-food {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 65%;
+      }
+      
+      .menu-food {
+        height: 70%;
+        overflow-y: auto;
+      }
+      
+      .categories {
+        height: 30%;
+        margin: 10px 0 10px 0;
+      }
+
+      .categories ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+      }
+
+      .categories ul li {
+        border: 1px solid;
+        padding: 10px 15px 10px 15px;
+        color: white;
+        border-radius: 10px;
+        margin-right: 10px;
+        font-size: 20px;
+      }
+   
+    
+    h2 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    }
+    
+    #food-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 500px;
+    height: 100%;
+    overflow-y: scroll; /* Add a vertical scroll bar */
+    }
+
+    #food-list li {
+        width: 32%;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        /* border: 1px solid #0F5372; */
+        border-radius: 10px;
+        /* background-color: rgb(221, 221, 221); */
+        background-color: #F6F6F6;
+        height: auto;
+        max-height: 150px;
+        position: relative;
+        padding: 5px 0 5px 0;
+        /* background-image: linear-gradient(-169deg, white, #D9D9D9);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); */
+        margin-right: 12px;
+      }
+
+      #food-list li h3{
+       line-height: 0;
+       margin-top: 30px;
+      }
+      #food-list li .add-food{
+        width: 40px;
+        height: 40px;
+        color: white;
+        background-color: #C82A2E;
+        border-radius: 50%;
+        position: absolute;
+        right: -5px;
+        bottom: -5px;
+       }
+
+    .search-data{
+        position: relative;
+        height: 50px;
+    }
+    .search-data i {
+        position: absolute;
+        right: 15px;
+        z-index: 9;
+        font-size: 30px;
+        bottom: 30%;
+    }
+    .search-data #SearchMaterial{
+        position: absolute;
+        left: 0;
+        height: 40px;
+        font-size: 22px;
+        width: 99%;
+    }
+
+    .add-food i {
+        vertical-align: middle; /* Để icon căn giữa theo chiều dọc với text */
+        font-size: 20px; /* Để điều chỉnh kích thước của icon */
+      }
+
+    img {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    margin-right: 10px;
+    margin-left: 20px;
+    border: 5px solid white;
+    }
+    
+    .food-info {
+    display: flex;
+    flex-direction: column;
+    /* align-items: flex-start; */
+    }
+    
+    h3 {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin: 0;
+    margin-bottom: 5px;
+    }
+    
+    p {
+    margin: 0;
+    margin-bottom: 5px;
+    }
+
+    .food-info .name{
+        font-size: 22px;
+    }
+    .food-info .price{
+        font-size: 20px;
+        color: #EE5725;
+    }
+    
+    .add-food {
+    border: none;
+    background-color: transparent;
+    color: green;
+    cursor: pointer;
+    }
+    
+    .right-food {
+    width: 35%;
+    }
+    
+    #selected-food-list {
+    list-style: none;
+    padding: 0;
+    }
+    
+    .selected-food-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #eee;
+    border-radius: 5px;
+    }
+    
+    .selected-food-item h4 {
+    margin: 0;
+    }
+    
+    .selected-food-item p {
+    margin: 0;
+    margin-left: 10px;
+    }
+
+
+
+    #selected-food-list li {
+        margin-bottom: 10px;
+      }
+      
+      #selected-food-list li .quantity {
+        margin-right: 10px;
+      }
+      
+      #selected-food-list li .total-price {
+        font-weight: bold;
+      }
+
+
+
+    .reset-line-height{
+        line-height: 0;
+    }
+
+
+    /* Detail bill */
+    .header-invoice{
+    background-image: linear-gradient(135deg, #C82A2E, #F15A24);
+    color: white;
+    padding: 5px;
+    }
+    .hr-invoice{
+        border: none;
+    }
+    .img-invoice{
+        width: 60px;
+        height: 60px;
+        margin-left: 0;
+    }
+ 
+    .item-upquantity, .item-delete, .item-note-btn{
+        width: 40px;
+    }
+    
+    .plus-invoice, .close-invoice, .note-invoice{
+        width: 30px;
+        height: 30px;
+        border: 0;
+        color: #C82A2E;
+        border-radius: 50%;
+    }
+    .item-price{
+        width: 20%;
+    }
+    .item-title{
+        margin-bottom: 0px !important;
+    }
+    /* .invoice-details{
+        padding: 20px 10px 10px 10px;
+        border: 1px solid #F6F6F6;
+        background-image: linear-gradient(-135deg, white, #F6F6F6);
+        border-radius: 10px;
+        margin: 0 0 0 15px;
+        height: 100%;
+    } */
+
+    .order-details {
+        display: flex;
+        flex-direction: column;
+        margin: 20px;
+        /* border: 1px solid #ddd; */
+        padding: 20px;
+      }
+      
+      .header {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      
+      .content {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .order-info {
+        display: inline-block;
+        justify-content: space-between;
+        /* margin-bottom: 20px; */
+      }
+      
+      .order-items {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      .order-item {
+        display: flex;
+        margin-bottom: 10px;
+      }
+      
+      .item-image {
+        /* margin-right: 20px;
+        width: 100px;
+        height: 100px; */
+        object-fit: cover;
+        border-radius: 50%;
+      }
+      .item-info {
+        display: contents;
+        flex-direction: column;
+        justify-content: center;
+        margin-right: 20px;
+      }
+      .item-name {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        width: 40%;
+      }
+      .item-quantity, .item-price {
+        font-size: 16px;
+        margin-bottom: 5px;
+        margin-right: 5px;
+      }
+      .item-note {
+        font-size: 14px;
+        font-style: italic;
+        margin: 0 !important;
+        color: #CCCCCC;
+        font-weight: lighter;
+      }
+      .order-summary {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        margin-top: 20px;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+      }
+      .total-label {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      .total-value {
+        font-size: 20px;
+        font-weight: bold;
+      }
+      .order-detail__content {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        margin-top: 20px;
+      }
+      
+      .order-detail__item {
+        display: flex;
+        margin-bottom: 10px;
+        width: calc(50% - 10px);
+      }
+      
+      .order-detail__item-image {
+        margin-right: 10px;
+        width: 80px;
+      }
+      
+      .order-detail__item-image img {
+        width: 100%;
+      }
+      
+      .order-detail__item-info {
+        flex-grow: 1;
+      }
+      
+      .order-detail__item-name {
+        font-size: 18px;
+        margin-bottom: 5px;
+      }
+      
+      .order-detail__item-quantity,
+      .order-detail__item-price,
+      .order-detail__item-total {
+        font-weight: bold;
+      }
+      
+      .order-detail__item-quantity::before {
+        content: "Số lượng: ";
+      }
+      
+      .order-detail__item-price::before {
+        content: "Đơn giá: ";
+      }
+      
+      .order-detail__item-total::before {
+        content: "Thành tiền: ";
+      }
+      
+      .order-detail__item-note {
+        margin-top: 5px;
+      }
+      
+      .order-detail__footer {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        margin-top: 20px;
+      }
+      
+      .order-detail__total {
+        font-size: 20px;
+        font-weight: bold;
+      }
+      
+      .order-detail__discount {
+        font-weight: bold;
+      }
+      
+      .order-detail__payment-method {
+        margin-top: 10px;
+      }
+      
+      .order-detail__payment-method::before {
+        content: "Phương thức thanh toán: ";
+      }
+      
+
+
+      
+
+    

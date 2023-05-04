@@ -60,6 +60,11 @@ def Order_POS(request):
     template =  loader.get_template('Order-POS.html')
     return HttpResponse(template.render())
 
+def Home_POS(request):
+    #load template in folder teamplates
+    template =  loader.get_template('Home-POS.html')
+    return HttpResponse(template.render())
+
 
 
 # def login_pos_system(request):

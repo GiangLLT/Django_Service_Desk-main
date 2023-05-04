@@ -1,4 +1,5 @@
 
+$(document).ready(function() {
   /* ======================================================================================================================== */
   /* ==============================================Login POS================================================================= */
   /* ======================================================================================================================== */
@@ -49,7 +50,7 @@
             },
             success: function(response) {
             if (response.success) {
-                window.location.href = "/login-pos-check/";
+                window.location.href = "/home-pos/";
                 Swal.fire(
                     'Notification',
                     'Logout Success!!!',
@@ -156,3 +157,63 @@ categoryList.forEach(category => {
         });
     });
 });
+
+
+
+
+
+// Lấy danh sách các món ăn đã chọn
+const foods = JSON.parse(document.querySelector('#selected-food-list').getAttribute('data-foods'));
+
+// Lấy nút "Thêm"
+const addButton = document.getElementById('.add-food');
+
+// Khi click vào nút "Thêm"
+addButton.addEventListener('click', () => {
+  // Lấy tên món ăn và giá tiền
+  const foodName = prompt('Tên món ăn:');
+  const foodPrice = parseFloat(prompt('Giá tiền:'));
+
+  if (!foodName || !foodPrice || isNaN(foodPrice)) {
+    alert('Vui lòng nhập đầy đủ thông tin và giá tiền là một số!');
+    return;
+  }
+
+  // Kiểm tra xem món ăn đã được chọn trước đó chưa
+  const foodIndex = foods.findIndex(food => food.name === foodName);
+  if (foodIndex !== -1) {
+    // Cập nhật số lượng và tính tổng giá tiền
+    const food = foods[foodIndex];
+    food.quantity++;
+    food.totalPrice = foodPrice * food.quantity;
+  } else {
+    // Thêm món ăn vào danh sách
+    foods.push({
+      name: foodName,
+      quantity: 1,
+      price: foodPrice,
+      totalPrice: foodPrice
+    });
+  }
+
+  // Cập nhật danh sách các món ăn đã chọn
+  const selectedFoodList = document.querySelector('#selected-food-list');
+  selectedFoodList.setAttribute('data-foods', JSON.stringify(foods));
+
+  // Hiển thị danh sách các món ăn đã chọn
+  selectedFoodList.innerHTML = foods.map(food => `
+    <li>
+      <span>${food.name}</span>
+      <span>Số lượng: ${food.quantity}</span>
+      <span>Thành tiền: ${food.totalPrice}</span>
+    </li>
+  `).join('');
+});
+
+
+});
+
+
+
+
+
