@@ -161,16 +161,36 @@
                   <p class="price">25.000đ</p>
                   <button class="add-food"><i class="ti-plus"></i></button>
                 </div>
-              </li>          
+              </li>  
+              <li>
+                <img src="{% static 'Asset/img/mon-1.jpg' %}" alt="Cơm tấm">
+                <div class="food-info">
+                  <h3 class="name">Cơm tấm</h3>
+                  <p class="price">25.000đ</p>
+                  <button class="add-food"><i class="ti-plus"></i></button>
+                </div>
+              </li>
+              <li>
+                <img src="{% static 'Asset/img/mon-1.jpg' %}" alt="Cơm tấm">
+                <div class="food-info">
+                  <h3 class="name">Cơm tấm</h3>
+                  <p class="price">25.000đ</p>
+                  <button class="add-food"><i class="ti-plus"></i></button>
+                </div>
+              </li>        
             </ul>
           </div>
           <div class="categories">
             {% comment %} <h2>Danh mục món ăn</h2> {% endcomment %}
             <ul id="category-list">
-              <li id="random-border" class="border-radius"><a type="button"><i class="ti-bookmark-alt">Tất cả</i></a></li>
-              <li id="random-border" class="border-radius"><a type="button"><i class="ti-bookmark-alt"></i>Đồ ăn nhanh</a></li>
-              <li>Đồ ăn chay</li>
-              <li>Đồ ăn miền Nam</li>
+              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Tất cả</a></li>
+              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Thức ăn nhanh</a></li>
+              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Món Chay</a></li>
+              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Món Mặn</a></li>
+              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Hương Vị Miền Tây</a></li>
+              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Tráng Miệng</a></li>
+              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Tráng Miệng</a></li>
+              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Tráng Miệng</a></li>
             </ul>
           </div>
         </div>
@@ -178,11 +198,9 @@
           {% comment %} <h2>Danh sách các món ăn đã chọn</h2> {% endcomment %}
           <ul id="selected-food-list" data-foods="[]">
           </ul>
-          {% comment %} <div id="total-amount">Tổng tiền: 0 đồng</div> {% endcomment %}
-          {% comment %} <div id="total-amount" class="total-amount" value="0">0</div> {% endcomment %}
           <div class="order-details">
             <div class="header header-invoice">
-              <h1>Chi tiết đơn hàng</h1>
+              <i class="ti-pencil-alt font-size"></i><h1 class="font-size"> CHI TIẾT ĐƠN HÀNG</h1>
             </div>
             <div class="content">
               <div class="order-info">
@@ -198,79 +216,28 @@
               </div>
               <hr class="hr-invoice">
               <div class="order-items" id="order-items" data-food="[]">
-                <div class="order-item">
-                  <div class="item-image">
-                    <img class="img-invoice" id="img-invoice" src="https://via.placeholder.com/50x50" alt="Product image">
-                  </div>
-                  <div class="item-info">
-                    <div class="item-quantity">
-                      {% comment %} <span>Số lượng:</span> {% endcomment %}
-                      <p>x 2</p>
-                    </div>
-                    <div class="item-name">
-                      <p class="item-title">Bánh mì</p>
-                     <p class="item-note"><sub>Không đường</sub></p>                     
-                    </div>
-                   
-                    <div class="item-price">
-                      {% comment %} <span>Thành tiền:</span> {% endcomment %}
-                      <p>40.000 đ</p>
-                    </div>
-                    <div class="item-upquantity">
-                      <button class="plus-invoice"><i class="ti-plus"></i></button>
-                    </div>
-                    {% comment %} <div class="item-delete">
-                      <button class="close-invoice"><i class="ti-close"></i></button>
-                    </div> {% endcomment %}
-                    <div class="item-note-btn">
-                      <button class="note-invoice"><i class="ti-notepad"></i></button>
-                    </div>
-                  </div>
-                </div>
-                <div class="order-item">
-                  <div class="item-image">
-                    <img class="img-invoice" src="https://via.placeholder.com/50x50" alt="Product image">
-                  </div>
-                  <div class="item-info">
-                    <div class="item-quantity">
-                      {% comment %} <span>Số lượng:</span> {% endcomment %}
-                      <p>x 2</p>
-                    </div>
-                    <div class="item-name">
-                      <p class="item-title">Cà phê sữa đá - nóng </p>
-                     <p class="item-note"><sub></sub></p>                     
-                    </div>
-                   
-                    <div class="item-price">
-                      {% comment %} <span>Thành tiền:</span> {% endcomment %}
-                      <p>50.000 đ</p>
-                    </div>
-                    <div class="item-upquantity">
-                      <button class="plus-invoice"><i class="ti-plus"></i></button>
-                    </div>
-                    {% comment %} <div class="item-delete">
-                      <button class="close-invoice"><i class="ti-close"></i></button>
-                    </div> {% endcomment %}
-                    <div class="item-note-btn">
-                      <button class="note-invoice"><i class="ti-notepad"></i></button>
-                    </div>
-                  </div>
-                </div>
+                <p class="text-invoice">Chưa có sản phẩm</p>
               </div>
             </div>
             <div class="footer">
               <div class="total total-amount" id="total-amount">
-                <span>Tổng tiền:</span>
+                <span class="span-text">Tổng tiền:</span>
                 {% comment %} <p >65.000 đ</p> {% endcomment %}
-                <div id="total-amount-price" class="total-amount-price" value="0">0</div>
+                <div id="total-amount-price" class="total-amount-price span-value" value="0">0 đ</div>
               </div>
               <div class="discount">
-                <span>Giảm giá:</span>
-                <p>0 đ</p>
+                <span class="span-text">Giảm giá:</span>
+                <div class="span-value discount-value" value="0">0 đ</div>
+                {% comment %} <p class="span-value">0 đ</p> {% endcomment %}
               </div>
               <div class="payment-method">
-                <span>Phương thức thanh toán:</span>
-                <p>Tiền mặt</p>
+                <span class="span-text">Phương thức thanh toán:</span>
+                <p class="span-value">Tiền mặt</p>
+              </div>
+              <div class="payment">
+                <span class="span-text">Thanh toán:</span>
+                <div class="span-value payment-value" value="0">0 đ</div>
+                {% comment %} <p class="span-value">0 đ</p> {% endcomment %}
               </div>
             </div>
           </div>
@@ -280,8 +247,9 @@
       </section>
 
     {% comment %} Javascript {% endcomment %}
-    <script type="text/javascript" src="{% static 'js/jquery-3.6.4.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/Pos-login.js' %}"></script>
+    
+    <script  type="text/javascript" src="{% static 'js/jquery-3.6.4.min.js' %}"></script>
+    <script defer type="text/javascript" src="{% static 'js/Pos-login.js' %}"></script>
     <script src="{% static 'Sweetalert2/Js/sweetalert2.all.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/jquery.twbsPagination.min.js' %}"></script>
 
@@ -393,6 +361,7 @@
           const foodName = addButton.parentElement.querySelector('.food-name').textContent;
           const foodPrice = parseFloat(addButton.parentElement.querySelector('.food-price').getAttribute('value'));
           const imgInvoice = document.getElementById('food-img');
+
           
 
           {% comment %} const foodImage = addButton.parentElement.querySelector('.img-invoice').getAttribute('src'); {% endcomment %}
@@ -406,13 +375,13 @@
           // Kiểm tra xem món ăn đã được chọn trước đó chưa
           if (imgInvoice !== null) {
             foodImage = imgInvoice.getAttribute('src');
-            // do something with the src value
           }
           const foodIndex = foods.findIndex(food => food.name === foodName);
           if (foodIndex !== -1) {
             // Cập nhật số lượng và tính tổng giá tiền
+            let food_quantity = parseInt(document.querySelectorAll('.item-quantity p')[foodIndex].textContent.trim().split(' ')[1]);
             const food = foods[foodIndex];
-            food.quantity++;
+            food.quantity = food_quantity + 1;
             food.totalPrice = foodPrice * food.quantity;
             foodPrice_total += foodPrice;
             foodImage = foodImage;
@@ -432,20 +401,11 @@
           
           // Cập nhật danh sách các món ăn đã chọn
           const totalAmountDiv = document.querySelector('#total-amount');
-          totalAmountDiv.innerText ="Tổng Tiền: " + foodPrice_total.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'}); // thay 'foodPrice_total' bằng giá trị cần thiết
-    
-          {% comment %} const selectedFoodList = document.querySelector('#selected-food-list');
-          selectedFoodList.setAttribute('data-foods', JSON.stringify(foods)); {% endcomment %}
-      
-          // Hiển thị danh sách các món ăn đã chọn
-          {% comment %} selectedFoodList.innerHTML = foods.map(food => 
-            `<li>
-              <span>${food.id}</span>
-              <span>${food.name}</span>
-              <span>Số lượng: ${food.quantity}</span>
-              <span>Thành tiền: ${food.totalPrice.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})}</span>
-            </li>`
-          ).join(''); {% endcomment %}
+          const a = foodPrice_total;
+          const html_total = '<span class="span-text">Tổng tiền:</span><div id="total-amount-price" class="total-amount-price span-value" value="'+foodPrice_total+'">'+foodPrice_total.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})+'</div>';
+          
+          totalAmountDiv.innerHTML = html_total; // Sử dụng thuộc tính innerHTML để thêm HTML vào phần tử totalAmountDiv
+          
 
           const selectedFoodList = document.querySelector('#order-items');
           selectedFoodList.setAttribute('data-food', JSON.stringify(foods));
@@ -453,6 +413,9 @@
           // Hiển thị danh sách các món ăn đã chọn
           selectedFoodList.innerHTML = foods.map(food => 
             `<div class="order-item">
+              <div class="item-id">
+                <p>${food.id}</p>
+              </div>
               <div class="item-image">
                 <img class="img-invoice" src="${food.foodImage}" alt="Product image">
               </div>
@@ -469,60 +432,17 @@
                   <p>${food.totalPrice.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})}</p>
                 </div>
                 <div class="item-upquantity">
-                  <button class="plus-invoice"><i class="ti-plus"></i></button>
+                  <button class="plus-invoice"><i class="ti-plus plus-invoice-li"></i></button>
                 </div>
                 <div class="item-note-btn">
-                  <button class="note-invoice"><i class="ti-notepad"></i></button>
+                  <button class="note-invoice"><i class="ti-notepad note-invoice-li"></i></button>
                 </div>
               </div>
             </div>`
           ).join('');
         });
       });
-    </script>
-    <script>
-            // Lấy ra các button "plus-invoice" và "note-invoice"
-      const plusButtons = document.querySelectorAll('.plus-invoice');
-      const noteButtons = document.querySelectorAll('.note-invoice');
-
-      // Duyệt qua từng button "plus-invoice" và thêm sự kiện click vào từng button
-      plusButtons.forEach(button => {
-        button.addEventListener('click', () => {
-          // Lấy ra số lượng hiện tại
-          const quantityElement = button.parentNode.parentNode.querySelector('.item-quantity p');
-          const quantity = parseInt(quantityElement.textContent.trim().split(' ')[1]);
-
-          // Tăng số lượng lên 1 và cập nhật lên giao diện
-          quantityElement.textContent = `x ${quantity + 1}`;
-        });
-      });
-
-      // Duyệt qua từng button "note-invoice" và thêm sự kiện click vào từng button
-      noteButtons.forEach(button => {
-        button.addEventListener('click', () => {
-          // Lấy ra element chứa note và hiển thị popup note
-          const noteElement = button.parentNode.parentNode.querySelector('.item-note');
-          const note = noteElement.textContent.trim().substring(0);
-
-          // Hiển thị popup nhập ghi chú sử dụng SweetAlert
-          Swal.fire({
-            title: 'Ghi chú',
-            input: 'text',
-            inputValue: note,
-            showCancelButton: true,
-            confirmButtonText: 'Lưu',
-            cancelButtonText: 'Hủy'
-          }).then((result) => {
-            if (result.isConfirmed) {
-              // Cập nhật ghi chú mới vào element chứa note
-              const newNote = result.value ? `<sub>${result.value}</sub>` : '';
-              noteElement.innerHTML = newNote;
-            }
-          });
-        });
-      });
-
-    </script>
+    </script>  
 </body>
 </html>
 

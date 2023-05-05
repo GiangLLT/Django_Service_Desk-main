@@ -210,8 +210,104 @@ addButton.addEventListener('click', () => {
   `).join('');
 });
 
-
 });
+
+//Order POS
+//up quantity Bill detail
+    document.addEventListener('DOMContentLoaded', function() {
+        // Lấy phần tử cha chứa các nút plus-invoice và note-invoice
+        const orderItems = document.querySelector('.order-items');
+      
+        // Đăng ký sự kiện click cho phần tử cha
+        orderItems.addEventListener('click', function(event) {
+          // Kiểm tra xem phần tử được kích hoạt có phải là nút plus-invoice hoặc note-invoice hay không
+          const target = event.target;
+          if (target.classList.contains('plus-invoice') || target.classList.contains('plus-invoice-li')) {
+            // // Lấy ra số lượng hiện tại
+            // // const quantityElement = target.parentNode.parentNode.querySelector('.item-quantity p');
+            // const quantityElement = target.closest('.order-item').querySelector('.item-quantity p');
+            // const quantity = parseInt(quantityElement.textContent.trim().split(' ')[1]);
+      
+            // // Tăng số lượng lên 1 và cập nhật lên giao diện
+            // quantityElement.textContent = `x ${quantity + 1}`;
+            // Lấy ra phần tử cha của nút plus-invoice để truy cập vào các phần tử con khác
+            const orderItem = target.closest('.order-item');
+
+            // Lấy ra số lượng hiện tại và giá của sản phẩm
+            const quantityElement = orderItem.querySelector('.item-quantity p');
+            const quantity = parseInt(quantityElement.textContent.trim().split(' ')[1]);
+            const priceElement = orderItem.querySelector('.item-price p');
+            const price = parseInt(priceElement.textContent.trim().split(' ')[0].replace('.', ''));
+            const unit_price = price / quantity;
+
+            // Tăng số lượng lên 1 và tính toán giá trị mới
+            const newQuantity = quantity + 1;
+            const newTotalPrice = (newQuantity * unit_price).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+
+            // Cập nhật số lượng và giá trị thành tiền lên giao diện
+            quantityElement.textContent = `x ${newQuantity}`;
+            // priceElement.textContent = `${price.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})} x ${newQuantity}`;
+            priceElement.textContent = newTotalPrice;
+            // orderItem.querySelector('.item-total-price p').textContent = newTotalPrice;
+
+            // Tính toán và cập nhật giá trị tổng tiền lên giao diện
+            // const totalPrices = document.querySelectorAll('.item-total-price p');
+            const totalPrices = document.querySelectorAll('.total-amount-price');
+            const payment = document.querySelectorAll('.payment-value');
+            const discount = document.querySelectorAll('.discount-value');
+            let discountTotal = 0;
+            discount.forEach(discount => {
+                discountTotal += parseInt(discount.textContent.trim().replace('.', '').replace(' đ', ''));
+            });
+            
+            let foodPriceTotal = 0;
+            totalPrices.forEach(price => {
+                foodPriceTotal += parseInt(price.textContent.trim().replace('.', '').replace(' đ', ''));
+            });
+            const update_price = unit_price +  foodPriceTotal;
+            const payment_price = update_price - discountTotal;
+            const newFoodPriceTotal = update_price.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+            totalPrices.forEach(price => {
+                price.textContent = newFoodPriceTotal;
+                price.value = update_price;
+            });
+            payment.forEach(price => {
+                payment.textContent = payment_price.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+                payment.value = payment_price;
+            });
+
+            // totalPrices.setAttribute('value', update_price);
+          } else if (target.classList.contains('note-invoice') || target.classList.contains('note-invoice-li')) {
+            // Lấy ra element chứa note và hiển thị popup note
+            // const noteElement = target.parentNode.parentNode.querySelector('.item-note');
+            const noteElement = target.closest('.order-item').querySelector('.item-note');
+            let note = '';
+            if (noteElement) {
+                note = noteElement.textContent.trim().substring(0);
+            }     
+      
+            // Hiển thị popup nhập ghi chú sử dụng SweetAlert
+            Swal.fire({
+              title: 'Ghi chú',
+              input: 'text',
+              inputValue: note,
+              showCancelButton: true,
+              confirmButtonText: 'Lưu',
+              cancelButtonText: 'Hủy'
+            }).then((result) => {
+              if (result.isConfirmed) {
+                // Cập nhật ghi chú mới vào element chứa note
+                const newNote = result.value ? `<sub>${result.value}</sub>` : '';
+                noteElement.innerHTML = newNote;
+              }
+            });
+          }
+        });
+      });
+
+
+
+      
 
 
 
