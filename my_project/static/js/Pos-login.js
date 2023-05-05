@@ -227,9 +227,7 @@ addButton.addEventListener('click', () => {
             // // const quantityElement = target.parentNode.parentNode.querySelector('.item-quantity p');
             // const quantityElement = target.closest('.order-item').querySelector('.item-quantity p');
             // const quantity = parseInt(quantityElement.textContent.trim().split(' ')[1]);
-      
-            // // Tăng số lượng lên 1 và cập nhật lên giao diện
-            // quantityElement.textContent = `x ${quantity + 1}`;
+    
             // Lấy ra phần tử cha của nút plus-invoice để truy cập vào các phần tử con khác
             const orderItem = target.closest('.order-item');
 
@@ -237,7 +235,8 @@ addButton.addEventListener('click', () => {
             const quantityElement = orderItem.querySelector('.item-quantity p');
             const quantity = parseInt(quantityElement.textContent.trim().split(' ')[1]);
             const priceElement = orderItem.querySelector('.item-price p');
-            const price = parseInt(priceElement.textContent.trim().split(' ')[0].replace('.', ''));
+            // const price = parseInt(priceElement.textContent.trim().split(' ')[0].replace('.', ''));
+            const price = parseInt(priceElement.textContent.trim().split(' ')[0].replace(/\./g, ''));
             const unit_price = price / quantity;
 
             // Tăng số lượng lên 1 và tính toán giá trị mới
@@ -250,62 +249,231 @@ addButton.addEventListener('click', () => {
             priceElement.textContent = newTotalPrice;
             // orderItem.querySelector('.item-total-price p').textContent = newTotalPrice;
 
-            // Tính toán và cập nhật giá trị tổng tiền lên giao diện
-            // const totalPrices = document.querySelectorAll('.item-total-price p');
-            const totalPrices = document.querySelectorAll('.total-amount-price');
-            const payment = document.querySelectorAll('.payment-value');
-            const discount = document.querySelectorAll('.discount-value');
-            let discountTotal = 0;
-            discount.forEach(discount => {
-                discountTotal += parseInt(discount.textContent.trim().replace('.', '').replace(' đ', ''));
-            });
-            
-            let foodPriceTotal = 0;
-            totalPrices.forEach(price => {
-                foodPriceTotal += parseInt(price.textContent.trim().replace('.', '').replace(' đ', ''));
-            });
-            const update_price = unit_price +  foodPriceTotal;
-            const payment_price = update_price - discountTotal;
-            const newFoodPriceTotal = update_price.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
-            totalPrices.forEach(price => {
-                price.textContent = newFoodPriceTotal;
-                price.value = update_price;
-            });
-            payment.forEach(price => {
-                payment.textContent = payment_price.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
-                payment.value = payment_price;
-            });
+            calculate_total_payment();
 
-            // totalPrices.setAttribute('value', update_price);
           } else if (target.classList.contains('note-invoice') || target.classList.contains('note-invoice-li')) {
             // Lấy ra element chứa note và hiển thị popup note
-            // const noteElement = target.parentNode.parentNode.querySelector('.item-note');
-            const noteElement = target.closest('.order-item').querySelector('.item-note');
-            let note = '';
+            // const noteElement = target.closest('.order-item').querySelector('.item-note');
+            // let note = '';
+            // if (noteElement) {
+            //     note = noteElement.textContent.trim().substring(0);
+            // }    
+            let note = "";
+            let noteElement = target.closest('.order-item').querySelector('.item-note');          
             if (noteElement) {
-                note = noteElement.textContent.trim().substring(0);
-            }     
-      
-            // Hiển thị popup nhập ghi chú sử dụng SweetAlert
-            Swal.fire({
-              title: 'Ghi chú',
-              input: 'text',
-              inputValue: note,
-              showCancelButton: true,
-              confirmButtonText: 'Lưu',
-              cancelButtonText: 'Hủy'
-            }).then((result) => {
-              if (result.isConfirmed) {
-                // Cập nhật ghi chú mới vào element chứa note
-                const newNote = result.value ? `<sub>${result.value}</sub>` : '';
-                noteElement.innerHTML = newNote;
+              note = noteElement.textContent.trim().substring(0);
+            }
+            const orderItem = target.closest('.order-item');
+           
+            const addNoteBtns = orderItem.querySelector('.add-note-btn');
+
+              if (addNoteBtns) {
+                  // addNoteBtns.addEventListener('click', () => {
+                    // noteElement = target.closest('.order-item').querySelector('.item-note');          
+                    // if (noteElement) {
+                    //   note = noteElement.textContent.trim().substring(0);
+                    // }
+
+                    const modal = document.getElementById('note-modal');
+                    if (modal && !modal.classList.contains('modal-show')) {
+                      modal.classList.add('modal-show');
+                      const noteInput = document.getElementById('note-input');
+                      if (note) {
+                        noteInput.value = note;
+                      }
+                      else{
+                        noteInput.value = "";
+                      }
+                    }
+                  // });
+              }      
+
+
+              const closeBtn = document.querySelector('.close');
+              if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                  const modal = document.getElementById('note-modal');
+                  if (modal) {
+                    // modal.style.display = 'none';
+                    modal.classList.remove('modal-show');
+                  }
+                });
               }
-            });
+
+              window.addEventListener('click', (event) => {
+                const modal = document.getElementById('note-modal');
+                if (modal && event.target == modal) {
+                  // modal.style.display = 'none';
+                  modal.classList.remove('modal-show');
+                }
+              });
+
+              const saveNoteBtn = document.getElementById('save-note-btn');
+              if (saveNoteBtn) {
+                saveNoteBtn.addEventListener('click', () => {
+                  const noteInput = document.getElementById('note-input');
+                  if (noteInput) {
+                    const newNote = noteInput ? '<sub>'+noteInput.value+'</sub>' : '';
+                    noteElement.innerHTML = newNote;
+                    // noteElement.innerHTML = `<sub>${noteInput.value}</sub>`;
+                    const modal = document.getElementById('note-modal');
+                    if (modal) {
+                      modal.classList.remove('modal-show');
+                    }
+                  }
+                });
+              }
+            
+
+            
+
+      
+            // // Hiển thị popup nhập ghi chú sử dụng SweetAlert
+            // Swal.fire({
+            //   title: 'Ghi chú',
+            //   input: 'text',
+            //   inputValue: note,
+            //   showCancelButton: true,
+            //   confirmButtonText: 'Lưu',
+            //   cancelButtonText: 'Hủy'
+            // }).then((result) => {
+            //   if (result.isConfirmed) {
+            //     // Cập nhật ghi chú mới vào element chứa note
+            //     const newNote = result.value ? `<sub>${result.value}</sub>` : '';
+            //     noteElement.innerHTML = newNote;
+            //   }
+            // });
           }
         });
       });
 
 
+      // Function click button add product
+      const foods = JSON.parse(document.querySelector('#selected-food-list').getAttribute('data-foods'));
+      // Lấy nút "Thêm"
+      const addButtons = document.querySelectorAll('.add-food');
+      let counter = 0;
+    
+      // Khi click vào nút "Thêm"
+      addButtons.forEach(addButton => {
+        addButton.addEventListener('click', () => {
+          // Lấy tên món ăn và giá tiền
+          const foodName = addButton.parentElement.querySelector('.food-name').textContent;
+          const foodPrice = parseFloat(addButton.parentElement.querySelector('.food-price').getAttribute('value'));
+          const imgInvoice = document.getElementById('food-img');
+
+          if (!foodName || !foodPrice || isNaN(foodPrice)) {
+            alert('Sản phẩm chưa đủ thông tin!!');
+            return;
+          }
+          let foodImage = "";
+          
+          // Kiểm tra xem món ăn đã được chọn trước đó chưa
+          if (imgInvoice !== null) {
+            foodImage = imgInvoice.getAttribute('src');
+          }
+          const foodIndex = foods.findIndex(food => food.name === foodName);
+          if (foodIndex !== -1) {
+            // Cập nhật số lượng và tính tổng giá tiền
+            let food_quantity = parseInt(document.querySelectorAll('.item-quantity p')[foodIndex].textContent.trim().split(' ')[1]);
+            const food = foods[foodIndex];
+            food.quantity = food_quantity + 1;
+            food.totalPrice = foodPrice * food.quantity;
+            foodImage = foodImage;
+          } else {
+            counter++;
+            foods.push({
+              id: counter,
+              name: foodName,
+              quantity: 1,
+              price: foodPrice,
+              totalPrice: foodPrice,
+              foodImage: foodImage,      
+            });
+          }
+          
+          
+          // // Cập nhật danh sách các món ăn đã chọn
+          // const totalAmountDiv = document.querySelector('#total-amount');
+          // const html_total = '<span class="span-text">Tổng tiền:</span><div id="total-amount-price" class="total-amount-price span-value" value="'+foodPrice_total+'">'+foodPrice_total.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})+'</div>';          
+          // totalAmountDiv.innerHTML = html_total; // Sử dụng thuộc tính innerHTML để thêm HTML vào phần tử totalAmountDiv
+          // const totalDiscountDiv = document.querySelector('#discount');
+          // const html_total_discount = '<span class="span-text">Giảm giá:</span><div class="span-value discount-value" value="'+totalDiscount+'">'+totalDiscount.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})+'</div>';          
+          // totalDiscountDiv.innerHTML = html_total_discount; 
+          // const totalPaymentDiv = document.querySelector('#payment');
+          // const html_total_payment = '<span class="span-text">Thanh Toán:</span><div class="span-value payment-value" value="'+foodPrice_payment+'">'+foodPrice_payment.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})+'</div>';          
+          // totalPaymentDiv.innerHTML = html_total_payment; 
+
+
+          const selectedFoodList = document.querySelector('#order-items');
+          selectedFoodList.setAttribute('data-food', JSON.stringify(foods));
+
+          // Hiển thị danh sách các món ăn đã chọn
+          selectedFoodList.innerHTML = foods.map(food => 
+            `<div class="order-item">
+              <div class="item-id">
+                <p>${food.id}</p>
+              </div>
+              <div class="item-image">
+                <img class="img-invoice" src="${food.foodImage}" alt="Product image">
+              </div>
+              <div class="item-info">
+                <div class="item-quantity">
+                  <p>x ${food.quantity}</p>
+                </div>
+                <div class="item-name">
+                  <p class="item-title">${food.name}</p>
+                 <p class="item-note"></p>                     
+                </div>
+               
+                <div class="item-price">
+                  <p>${food.totalPrice.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})}</p>
+                </div>
+                <div class="item-upquantity">
+                  <button class="plus-invoice"><i class="ti-plus plus-invoice-li"></i></button>
+                </div>
+                <div class="item-note-btn">
+                  <button class="note-invoice add-note-btn" id="add-note-btn"><i class="ti-notepad note-invoice-li"></i></button>
+                </div>
+              </div>
+            </div>`
+          ).join('');
+
+          calculate_total_payment();
+        });
+      });
+
+
+
+//calculate total amount and total payment
+function calculate_total_payment(){
+  const item = document.querySelectorAll('.item-price');
+  const totalPrices = document.querySelector('.total-amount-price');
+  const payment = document.querySelector('.payment-value');
+
+  let foodPriceTotal = 0;  
+  item.forEach(price => {
+    // foodPriceTotal += parseInt(price.textContent.trim().replace('.', '').replace(' đ', ''));
+    foodPriceTotal += parseInt(price.textContent.trim().replace(' đ', '').replace(/\./g, ''));  
+  });
+  totalPrices.textContent = foodPriceTotal.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+  totalPrices.setAttribute('value', foodPriceTotal);
+
+  const discount = document.querySelector('.discount-value');
+  let discountTotal = 0;
+  discountTotal += parseInt(discount.textContent.trim().replace(' đ', '').replace(/\./g, ''));
+
+  let total_payment = foodPriceTotal - discountTotal; 
+  if (discountTotal > 0){
+    payment.textContent = total_payment.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+    payment.setAttribute('value', total_payment);
+  }    
+  else{
+    payment.textContent = foodPriceTotal.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+    payment.setAttribute('value', foodPriceTotal);
+  }
+  
+}
 
       
 

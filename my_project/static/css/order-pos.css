@@ -360,7 +360,7 @@ section {
     .food-info .name{
         font-size: 22px;
     }
-    .food-info .price{
+    .food-info .price, .food-info .food-price{
         font-size: 20px;
         color: #EE5725;
     }
@@ -468,19 +468,19 @@ section {
       font-weight: inherit;
       color: #0F5372;
     }
-    .total-amount, .discount, .payment-method ,.payment{
+    .total-amount, .discount, .payment-method ,.payment, .total-tax{
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-weight: bold;
       font-size: 18px;
     }
-    .total-amount .span-value, .discount .span-value, .payment-method .span-value, .payment .span-value {
+    .total-amount .span-value, .discount .span-value, .payment-method .span-value, .payment .span-value, .total-tax .span-value{
       font-size: 18px;
       font-weight: lighter;
     }
     
-    .total-amount .span-text, .discount .span-text, .payment-method .span-text, .payment .span-text {
+    .total-amount .span-text, .discount .span-text, .payment-method .span-text, .payment .span-text , .total-tax .span-text{
       margin-right: 10px;
     }
     
@@ -658,6 +658,71 @@ section {
         content: "Phương thức thanh toán: ";
       }
       
+
+      /* SweetAlert Note */
+    /* SweetAlert note style */
+    /* The modal (background) */
+.modal-note {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+.modal-show {
+  display: block !important;
+}
+
+/* Modal Content/Box */
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80% !important;
+}
+
+/* The Close Button */
+.close {
+  color: #aaaaaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Textarea */
+#note-input {
+  width: 100%;
+  height: 220px;
+  border: 0.5px solid #A9A9A9;
+}
+
+/* Save Button */
+#save-note-btn {
+  margin-top: 10px;
+}
+
+.div-title{
+  background-image: linear-gradient(135deg, #C82A2E, #F15A24);
+    color: #fff;
+    padding: 10px 10px 10px 10px;
+    margin-bottom: 10px;
+    margin-top: -10px;
+}
+#save-note-btn{
+  font-size: 20px;
+}
 
 
       

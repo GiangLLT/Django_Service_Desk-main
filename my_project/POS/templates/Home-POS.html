@@ -218,14 +218,36 @@
               <div class="order-items" id="order-items" data-food="[]">
                 <p class="text-invoice">Chưa có sản phẩm</p>
               </div>
+               <!-- The modal -->
+            <div id="note-modal" class="modal modal-note">
+              <div class="modal-content">
+                <div class="div-title">
+                  <span class="close">&times;</span>
+                  <h2><i class="icon-note"></i> GHI CHÚ</h2>
+                </div>             
+                  <textarea id="note-input"></textarea>
+                  <div class="display-button">
+                    {% comment %} <button type="button" class="btn btn-outline-danger btn-fw" id="save-note-btn"><i class="icon-note"><i/> Lưu Ghi Chú</button> {% endcomment %}
+                    <button type="button" class="btn btn-outline-danger btn-fw" id="save-note-btn"><i class="ti-save"></i> Lưu Ghi Chú</button>
+                  </div>
+              </div>
             </div>
+            <!-- The modal -->
+            </div>
+
+           
             <div class="footer">
+              <div class="total-tax" id="total-tax">
+                <span class="span-text">Thuế VAT:</span>
+                {% comment %} <p >65.000 đ</p> {% endcomment %}
+                <div id="total-tax-price" class="total-tax-price span-value" value="10">10%</div>
+              </div>
               <div class="total total-amount" id="total-amount">
                 <span class="span-text">Tổng tiền:</span>
                 {% comment %} <p >65.000 đ</p> {% endcomment %}
                 <div id="total-amount-price" class="total-amount-price span-value" value="0">0 đ</div>
               </div>
-              <div class="discount">
+              <div class="discount" id="discount">
                 <span class="span-text">Giảm giá:</span>
                 <div class="span-value discount-value" value="0">0 đ</div>
                 {% comment %} <p class="span-value">0 đ</p> {% endcomment %}
@@ -234,7 +256,7 @@
                 <span class="span-text">Phương thức thanh toán:</span>
                 <p class="span-value">Tiền mặt</p>
               </div>
-              <div class="payment">
+              <div class="payment" id="payment">
                 <span class="span-text">Thanh toán:</span>
                 <div class="span-value payment-value" value="0">0 đ</div>
                 {% comment %} <p class="span-value">0 đ</p> {% endcomment %}
@@ -245,6 +267,8 @@
           </div>               
         </div>
       </section>
+
+      
 
     {% comment %} Javascript {% endcomment %}
     
@@ -346,103 +370,7 @@
             });
           }); 
     </script>
-    <script type="text/javascript">
-      const foods = JSON.parse(document.querySelector('#selected-food-list').getAttribute('data-foods'));
-      
-      // Lấy nút "Thêm"
-      const addButtons = document.querySelectorAll('.add-food');
-      let foodPrice_total = parseFloat(document.querySelector('.total-amount-price').getAttribute('value'));
-      let counter = 0;
     
-      // Khi click vào nút "Thêm"
-      addButtons.forEach(addButton => {
-        addButton.addEventListener('click', () => {
-          // Lấy tên món ăn và giá tiền
-          const foodName = addButton.parentElement.querySelector('.food-name').textContent;
-          const foodPrice = parseFloat(addButton.parentElement.querySelector('.food-price').getAttribute('value'));
-          const imgInvoice = document.getElementById('food-img');
-
-          
-
-          {% comment %} const foodImage = addButton.parentElement.querySelector('.img-invoice').getAttribute('src'); {% endcomment %}
-
-          if (!foodName || !foodPrice || isNaN(foodPrice)) {
-            alert('Sản phẩm chưa đủ thông tin!!');
-            return;
-          }
-          let foodImage = "";
-          
-          // Kiểm tra xem món ăn đã được chọn trước đó chưa
-          if (imgInvoice !== null) {
-            foodImage = imgInvoice.getAttribute('src');
-          }
-          const foodIndex = foods.findIndex(food => food.name === foodName);
-          if (foodIndex !== -1) {
-            // Cập nhật số lượng và tính tổng giá tiền
-            let food_quantity = parseInt(document.querySelectorAll('.item-quantity p')[foodIndex].textContent.trim().split(' ')[1]);
-            const food = foods[foodIndex];
-            food.quantity = food_quantity + 1;
-            food.totalPrice = foodPrice * food.quantity;
-            foodPrice_total += foodPrice;
-            foodImage = foodImage;
-          } else {
-            foodPrice_total += foodPrice;
-            // Thêm món ăn vào danh sách
-            counter++;
-            foods.push({
-              id: counter,
-              name: foodName,
-              quantity: 1,
-              price: foodPrice,
-              totalPrice: foodPrice,
-              foodImage: foodImage,
-            });
-          }
-          
-          // Cập nhật danh sách các món ăn đã chọn
-          const totalAmountDiv = document.querySelector('#total-amount');
-          const a = foodPrice_total;
-          const html_total = '<span class="span-text">Tổng tiền:</span><div id="total-amount-price" class="total-amount-price span-value" value="'+foodPrice_total+'">'+foodPrice_total.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})+'</div>';
-          
-          totalAmountDiv.innerHTML = html_total; // Sử dụng thuộc tính innerHTML để thêm HTML vào phần tử totalAmountDiv
-          
-
-          const selectedFoodList = document.querySelector('#order-items');
-          selectedFoodList.setAttribute('data-food', JSON.stringify(foods));
-
-          // Hiển thị danh sách các món ăn đã chọn
-          selectedFoodList.innerHTML = foods.map(food => 
-            `<div class="order-item">
-              <div class="item-id">
-                <p>${food.id}</p>
-              </div>
-              <div class="item-image">
-                <img class="img-invoice" src="${food.foodImage}" alt="Product image">
-              </div>
-              <div class="item-info">
-                <div class="item-quantity">
-                  <p>x ${food.quantity}</p>
-                </div>
-                <div class="item-name">
-                  <p class="item-title">${food.name}</p>
-                 <p class="item-note"></p>                     
-                </div>
-               
-                <div class="item-price">
-                  <p>${food.totalPrice.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})}</p>
-                </div>
-                <div class="item-upquantity">
-                  <button class="plus-invoice"><i class="ti-plus plus-invoice-li"></i></button>
-                </div>
-                <div class="item-note-btn">
-                  <button class="note-invoice"><i class="ti-notepad note-invoice-li"></i></button>
-                </div>
-              </div>
-            </div>`
-          ).join('');
-        });
-      });
-    </script>  
 </body>
 </html>
 
