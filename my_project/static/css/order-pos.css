@@ -171,7 +171,6 @@ li .close-button{
 }
 
 
-
 /* CSS for the food list section */
 section {
     display: flex;
@@ -185,6 +184,7 @@ section {
         flex-direction: column;
         height: 100%;
         width: 65%;
+        overflow-x: auto;
       }
       
       .menu-food {
@@ -196,13 +196,15 @@ section {
         margin: 20px 0 0px 0;
         max-width: 100%;
         max-height: 30%;
-        overflow-x: scroll;
+        /* overflow-x: scroll; */
         /* overflow-y: hidden; */
         white-space: nowrap;
         -webkit-overflow-scrolling: touch; /* thêm thuộc tính này để hỗ trợ cuộn bằng cảm ứng trên các trình duyệt Safari và Chrome trên iOS */
+        overflow-x: auto;
+        white-space: nowrap;
       }
 
-      /* #category-list {
+        /* #category-list {
         display: inline-flex;
         padding: 0;
         margin: 0;
@@ -211,13 +213,14 @@ section {
       /* } */
 
       #category-list {
-        display: flex;
-        flex-wrap: wrap;
+        display: inline-flex;
+        /* display: flex; */
+        /* flex-wrap: wrap; */
         justify-content: space-between;
         list-style: none;
-        margin: 0;
+        margin: 0 0 0 0;
         padding: 0;
-        max-width: 1000px;
+        /* max-width: 1000px; */
         width: 100%;
         overflow-x: scroll;
       }
@@ -247,13 +250,27 @@ section {
    
       /* Ẩn thanh cuộn trên toàn trang */
     ::-webkit-scrollbar {
-      display: none;
+      /* display: none; */
+      width: 1px;
     }
 
     /* Ẩn thanh cuộn trên một phần tử cụ thể */
     .element-class::-webkit-scrollbar {
       display: none;
     }
+
+    .categories::-webkit-scrollbar {
+      height: 10px;
+  }
+
+  .categories::-webkit-scrollbar-thumb {
+      background-color: #ccc;
+      border-radius: 5px;
+  }
+
+  .categories::-webkit-scrollbar-track {
+      background-color: #f1f1f1;
+  }
     
     h2 {
     font-size: 1.5rem;
@@ -361,8 +378,9 @@ section {
         font-size: 22px;
     }
     .food-info .price, .food-info .food-price{
-        font-size: 20px;
+        font-size: 18px;
         color: #EE5725;
+        margin-top: 10px;
     }
     
     .add-food {
@@ -499,9 +517,9 @@ section {
     .order-details {
         display: flex;
         flex-direction: column;
-        margin: 20px;
+        margin: 5px;
         /* border: 1px solid #ddd; */
-        padding: 20px;
+        /* padding: 20px; */
       }
       
       .header {
@@ -557,11 +575,12 @@ section {
         margin-right: 5px;
       }
       .item-note {
-        font-size: 14px;
+        font-size: 11px;
         font-style: italic;
         margin: 0 !important;
         color: #CCCCCC;
         font-weight: lighter;
+        vertical-align: sub;
       }
       .order-summary {
         display: flex;
@@ -632,6 +651,10 @@ section {
       
       .order-detail__item-note {
         margin-top: 5px;
+      }
+
+      .footer {
+        padding: 10px 2.45rem !important;
       }
       
       .order-detail__footer {

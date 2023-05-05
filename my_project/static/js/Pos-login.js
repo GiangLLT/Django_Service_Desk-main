@@ -252,82 +252,77 @@ addButton.addEventListener('click', () => {
             calculate_total_payment();
 
           } else if (target.classList.contains('note-invoice') || target.classList.contains('note-invoice-li')) {
+            
             // Lấy ra element chứa note và hiển thị popup note
-            // const noteElement = target.closest('.order-item').querySelector('.item-note');
-            // let note = '';
-            // if (noteElement) {
-            //     note = noteElement.textContent.trim().substring(0);
-            // }    
             let note = "";
-            let noteElement = target.closest('.order-item').querySelector('.item-note');          
+            let noteElement = target.closest('.order-item').querySelector('.item-note'); 
+            // let food_note = target.closest('.order-item').querySelector('.note-invoice [data-food-note]');         
+            const IdElement = parseInt(target.closest('.order-item').querySelector('.item-id').textContent);          
             if (noteElement) {
               note = noteElement.textContent.trim().substring(0);
             }
             const orderItem = target.closest('.order-item');
-           
-            const addNoteBtns = orderItem.querySelector('.add-note-btn');
 
-              if (addNoteBtns) {
-                  // addNoteBtns.addEventListener('click', () => {
-                    // noteElement = target.closest('.order-item').querySelector('.item-note');          
-                    // if (noteElement) {
-                    //   note = noteElement.textContent.trim().substring(0);
-                    // }
+            const modal = document.getElementById('note-modal');
+            if (modal && !modal.classList.contains('modal-show')) {
+              modal.classList.add('modal-show');
+              // modal.setAttribute('id-product', IdElement);
 
-                    const modal = document.getElementById('note-modal');
-                    if (modal && !modal.classList.contains('modal-show')) {
-                      modal.classList.add('modal-show');
-                      const noteInput = document.getElementById('note-input');
-                      if (note) {
-                        noteInput.value = note;
-                      }
-                      else{
-                        noteInput.value = "";
-                      }
-                    }
-                  // });
-              }      
-
-
-              const closeBtn = document.querySelector('.close');
-              if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                  const modal = document.getElementById('note-modal');
-                  if (modal) {
-                    // modal.style.display = 'none';
-                    modal.classList.remove('modal-show');
-                  }
-                });
+              const noteInput = document.getElementById('note-input');
+              if (note) {
+                noteInput.value = note;
               }
+              else {
+                noteInput.value = "";
+              }
+            }
 
-              window.addEventListener('click', (event) => {
+            const closeBtn = document.querySelector('.close');
+            if (closeBtn) {
+              closeBtn.addEventListener('click', () => {
                 const modal = document.getElementById('note-modal');
-                if (modal && event.target == modal) {
-                  // modal.style.display = 'none';
+                if (modal) {
                   modal.classList.remove('modal-show');
                 }
               });
+            }
 
-              const saveNoteBtn = document.getElementById('save-note-btn');
-              if (saveNoteBtn) {
-                saveNoteBtn.addEventListener('click', () => {
-                  const noteInput = document.getElementById('note-input');
-                  if (noteInput) {
-                    const newNote = noteInput ? '<sub>'+noteInput.value+'</sub>' : '';
-                    noteElement.innerHTML = newNote;
-                    // noteElement.innerHTML = `<sub>${noteInput.value}</sub>`;
-                    const modal = document.getElementById('note-modal');
-                    if (modal) {
-                      modal.classList.remove('modal-show');
-                    }
-                  }
-                });
+            window.addEventListener('click', (event) => {
+              const modal = document.getElementById('note-modal');
+              if (modal && event.target == modal) {
+                modal.classList.remove('modal-show');
               }
-            
+            });
 
-            
+            const saveNoteBtn = document.getElementById('save-note-btn');
+            if (saveNoteBtn) {
+              const clickHandler = () => {
+                const noteInput = document.getElementById('note-input');
+                if (noteInput) {
+                  // const newNote = '<sub>' + noteInput.value + '</sub>';
+                  const newNote = noteInput.value;
+                  // const updateNote = document.querySelectorAll('.item-note')[IdElement-1];
+                  
+                  var dataFood = document.getElementById("selected-food-list").getAttribute("data-foods");
+                  var foodList = JSON.parse(dataFood);
+                  foodList[IdElement-1].foodNote = newNote;
+                  var updatedDataFood = JSON.stringify(foodList);
+                  document.getElementById("selected-food-list").setAttribute("data-foods", updatedDataFood);
+                  
+                  noteElement.innerHTML = newNote;
 
-      
+                  const modal = document.getElementById('note-modal');
+                  if (modal) {
+                    modal.classList.remove('modal-show');
+                  }
+                  // Gỡ bỏ sự kiện click để tránh đăng ký nhiều lần
+                  saveNoteBtn.removeEventListener('click', clickHandler);
+                }
+              };
+              // Đăng ký sự kiện click
+              saveNoteBtn.addEventListener('click', clickHandler);
+            }       
+
             // // Hiển thị popup nhập ghi chú sử dụng SweetAlert
             // Swal.fire({
             //   title: 'Ghi chú',
@@ -349,37 +344,51 @@ addButton.addEventListener('click', () => {
 
 
       // Function click button add product
-      const foods = JSON.parse(document.querySelector('#selected-food-list').getAttribute('data-foods'));
+      // let foods = JSON.parse(document.querySelector('#selected-food-list').getAttribute('data-foods'));
+    
       // Lấy nút "Thêm"
       const addButtons = document.querySelectorAll('.add-food');
       let counter = 0;
-    
+      // const foodNotes = [];
+
       // Khi click vào nút "Thêm"
       addButtons.forEach(addButton => {
-        addButton.addEventListener('click', () => {
+        addButton.addEventListener('click', event => {
           // Lấy tên món ăn và giá tiền
+          let FoodList = document.querySelector('#selected-food-list');
+          let foods = JSON.parse(FoodList.getAttribute('data-foods'));
+
           const foodName = addButton.parentElement.querySelector('.food-name').textContent;
           const foodPrice = parseFloat(addButton.parentElement.querySelector('.food-price').getAttribute('value'));
-          const imgInvoice = document.getElementById('food-img');
+
+          const foodItem = event.target.closest('li');
+          const imgInvoice = foodItem.querySelector('.food-img');        
+          // const foodNote = foodNotes[counter];
 
           if (!foodName || !foodPrice || isNaN(foodPrice)) {
             alert('Sản phẩm chưa đủ thông tin!!');
             return;
           }
-          let foodImage = "";
-          
-          // Kiểm tra xem món ăn đã được chọn trước đó chưa
-          if (imgInvoice !== null) {
-            foodImage = imgInvoice.getAttribute('src');
-          }
+          let foodImage = imgInvoice ? imgInvoice.getAttribute('src') : '';
+          // let food_note = addButton.getAttribute('data-food-note');
+
           const foodIndex = foods.findIndex(food => food.name === foodName);
           if (foodIndex !== -1) {
-            // Cập nhật số lượng và tính tổng giá tiền
+            //Cập nhật số lượng và tính tổng giá tiền
             let food_quantity = parseInt(document.querySelectorAll('.item-quantity p')[foodIndex].textContent.trim().split(' ')[1]);
+            let food_note = document.querySelectorAll('.item-note')[foodIndex].textContent.trim().substring(0);
             const food = foods[foodIndex];
             food.quantity = food_quantity + 1;
             food.totalPrice = foodPrice * food.quantity;
             foodImage = foodImage;
+            if(food_note){
+              food.foodNote = food_note;
+            }
+            else{
+              food.foodNote = "";
+            }     
+            FoodList.setAttribute('data-foods', JSON.stringify(foods));
+            // addButton.removeEventListener('click', event);
           } else {
             counter++;
             foods.push({
@@ -388,23 +397,13 @@ addButton.addEventListener('click', () => {
               quantity: 1,
               price: foodPrice,
               totalPrice: foodPrice,
-              foodImage: foodImage,      
-            });
-          }
+              foodImage:foodImage,     
+              // foodNote: foodNote || "",
+              foodNote: "",
+            });     
+            FoodList.setAttribute('data-foods', JSON.stringify(foods));
+          }       
           
-          
-          // // Cập nhật danh sách các món ăn đã chọn
-          // const totalAmountDiv = document.querySelector('#total-amount');
-          // const html_total = '<span class="span-text">Tổng tiền:</span><div id="total-amount-price" class="total-amount-price span-value" value="'+foodPrice_total+'">'+foodPrice_total.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})+'</div>';          
-          // totalAmountDiv.innerHTML = html_total; // Sử dụng thuộc tính innerHTML để thêm HTML vào phần tử totalAmountDiv
-          // const totalDiscountDiv = document.querySelector('#discount');
-          // const html_total_discount = '<span class="span-text">Giảm giá:</span><div class="span-value discount-value" value="'+totalDiscount+'">'+totalDiscount.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})+'</div>';          
-          // totalDiscountDiv.innerHTML = html_total_discount; 
-          // const totalPaymentDiv = document.querySelector('#payment');
-          // const html_total_payment = '<span class="span-text">Thanh Toán:</span><div class="span-value payment-value" value="'+foodPrice_payment+'">'+foodPrice_payment.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'})+'</div>';          
-          // totalPaymentDiv.innerHTML = html_total_payment; 
-
-
           const selectedFoodList = document.querySelector('#order-items');
           selectedFoodList.setAttribute('data-food', JSON.stringify(foods));
 
@@ -423,7 +422,7 @@ addButton.addEventListener('click', () => {
                 </div>
                 <div class="item-name">
                   <p class="item-title">${food.name}</p>
-                 <p class="item-note"></p>                     
+                 <p class="item-note">${food.foodNote}</p>                     
                 </div>
                
                 <div class="item-price">
@@ -440,9 +439,9 @@ addButton.addEventListener('click', () => {
           ).join('');
 
           calculate_total_payment();
-        });
+          addButton.removeEventListener('click', event);
+        });      
       });
-
 
 
 //calculate total amount and total payment
@@ -472,9 +471,26 @@ function calculate_total_payment(){
     payment.textContent = foodPriceTotal.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
     payment.setAttribute('value', foodPriceTotal);
   }
-  
 }
+ //search material
+const searchInput = document.querySelector('#SearchMaterial');
+const foodList = document.querySelector('#food-list');
 
+searchInput.addEventListener('input', function() {
+  const searchTerm = searchInput.value.toLowerCase();
+  const allFoodItems = foodList.querySelectorAll('li');
+  
+  allFoodItems.forEach(item => {
+    const foodName = item.querySelector('.food-name').textContent.toLowerCase();
+    const foodPrice = item.querySelector('.food-price').textContent.toLowerCase();
+    
+    if (foodName.includes(searchTerm) || foodPrice.includes(searchTerm)) {
+      item.style.display = 'flex';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+});
       
 
 

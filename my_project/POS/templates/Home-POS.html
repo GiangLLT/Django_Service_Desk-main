@@ -57,129 +57,6 @@
     </header>
 	<section>
         <div class="left-food">
-          <div class="menu-food">
-            <div class="search-data">
-                <i class="ti-search"></i>
-                <input type="text" class="form-control" id="SearchMaterial" name="SearchMaterial"   placeholder="Material Name">
-            </div>
-            
-            {% comment %} <h2>Danh sách món ăn</h2> {% endcomment %}
-            <ul id="food-list">
-              <li >
-                <img class="food-img" id="food-img" src="{% static 'Asset/img/mon-1.jpg' %}" alt="Bánh mì">
-                <div class="food-info">
-                  <h3 id="food-name" class="food-name" value="Bánh mì">Bánh mì</h3>
-                  <p  id="food-price" class="food-price" value="15000">15.000đ</p>
-                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img class="food-img" id="food-img" src="{% static 'Asset/img/mon-1.jpg' %}" alt="Bún chả">
-                <div class="food-info">
-                    <h3 id="food-name" class="food-name" value="Bún chả">Bún chả</h3>
-                    <p  id="food-price" class="food-price" value="50000">50.000đ</p>
-                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img src="{% static 'Asset/img/mon-1.jpg' %}" alt="Phở bò">
-                <div class="food-info">
-                  <h3 class="name">Phở bò</h3>
-                  <p class="price">50.000đ</p>
-                  <button id="add-food" class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img src="{% static 'Asset/img/mon-1.jpg' %}" alt="Cơm tấm">
-                <div class="food-info">
-                  <h3 class="name">Cơm tấm</h3>
-                  <p class="price">25.000đ</p>
-                  <button class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <!-- Add more food items here -->
-              <li>
-                <img src="{% static 'Asset/img/mon-1.jpg' %}" alt="Bánh mì">
-                <div class="food-info">
-                  <h3 class="name">Bánh mì</h3>
-                  <p  class="price">15.000đ</p>
-                  <button class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img src="{% static 'Asset/img/mon-1.jpg' %}" alt="Bún chả">
-                <div class="food-info">
-                  <h3 class="name">Bún chả</h3>
-                  <p class="price">35.000đ</p>
-                  <button class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img src="{% static 'Asset/img/mon-1.jpg' %}" alt="Phở bò">
-                <div class="food-info">
-                  <h3 class="name">Phở bò</h3>
-                  <p class="price">50.000đ</p>
-                  <button class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img src="{% static 'Asset/img/mon-1.jpg' %}" alt="Cơm tấm">
-                <div class="food-info">
-                  <h3 class="name">Cơm tấm</h3>
-                  <p class="price">25.000đ</p>
-                  <button class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img src="{% static 'Asset/img/mon-1.jpg' %}" alt="Cơm tấm">
-                <div class="food-info">
-                  <h3 class="name">Cơm tấm</h3>
-                  <p class="price">25.000đ</p>
-                  <button class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img src="{% static 'Asset/img/mon-1.jpg' %}" alt="Cơm tấm">
-                <div class="food-info">
-                  <h3 class="name">Cơm tấm</h3>
-                  <p class="price">25.000đ</p>
-                  <button class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img src="{% static 'Asset/img/mon-1.jpg' %}" alt="Cơm tấm">
-                <div class="food-info">
-                  <h3 class="name">Cơm tấm</h3>
-                  <p class="price">25.000đ</p>
-                  <button class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img src="{% static 'Asset/img/mon-1.jpg' %}" alt="Cơm tấm">
-                <div class="food-info">
-                  <h3 class="name">Cơm tấm</h3>
-                  <p class="price">25.000đ</p>
-                  <button class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>  
-              <li>
-                <img src="{% static 'Asset/img/mon-1.jpg' %}" alt="Cơm tấm">
-                <div class="food-info">
-                  <h3 class="name">Cơm tấm</h3>
-                  <p class="price">25.000đ</p>
-                  <button class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img src="{% static 'Asset/img/mon-1.jpg' %}" alt="Cơm tấm">
-                <div class="food-info">
-                  <h3 class="name">Cơm tấm</h3>
-                  <p class="price">25.000đ</p>
-                  <button class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>        
-            </ul>
-          </div>
           <div class="categories">
             {% comment %} <h2>Danh mục món ăn</h2> {% endcomment %}
             <ul id="category-list">
@@ -193,6 +70,59 @@
               <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Tráng Miệng</a></li>
             </ul>
           </div>
+          <div class="menu-food">
+            <div class="search-data">
+                <i class="ti-search"></i>
+                <input type="text" class="form-control" id="SearchMaterial" name="SearchMaterial"   placeholder="Material Name">
+            </div>
+            
+            {% comment %} <h2>Danh sách món ăn</h2> {% endcomment %}
+            <ul id="food-list">
+              <li >
+                <img class="food-img" id="food-img" src="{% static 'Asset/img/banhmi.png' %}" alt="Bánh mì">
+                <div class="food-info">
+                  <h3 id="food-name" class="food-name" value="Bánh mì">Bánh mì</h3>
+                  <p  id="food-price" class="food-price" value="15000">15.000đ</p>
+                  <p  id="food-group" class="food-group" value="Thức ăn nhanh"></p>
+                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
+                </div>
+              </li>
+              <li>
+                <img class="food-img" id="food-img" src="{% static 'Asset/img/buncha.jpg' %}" alt="Bún chả">
+                <div class="food-info">
+                    <h3 id="food-name" class="food-name" value="Bún chả">Bún chả</h3>
+                    <p  id="food-price" class="food-price" value="50000">50.000đ</p>
+                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
+                </div>
+              </li>
+              <li>
+                <img class="food-img" id="food-img" src="{% static 'Asset/img/phobo.png' %}" alt="Bún chả">
+                <div class="food-info">
+                    <h3 id="food-name" class="food-name" value="Bún chả">Phở bò</h3>
+                    <p  id="food-price" class="food-price" value="100000">100.000đ</p>
+                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
+                </div>
+              </li>
+              <li>
+                <img class="food-img" id="food-img" src="{% static 'Asset/img/hutiunamvang.png' %}" alt="Bún chả">
+                <div class="food-info">
+                    <h3 id="food-name" class="food-name" value="Bún chả">Hủ Tíu Nam Vang</h3>
+                    <p  id="food-price" class="food-price" value="90000">90.000đ</p>
+                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
+                </div>
+              </li>
+              <li>
+                <img class="food-img" id="food-img" src="{% static 'Asset/img/hutiunamvang.png' %}" alt="Bún chả">
+                <div class="food-info">
+                    <h3 id="food-name" class="food-name" value="Bún chả">Hủ Tíu Sóc Trăng</h3>
+                    <p  id="food-price" class="food-price" value="80000">80.000đ</p>
+                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
+                </div>
+              </li>
+              <!-- Add more food items here -->            
+            </ul>
+          </div>
+          
         </div>
         <div class="right-food">
           {% comment %} <h2>Danh sách các món ăn đã chọn</h2> {% endcomment %}
