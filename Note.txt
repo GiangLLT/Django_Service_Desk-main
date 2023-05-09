@@ -9,3 +9,13 @@ django-admin startproject my_project - project django
 py C:\Data\Document\Another_Code\Python_Ex\Python_Django\my_project\manage.py runserver 
 
 py C:\Data\Document\Another_Code\Python_Ex\Python_Django\my_project\manage.py startapp members
+
+
+
+Switched to branch 'master'
+
+Switched to branch 'Development'
+
+git checkout 'master'
+
+git merge <commit>
