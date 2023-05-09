@@ -1,0 +1,58 @@
+{%load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title>POS Login</title>
+	<link rel="stylesheet" href="{% static 'css/css-pos.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Castoro+Titling&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'Sweetalert2/Css/sweetalert2.min.css' %}">
+    <link rel="stylesheet" href="{% static 'star_admin/vendors/ti-icons/css/themify-icons.css' %}">
+</head>
+<body>
+	<div class="left">
+        <img src="{% static '/Asset/img/restaurant.jpeg' %}" alt="image-restaurant">
+        <img src="{% static '/Asset/img/logo.png' %}" alt="image-logo" id="image-logo">
+    </div>
+    {% comment %} <div class="middle"></div> {% endcomment %}
+	<div class="right">
+        <form class="form-login">
+            <label for="username">Username:</label>
+            {% comment %} <input type="text" id="username" name="username" autofocus> {% endcomment %}
+            <input type="text" id="username" name="username">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password">
+          </form>
+        <div class="keypad">
+            <div class="row">
+              <button onclick="addValue('1')">1</button>
+              <button onclick="addValue('2')">2</button>
+              <button onclick="addValue('3')">3</button>
+            </div>
+            <div class="row">
+              <button onclick="addValue('4')">4</button>
+              <button onclick="addValue('5')">5</button>
+              <button onclick="addValue('6')">6</button>
+            </div>
+            <div class="row">
+              <button onclick="addValue('7')">7</button>
+              <button onclick="addValue('8')">8</button>
+              <button onclick="addValue('9')">9</button>
+            </div>
+            <div class="row">
+              {% comment %} <button class="clear" onclick="clearInput()">C</button> {% endcomment %}
+              <button onclick="clearInput()">C</button>
+              <button onclick="addValue('0')">0</button>
+              {% comment %} <button class="enter" onclick="submitForm()" id="enter-login-pos">Enter</button> {% endcomment %}
+              <button class="enter-circle" onclick="submitForm()" id="enter-login-pos"><i class="ti-arrow-right"></i></button>
+            </div>
+          
+    </div>
+    <script type="text/javascript" src="{% static 'js/jquery-3.6.4.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/Pos-login.js' %}"></script>
+    <script src="{% static 'Sweetalert2/Js/sweetalert2.all.min.js' %}"></script>
+</body>
+    
+</html>
+
+

@@ -44,9 +44,9 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
 
     'web_api',
-    'members',
     'Admin',
     'barcode',
+    'POS',
 
     'rest_framework', #API
     'rest_framework_swagger',  # Thêm vào danh sách ứng dụng
