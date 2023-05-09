@@ -523,7 +523,7 @@ categoryButtons.forEach(button => {
     });
   });
 });
-//new branch
+//new branch update dev
 
 //Modal promotion
 $('#save-promotion-btn').click(function(event) {
