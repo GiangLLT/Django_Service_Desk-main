@@ -305,7 +305,14 @@ addButton.addEventListener('click', () => {
                   
                   var dataFood = document.getElementById("selected-food-list").getAttribute("data-foods");
                   var foodList = JSON.parse(dataFood);
-                  foodList[IdElement-1].foodNote = newNote;
+                  for (var i = 0; i < foodList.length; i++) {
+                    // So sánh giá trị id của phần tử hiện tại với giá trị mong muốn
+                    if (foodList[i].id === IdElement) {
+                      // Nếu tìm thấy phần tử có id bằng 4, cập nhật thông tin của phần tử đó
+                      foodList[i].foodNote = newNote;
+                    }
+                  }
+                  // foodList[IdElement-1].foodNote = newNote;
                   var updatedDataFood = JSON.stringify(foodList);
                   document.getElementById("selected-food-list").setAttribute("data-foods", updatedDataFood);
                   
@@ -339,12 +346,35 @@ addButton.addEventListener('click', () => {
             //   }
             // });
           }
+          else if (target.classList.contains('del-invoice') || target.classList.contains('del-invoice-li')) {
+            // orderItems.innerHTML = '';
+            // let dataFoods  = target.closest('.order-item').querySelector('.item-note');
+            var dataFood = document.getElementById("selected-food-list").getAttribute("data-foods");
+            var foodList = JSON.parse(dataFood);         
+            const IdElement = parseInt(target.closest('.order-item').querySelector('.item-id').textContent);
+            foodList = foodList.filter(function(item) {
+              return item.id !== IdElement;
+            });
+            var updatedDataFood = JSON.stringify(foodList);
+            document.getElementById("selected-food-list").setAttribute("data-foods", updatedDataFood);
+            const button = event.target;
+            const orderItem = button.closest('.order-item');
+            if (orderItem) {
+              // Xử lý với phần tử order-item
+              // console.log(orderItem);
+              orderItem.remove();
+              calculate_total_payment();
+              if(updatedDataFood.length <= 2){
+                orderItems.insertAdjacentHTML('beforeend', '<p class="text-invoice">Chưa có sản phẩm</p>');
+              }
+            }
+            // check_promotion();
+            check_promotion_del();
+            
+          }
         });
       });
 
-
-      // Function click button add product
-      // let foods = JSON.parse(document.querySelector('#selected-food-list').getAttribute('data-foods'));
     
       // Lấy nút "Thêm"
       const addButtons = document.querySelectorAll('.add-food');
@@ -409,7 +439,7 @@ addButton.addEventListener('click', () => {
 
           // Hiển thị danh sách các món ăn đã chọn
           selectedFoodList.innerHTML = foods.map(food => 
-            `<div class="order-item">
+            `<div class="order-item" type="button">
               <div class="item-id">
                 <p>${food.id}</p>
               </div>
@@ -430,6 +460,9 @@ addButton.addEventListener('click', () => {
                 </div>
                 <div class="item-upquantity">
                   <button class="plus-invoice"><i class="ti-plus plus-invoice-li"></i></button>
+                </div>
+                <div class="item-delquantity">
+                  <button class="del-invoice"><i class="ti-trash del-invoice-li"></i></button>
                 </div>
                 <div class="item-note-btn">
                   <button class="note-invoice add-note-btn" id="add-note-btn"><i class="ti-notepad note-invoice-li"></i></button>
@@ -465,14 +498,22 @@ function calculate_total_payment(){
   discountTotal = Math.abs(discount_Total);
 
   let total_payment = foodPriceTotal - discountTotal; 
-  if (discountTotal > 0){
-    payment.textContent = total_payment.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
-    payment.setAttribute('value', total_payment);
-  }    
-  else{
-    payment.textContent = foodPriceTotal.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
-    payment.setAttribute('value', foodPriceTotal);
+  if(total_payment > 0){
+    if (discountTotal > 0){
+      payment.textContent = total_payment.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+      payment.setAttribute('value', total_payment);
+    }    
+    else{
+      payment.textContent = foodPriceTotal.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+      payment.setAttribute('value', foodPriceTotal);
+    }
   }
+  else{
+    var dis = 0;
+    discount.textContent = dis.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});  
+    discount.setAttribute('value',dis);
+  }
+  
 }
 
 
@@ -523,48 +564,133 @@ categoryButtons.forEach(button => {
     });
   });
 });
-//new branch update dev
+
 
 //Modal promotion
-$('#save-promotion-btn').click(function(event) {
-  var PromotionID = document.querySelector('.promotion-name').getAttribute('data-promotion');
-  $.ajax({
-    url: '/check-promotion/',
-    method: 'POST',
-    data: { 'PromotionID': PromotionID },
-    success: function(response) {
-      if (response.success) {
-        var discount_promotion = document.querySelector('.discount-value');
-        let discount = response.dataPromotion;
-        let discount1 =  parseInt(discount).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+let ProID = 0;
+function check_promotion(promotionID){
+  // var PromotionID = document.querySelector('.promotion-name').getAttribute('data-promotion');
+  var PromotionID = promotionID;
+  var PaymentValue = document.querySelector('.payment-value').getAttribute('value');
+  var TotalAmount = document.querySelector('.total-amount-price').getAttribute('value');
+  if(PaymentValue > 0 ){
+    $.ajax({
+      url: '/check-promotion/',
+      method: 'POST',
+      data: { 'PromotionID': PromotionID },
+      success: function(response) {
+        if (response.success) {   
+          var respone_value =  Math.abs(parseInt(response.dataPromotion));
+          if(respone_value > 0){
+            if(TotalAmount > respone_value){
+              var discount_promotion = document.querySelector('.discount-value');    
+              let discount =  parseInt(response.dataPromotion).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+              discount_promotion.textContent = discount;
+              discount_promotion.value = respone_value;
+              calculate_total_payment();
+              $('#promotion-modal').removeClass('modal-show'); 
+              ProID = PromotionID;
+            }
+            else{
+              Swal.fire({
+                icon: 'error',
+                title: 'Thông báo lỗi',
+                text: 'Số tiền thanh toán phải lớn hơn khuyển mãi/giảm giá.',
+              })
+            }
+          }
 
-        discount_promotion.textContent = parseInt(discount).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
-        discount_promotion.value = response.dataPromotion;
-        calculate_total_payment();
-        $('#promotion-modal').removeClass('modal-show');
-        
-        // Swal.fire(
-        //     'Deleted!',
-        //     'Your data has been deleted.',
-        //     'success'
-        //   )
-      } else {
-        Swal.fire({
-            icon: 'error',
-            title: 'Oops...',
-            text: response.error,
-          })
+        } else {
+          Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: response.error,
+            })
+        }
+      },
+      error: function(response) {
+          Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: response.error,
+            })
       }
-    },
-    error: function(response) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Oops...',
-            text: response.error,
-          })
-    }
-  });
+    });
+  }
+  else{
+    Swal.fire({
+      icon: 'error',
+      title: 'Thông báo lỗi',
+      text: 'Số tiền thanh toán phải lớn hơn 0.',
+    })
+  }
+}
+
+function check_promotion_del(){
+  // var PromotionID = document.querySelector('.promotion-name').getAttribute('data-promotion');
+  var PromotionID = ProID;
+  var PaymentValue = document.querySelector('.payment-value').getAttribute('value');
+  var TotalAmount = document.querySelector('.total-amount-price').getAttribute('value');
+  if(PaymentValue > 0 ){
+    $.ajax({
+      url: '/check-promotion/',
+      method: 'POST',
+      data: { 'PromotionID': PromotionID },
+      success: function(response) {
+        if (response.success) {   
+          var respone_value =  Math.abs(parseInt(response.dataPromotion));
+          if(respone_value > 0){
+            if(TotalAmount > respone_value){
+              var discount_promotion = document.querySelector('.discount-value');    
+              let discount =  parseInt(response.dataPromotion).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+              discount_promotion.textContent = discount;
+              discount_promotion.value = respone_value;
+              calculate_total_payment();
+              // $('#promotion-modal').removeClass('modal-show'); 
+              ProID = PromotionID;
+            }
+            else{
+              calculate_total_payment();
+              Swal.fire({
+                icon: 'error',
+                title: 'Thông báo lỗi',
+                text: 'Số tiền thanh toán phải lớn hơn khuyển mãi/giảm giá.',
+              })
+            }
+          }
+
+        } else {
+          Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: response.error,
+            })
+        }
+      },
+      error: function(response) {
+          Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: response.error,
+            })
+      }
+    });
+  }
+  else{
+    Swal.fire({
+      icon: 'error',
+      title: 'Thông báo lỗi',
+      text: 'Số tiền thanh toán phải lớn hơn 0.',
+    })
+  }
+}
+
+$(document).on('click', '#save-promotion-btn', function(event) {
+  // check_promotion();
+  var promotionID = $(this).prev('.promotion-name').attr('data-promotion');
+  check_promotion(promotionID);
 });
+
 $('.close-promotion').click(function(event) {
   $('#promotion-modal').removeClass('modal-show');
 });      
@@ -593,4 +719,21 @@ $('.btn-promotion-button').click(function(event) {
  });
  
 
+ //Modal click order-item
+ const orderItems = document.querySelectorAll('.order-item');
+
+// Lặp qua từng phần tử order-item và thêm sự kiện double click
+orderItems.forEach(function(orderItem) {
+  orderItem.addEventListener('dblclick', function(event) {
+    // Lấy thông tin sản phẩm được chọn
+    const productInfo = orderItem.querySelector('.item-title').textContent;
+    const productPrice = orderItem.querySelector('.item-price').textContent;
+    // Hiển thị modal với thông tin sản phẩm được chọn
+    const modalTitle = document.querySelector('#product-modal .modal-title');
+    const modalBody = document.querySelector('#product-modal .modal-body');
+    modalTitle.textContent = productInfo;
+    modalBody.innerHTML = '<p>' + productPrice + '</p>';
+    $('#product-modal').modal('show');
+  });
+});
 

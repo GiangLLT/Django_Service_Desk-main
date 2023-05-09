@@ -455,11 +455,11 @@ section {
         margin-left: 0;
     }
  
-    .item-upquantity, .item-delete, .item-note-btn{
+    .item-upquantity, .item-delete, .item-note-btn, .item-delquantity{
         width: 40px;
     }
     
-    .plus-invoice, .close-invoice, .note-invoice{
+    .plus-invoice, .close-invoice, .note-invoice, .del-invoice{
         width: 30px;
         height: 30px;
         border: 0;
@@ -552,6 +552,17 @@ section {
       .order-item {
         display: flex;
         margin-bottom: 10px;
+        padding: 8px 2px 8px 2px;
+      }
+
+      .order-item:hover {
+        background-color: #f2f2f2;
+        cursor: pointer;
+        /* padding: 10px; */
+      }
+      .order-item:hover button{
+        border: 1px dashed #C82A2E;
+        /* padding: 10px; */
       }
       
       .item-image {
@@ -730,6 +741,8 @@ section {
   cursor: pointer;
 }
 
+
+
 /* Textarea */
 #note-input {
   width: 100%;
@@ -760,10 +773,10 @@ section {
   font-size: 20px;
 }
 #save-promotion-btn{
-  font-size: 10px;
+  font-size: 11px;
   position: absolute;
   top: 80%;
-  left: 80%;
+  left: 70%;
   padding: 5px 20px 5px 20px;
 }
 
@@ -798,6 +811,7 @@ section {
   font-size: 30px !important;
 }
       
+
 /* css promotion */
  .promotion-list {
   display: flex;
@@ -805,13 +819,13 @@ section {
   /* justify-content: space-between; */
   background-size: cover;
   background-position: center;
-  margin: 30px 0px 20px 0;
+  margin: 30px 0px 0px 0;
 }
 
 .promotion-item {
   display: flex;
   align-items: center;
-  margin-bottom: 60px;
+  margin-bottom: 80px;
   width: 24%;
   margin-right: 5px;
   height: 80px;

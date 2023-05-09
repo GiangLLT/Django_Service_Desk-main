@@ -74,7 +74,17 @@ def Check_promotion(request):
                 return JsonResponse({
                 'success': True,
                 'message': 'Login Successed',
-                'dataPromotion': '-100000'}) 
+                'dataPromotion': '-100000'})
+            elif(PromotionID == '2'):
+                return JsonResponse({
+                'success': True,
+                'message': 'Login Successed',
+                'dataPromotion': '-20000'})  
+            else:
+                return JsonResponse({
+                'success': True,
+                'message': 'Login Successed',
+                'dataPromotion': '0'})
     except Exception as ex:
         return JsonResponse({
             'success': False,
