@@ -14,8 +14,10 @@ py C:\Data\Document\Another_Code\Python_Ex\Python_Django\my_project\manage.py st
 
 Switched to branch 'master'
 
-Switched to branch 'Development'
+git checkout Development
 
-git checkout 'master'
+git merge origin/main
 
-git merge <commit>
+git add Note.txt
+git commit -m "Update Note.txt"
+
