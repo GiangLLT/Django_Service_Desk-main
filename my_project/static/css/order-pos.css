@@ -239,7 +239,7 @@ section {
         border: 1px solid;
         padding: 10px 15px 10px 15px;
         color: white;
-        border-radius: 10px;
+        border-radius: 4px;
         margin-right: 10px;
         font-size: 20px;
       }
@@ -447,6 +447,7 @@ section {
     }
     .hr-invoice{
         border: none;
+        border-top: 1px dashed #ccc;
     }
     .img-invoice{
         width: 60px;
@@ -504,7 +505,10 @@ section {
     
     .total-amount .total-amount-price {
       text-align: right;
-    }    
+    }   
+    .payment-size{
+      font-size: 30px !important;
+    } 
     /* .invoice-details{
         padding: 20px 10px 10px 10px;
         border: 1px solid #F6F6F6;
@@ -710,7 +714,7 @@ section {
 }
 
 /* The Close Button */
-.close {
+.close, .close-promotion {
   color: #aaaaaa;
   float: right;
   font-size: 28px;
@@ -718,7 +722,9 @@ section {
 }
 
 .close:hover,
-.close:focus {
+.close:focus,  
+.close-promotion:hover,
+.close-promotion:focus{
   color: #000;
   text-decoration: none;
   cursor: pointer;
@@ -729,6 +735,13 @@ section {
   width: 100%;
   height: 220px;
   border: 0.5px solid #A9A9A9;
+}
+#promotion-input{
+  width: 100%;
+  height: 50px !important;
+  border: 0.5px solid #A9A9A9;
+  margin-bottom: 10px;
+  font-size: 20px;
 }
 
 /* Save Button */
@@ -746,8 +759,91 @@ section {
 #save-note-btn{
   font-size: 20px;
 }
+#save-promotion-btn{
+  font-size: 10px;
+  position: absolute;
+  top: 80%;
+  left: 80%;
+  padding: 5px 20px 5px 20px;
+}
 
-
+.order-function{
+  margin: 10px 0 10px 0;
+}
+.btn-promotion{
+    margin-bottom: 10px;    
+}
+.btn-promotion-button{
+  border: 1px dashed #ad1206 !important;
+    width: 100%;
+    font-size: 22px !important;
+    border-radius: 0 !important;
+}
+.btn-function-cancel {
+  width: 49%;
+  border-radius: 0 !important;
+  margin-right: 7px;
+  font-size: 20px !important;
+}
+.btn-function-payment{
+  width: 49%;
+  border-radius: 0 !important;
+  margin-right: 0px !important;
+  padding-right: 0px !important;
+  font-size: 20px !important;
+}
+.order-function i {
+  margin-right: 10px;
+  vertical-align: middle;
+  font-size: 30px !important;
+}
       
+/* css promotion */
+ .promotion-list {
+  display: flex;
+  flex-wrap: wrap;
+  /* justify-content: space-between; */
+  background-size: cover;
+  background-position: center;
+  margin: 30px 0px 20px 0;
+}
 
-    
+.promotion-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 60px;
+  width: 24%;
+  margin-right: 5px;
+  height: 80px;
+  max-height: 100px;
+  position: relative;
+}
+
+.promotion-item img{
+  position: absolute;
+  width: 100%;
+  border-radius: 0;
+  height: auto;
+}
+
+.ticket {
+  width: 80px;
+  height: 80px;
+  margin-right: 20px;
+}
+
+.promotion-name {
+  font-size: 17px;
+    font-weight: bold;
+    color: #fff;
+    position: absolute;
+    color: black;
+    width: 60%;
+    margin-left: 19%;
+    font-weight: lighter;
+} */
+
+
+.promotion-item:nth-child(4n) {
+  margin-right: 0;
+}

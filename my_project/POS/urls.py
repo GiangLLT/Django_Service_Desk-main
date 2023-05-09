@@ -10,5 +10,6 @@ urlpatterns = [
 
     #Function
     path('login-pos-check/', views.login_pos_system, name='login_pos_system'),
+    path('check-promotion/', views.Check_promotion, name='Check_promotion'),
 
 ]

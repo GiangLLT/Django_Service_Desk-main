@@ -65,6 +65,21 @@ def Home_POS(request):
     template =  loader.get_template('Home-POS.html')
     return HttpResponse(template.render())
 
+@csrf_exempt
+def Check_promotion(request):
+    try:
+        if request.method == 'POST':
+            PromotionID = request.POST.get('PromotionID')
+            if(PromotionID == '1'):
+                return JsonResponse({
+                'success': True,
+                'message': 'Login Successed',
+                'dataPromotion': '-100000'}) 
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Login Failed: {str(ex)}',
+        })
 
 
 # def login_pos_system(request):

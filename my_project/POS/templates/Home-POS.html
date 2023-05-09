@@ -60,14 +60,12 @@
           <div class="categories">
             {% comment %} <h2>Danh mục món ăn</h2> {% endcomment %}
             <ul id="category-list">
-              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Tất cả</a></li>
-              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Thức ăn nhanh</a></li>
-              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Món Chay</a></li>
-              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Món Mặn</a></li>
-              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Hương Vị Miền Tây</a></li>
-              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Tráng Miệng</a></li>
-              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Tráng Miệng</a></li>
-              <li id="random-border" class="border-radius"><i class="ti-bookmark-alt"></i><a type="button">Tráng Miệng</a></li>
+              <li id="random-border" class="border-radius" value="Tất cả"><i class="ti-bookmark-alt"></i><a type="button">Tất cả</a></li>
+              <li id="random-border" class="border-radius" value="1"><i class="ti-bookmark-alt"></i><a type="button">Thức ăn nhanh</a></li>
+              <li id="random-border" class="border-radius" value="2"><i class="ti-bookmark-alt"></i><a type="button">Món Chay</a></li>
+              <li id="random-border" class="border-radius" value="3"><i class="ti-bookmark-alt"></i><a type="button">Món Mặn</a></li>
+              <li id="random-border" class="border-radius" value="4"><i class="ti-bookmark-alt"></i><a type="button">Hương Vị Miền Tây</a></li>
+              <li id="random-border" class="border-radius" value="5"><i class="ti-bookmark-alt"></i><a type="button">Tráng Miệng</a></li>
             </ul>
           </div>
           <div class="menu-food">
@@ -83,7 +81,7 @@
                 <div class="food-info">
                   <h3 id="food-name" class="food-name" value="Bánh mì">Bánh mì</h3>
                   <p  id="food-price" class="food-price" value="15000">15.000đ</p>
-                  <p  id="food-group" class="food-group" value="Thức ăn nhanh"></p>
+                  <p  id="food-group" class="food-group" value="1"></p>
                   <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
                 </div>
               </li>
@@ -92,6 +90,7 @@
                 <div class="food-info">
                     <h3 id="food-name" class="food-name" value="Bún chả">Bún chả</h3>
                     <p  id="food-price" class="food-price" value="50000">50.000đ</p>
+                    <p  id="food-group" class="food-group" value="1"></p>
                   <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
                 </div>
               </li>
@@ -100,6 +99,7 @@
                 <div class="food-info">
                     <h3 id="food-name" class="food-name" value="Bún chả">Phở bò</h3>
                     <p  id="food-price" class="food-price" value="100000">100.000đ</p>
+                    <p  id="food-group" class="food-group" value="2"></p>
                   <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
                 </div>
               </li>
@@ -108,6 +108,7 @@
                 <div class="food-info">
                     <h3 id="food-name" class="food-name" value="Bún chả">Hủ Tíu Nam Vang</h3>
                     <p  id="food-price" class="food-price" value="90000">90.000đ</p>
+                    <p  id="food-group" class="food-group" value="3"></p>
                   <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
                 </div>
               </li>
@@ -116,6 +117,25 @@
                 <div class="food-info">
                     <h3 id="food-name" class="food-name" value="Bún chả">Hủ Tíu Sóc Trăng</h3>
                     <p  id="food-price" class="food-price" value="80000">80.000đ</p>
+                    <p  id="food-group" class="food-group" value="4"></p>
+                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
+                </div>
+              </li>
+              <li>
+                <img class="food-img" id="food-img" src="{% static 'Asset/img/trangmieng-1.jpg' %}" alt="Bún chả">
+                <div class="food-info">
+                    <h3 id="food-name" class="food-name" value="Bún chả">Bánh Flan</h3>
+                    <p  id="food-price" class="food-price" value="20000">20.000đ</p>
+                    <p  id="food-group" class="food-group" value="5"></p>
+                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
+                </div>
+              </li>
+              <li>
+                <img class="food-img" id="food-img" src="{% static 'Asset/img/trangmieng-2.png' %}" alt="Bún chả">
+                <div class="food-info">
+                    <h3 id="food-name" class="food-name" value="Bún chả">Bánh Tiramisu</h3>
+                    <p  id="food-price" class="food-price" value="30000">30.000đ</p>
+                    <p  id="food-group" class="food-group" value="5"></p>
                   <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
                 </div>
               </li>
@@ -148,52 +168,128 @@
               <div class="order-items" id="order-items" data-food="[]">
                 <p class="text-invoice">Chưa có sản phẩm</p>
               </div>
-               <!-- The modal -->
-            <div id="note-modal" class="modal modal-note">
-              <div class="modal-content">
-                <div class="div-title">
-                  <span class="close">&times;</span>
-                  <h2><i class="icon-note"></i> GHI CHÚ</h2>
-                </div>             
-                  <textarea id="note-input"></textarea>
-                  <div class="display-button">
-                    {% comment %} <button type="button" class="btn btn-outline-danger btn-fw" id="save-note-btn"><i class="icon-note"><i/> Lưu Ghi Chú</button> {% endcomment %}
-                    <button type="button" class="btn btn-outline-danger btn-fw" id="save-note-btn"><i class="ti-save"></i> Lưu Ghi Chú</button>
+               <!-- The modal NOTE -->
+                <div id="note-modal" class="modal modal-note">
+                  <div class="modal-content">
+                    <div class="div-title">
+                      <span class="close"><i class="ti-close"></i></span>
+                      <h2><i class="icon-note"></i> GHI CHÚ</h2>
+                    </div>             
+                      <textarea id="note-input"></textarea>
+                      <div class="display-button">
+                        {% comment %} <button type="button" class="btn btn-outline-danger btn-fw" id="save-note-btn"><i class="icon-note"><i/> Lưu Ghi Chú</button> {% endcomment %}
+                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-note-btn"><i class="ti-save"></i> Lưu Ghi Chú</button>
+                      </div>
                   </div>
+                </div>
+              <!-- The modal -->
+
+               <!-- The modal PROMOTION-->
+               <div id="promotion-modal" class="modal modal-promotion">
+                <div class="modal-content">
+                  <div class="div-title">
+                    <span class="close-promotion"><i class="ti-close"></i></span>
+                    <h2><i class="ti-gift"></i> THÔNG TIN KHUYẾN MÃI</h2>
+                  </div>             
+                    <input id="promotion-input"></input>
+                    <div class="promotion-list">
+                      <div class="promotion-item">
+                        <img src="{% static 'Asset/img/ticket-promotion.png' %}" alt="promotion ticket" class="ticket">
+                        <div class="promotion-name" data-promotion="1">Giảm giá 10% cho tất cả khách hàng</div>
+                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
+                      </div>
+                      <div class="promotion-item">
+                        <img src="{% static 'Asset/img/ticket-promotion.png' %}" alt="promotion ticket" class="ticket">
+                        <div class="promotion-name">Miễn phí vận chuyển cho đơn hàng trên 500.000đ</div>
+                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
+                      </div>
+                      <div class="promotion-item">
+                        <img src="{% static 'Asset/img/ticket-promotion.png' %}" alt="promotion ticket" class="ticket">
+                        <div class="promotion-name">Giảm giá 30% cho các sản phẩm thương hiệu ABC</div>
+                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
+                      </div> 
+                      <div class="promotion-item">
+                        <img src="{% static 'Asset/img/ticket-promotion.png' %}" alt="promotion ticket" class="ticket">
+                        <div class="promotion-name">Giảm giá Khách hàng thân thiết</div>
+                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
+                      </div>     
+                      <div class="promotion-item">
+                        <img src="{% static 'Asset/img/ticket-promotion.png' %}" alt="promotion ticket" class="ticket">
+                        <div class="promotion-name">Giảm giá Khách hàng thân thiết</div>
+                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
+                      </div>        
+                      <div class="promotion-item">
+                        <img src="{% static 'Asset/img/ticket-promotion.png' %}" alt="promotion ticket" class="ticket">
+                        <div class="promotion-name">Giảm giá Khách hàng thân thiết</div>
+                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
+                      </div> 
+                      <div class="promotion-item">
+                        <img src="{% static 'Asset/img/ticket-promotion.png' %}" alt="promotion ticket" class="ticket">
+                        <div class="promotion-name">Giảm giá Khách hàng thân thiết</div>
+                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
+                      </div>        
+                      <div class="promotion-item">
+                        <img src="{% static 'Asset/img/ticket-promotion.png' %}" alt="promotion ticket" class="ticket">
+                        <div class="promotion-name">Giảm giá Khách hàng thân thiết</div>
+                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
+                      </div> 
+                      <div class="promotion-item">
+                        <img src="{% static 'Asset/img/ticket-promotion.png' %}" alt="promotion ticket" class="ticket">
+                        <div class="promotion-name">Giảm giá Khách hàng thân thiết</div>
+                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
+                      </div>        
+                      <div class="promotion-item">
+                        <img src="{% static 'Asset/img/ticket-promotion.png' %}" alt="promotion ticket" class="ticket">
+                        <div class="promotion-name">Giảm giá Khách hàng thân thiết</div>
+                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
+                      </div>      
+                    </div>                                     
+                  </div>
+                    {% comment %} <div class="display-button">
+                      <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn"><i class="ti-save"></i> Áp Dụng Khuyến Mãi</button>
+                    </div> {% endcomment %}
+                </div>
               </div>
-            </div>
             <!-- The modal -->
             </div>
 
            
             <div class="footer">
-              <div class="total-tax" id="total-tax">
-                <span class="span-text">Thuế VAT:</span>
-                {% comment %} <p >65.000 đ</p> {% endcomment %}
-                <div id="total-tax-price" class="total-tax-price span-value" value="10">10%</div>
+                <div class="total-tax" id="total-tax">
+                  <span class="span-text">Thuế VAT:</span>
+                  {% comment %} <p >65.000 đ</p> {% endcomment %}
+                  <div id="total-tax-price" class="total-tax-price span-value" value="10">10%</div>
+                </div>
+                <div class="total total-amount" id="total-amount">
+                  <span class="span-text">Tổng Tiền:</span>
+                  <div id="total-amount-price" class="total-amount-price span-value" value="0">0 đ</div>
+                </div>
+                <div class="discount" id="discount">
+                  <span class="span-text">Giảm Giá:</span>
+                  <div class="span-value discount-value" value="0">0 đ</div>
+                </div>
+                <div class="payment-method">
+                  <span class="span-text">Phương Thức Thanh Toán:</span>
+                  <p class="span-value">Tiền mặt</p>
+                </div>
+                <hr class="hr-invoice">
+                <div class="payment" id="payment">
+                  <span class="span-text payment-size">Thanh Toán:</span>
+                  <div class="span-value payment-value payment-size" value="0">0 đ</div>
+                </div>                          
+            </div> 
+
+            <div class="order-function">
+              <div class="btn-promotion">
+                <button type="button" class="btn btn-outline-danger btn-fw btn-promotion-button" id=""><i class="ti-gift"></i>CHƯƠNG TRÌNH KHUYẾN MÃI</button>
               </div>
-              <div class="total total-amount" id="total-amount">
-                <span class="span-text">Tổng tiền:</span>
-                {% comment %} <p >65.000 đ</p> {% endcomment %}
-                <div id="total-amount-price" class="total-amount-price span-value" value="0">0 đ</div>
-              </div>
-              <div class="discount" id="discount">
-                <span class="span-text">Giảm giá:</span>
-                <div class="span-value discount-value" value="0">0 đ</div>
-                {% comment %} <p class="span-value">0 đ</p> {% endcomment %}
-              </div>
-              <div class="payment-method">
-                <span class="span-text">Phương thức thanh toán:</span>
-                <p class="span-value">Tiền mặt</p>
-              </div>
-              <div class="payment" id="payment">
-                <span class="span-text">Thanh toán:</span>
-                <div class="span-value payment-value" value="0">0 đ</div>
-                {% comment %} <p class="span-value">0 đ</p> {% endcomment %}
+              <div class="btn-function">
+                <button type="button" class="btn btn-danger btn-fw btn-function-cancel" id=""><i class="ti-trash"></i>HỦY ĐƠN</button>
+                <button type="button" class="btn btn-success btn-fw btn-function-payment" id=""><i class="ti-shopping-cart-full"></i>THANH TOÁN</button>
               </div>
             </div>
-          </div>
-          
+
+          </div>       
           </div>               
         </div>
       </section>

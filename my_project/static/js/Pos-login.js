@@ -460,7 +460,9 @@ function calculate_total_payment(){
 
   const discount = document.querySelector('.discount-value');
   let discountTotal = 0;
-  discountTotal += parseInt(discount.textContent.trim().replace(' đ', '').replace(/\./g, ''));
+  let discount_Total = 0;
+  discount_Total += parseInt(discount.textContent.trim().replace(' đ', '').replace(/\./g, ''));
+  discountTotal = Math.abs(discount_Total);
 
   let total_payment = foodPriceTotal - discountTotal; 
   if (discountTotal > 0){
@@ -472,6 +474,8 @@ function calculate_total_payment(){
     payment.setAttribute('value', foodPriceTotal);
   }
 }
+
+
  //search material
 const searchInput = document.querySelector('#SearchMaterial');
 const foodList = document.querySelector('#food-list');
@@ -491,9 +495,101 @@ searchInput.addEventListener('input', function() {
     }
   });
 });
-      
 
 
+//Search Group Product
+// Lấy danh sách các nút danh mục
+const categoryButtons = document.querySelectorAll('#category-list li');
 
+// Lấy danh sách các món ăn
+const foodItems = document.querySelectorAll('#food-list li');
+
+// Lặp qua danh sách các nút danh mục và thêm sự kiện click cho mỗi nút
+categoryButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    // Lấy giá trị của nút danh mục được chọn
+    const category_text = button.textContent.trim();
+    const category_value = button.value;
+
+    // Lặp qua danh sách các món ăn và ẩn những món ăn không thuộc danh mục được chọn
+    foodItems.forEach(item => {
+      const foodCategory = parseInt(item.querySelector('.food-group').getAttribute('value').trim());
+      // const foodCategory = item.querySelector('.food-group').getAttribute('value');
+      if (category_text === 'Tất cả' || category_value === foodCategory) {
+        item.style.display = 'flex';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  });
+});
+
+//Modal promotion
+$('#save-promotion-btn').click(function(event) {
+  var PromotionID = document.querySelector('.promotion-name').getAttribute('data-promotion');
+  $.ajax({
+    url: '/check-promotion/',
+    method: 'POST',
+    data: { 'PromotionID': PromotionID },
+    success: function(response) {
+      if (response.success) {
+        var discount_promotion = document.querySelector('.discount-value');
+        let discount = response.dataPromotion;
+        let discount1 =  parseInt(discount).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+
+        discount_promotion.textContent = parseInt(discount).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+        discount_promotion.value = response.dataPromotion;
+        calculate_total_payment();
+        $('#promotion-modal').removeClass('modal-show');
+        
+        // Swal.fire(
+        //     'Deleted!',
+        //     'Your data has been deleted.',
+        //     'success'
+        //   )
+      } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: response.error,
+          })
+      }
+    },
+    error: function(response) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: response.error,
+          })
+    }
+  });
+});
+$('.close-promotion').click(function(event) {
+  $('#promotion-modal').removeClass('modal-show');
+});      
+$('.btn-promotion-button').click(function(event) {
+  $('#promotion-modal').addClass('modal-show');
+}); 
+
+
+ //search material
+ const searchpromotion = document.querySelector('#promotion-input');
+ const promotionList = document.querySelector('.promotion-list');
+ 
+ searchpromotion.addEventListener('input', function() {
+   const searchTerm = searchpromotion.value.toLowerCase();
+   const allPromotionItems = promotionList.querySelectorAll('.promotion-item');
+   
+   allPromotionItems.forEach(item => {
+     const PromotionName = item.querySelector('.promotion-name').textContent.toLowerCase();
+     
+     if (PromotionName.includes(searchTerm)) {
+       item.style.display = 'flex';
+     } else {
+       item.style.display = 'none';
+     }
+   });
+ });
+ 
 
 
