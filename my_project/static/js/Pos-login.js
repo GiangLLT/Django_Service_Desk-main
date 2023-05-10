@@ -217,6 +217,7 @@ addButton.addEventListener('click', () => {
     document.addEventListener('DOMContentLoaded', function() {
         // Lấy phần tử cha chứa các nút plus-invoice và note-invoice
         const orderItems = document.querySelector('.order-items');
+        
       
         // Đăng ký sự kiện click cho phần tử cha
         orderItems.addEventListener('click', function(event) {
@@ -370,8 +371,10 @@ addButton.addEventListener('click', () => {
             }
             // check_promotion();
             check_promotion_del();
-            
           }
+          // else if (target.classList.contains('img-invoice')) {
+          //   alert("abc");
+          // }
         });
       });
 
@@ -439,7 +442,7 @@ addButton.addEventListener('click', () => {
 
           // Hiển thị danh sách các món ăn đã chọn
           selectedFoodList.innerHTML = foods.map(food => 
-            `<div class="order-item" type="button">
+            `<div class="order-item">
               <div class="item-id">
                 <p>${food.id}</p>
               </div>
@@ -568,11 +571,14 @@ categoryButtons.forEach(button => {
 
 //Modal promotion
 let ProID = 0;
-function check_promotion(promotionID){
+let ProName = "";
+function check_promotion(promotionID, promotionName){
   // var PromotionID = document.querySelector('.promotion-name').getAttribute('data-promotion');
   var PromotionID = promotionID;
+  var PromotionName = promotionName;
   var PaymentValue = document.querySelector('.payment-value').getAttribute('value');
   var TotalAmount = document.querySelector('.total-amount-price').getAttribute('value');
+  
   if(PaymentValue > 0 ){
     $.ajax({
       url: '/check-promotion/',
@@ -588,8 +594,10 @@ function check_promotion(promotionID){
               discount_promotion.textContent = discount;
               discount_promotion.value = respone_value;
               calculate_total_payment();
+              add_promotion_title(PromotionName);
               $('#promotion-modal').removeClass('modal-show'); 
               ProID = PromotionID;
+              ProName = promotionName;
             }
             else{
               Swal.fire({
@@ -648,9 +656,11 @@ function check_promotion_del(){
               calculate_total_payment();
               // $('#promotion-modal').removeClass('modal-show'); 
               ProID = PromotionID;
+              
             }
             else{
               calculate_total_payment();
+              remove_promotion_title(ProName);
               Swal.fire({
                 icon: 'error',
                 title: 'Thông báo lỗi',
@@ -688,7 +698,8 @@ function check_promotion_del(){
 $(document).on('click', '#save-promotion-btn', function(event) {
   // check_promotion();
   var promotionID = $(this).prev('.promotion-name').attr('data-promotion');
-  check_promotion(promotionID);
+  var promotionName = $(this).prev('.promotion-name').text();
+  check_promotion(promotionID,promotionName);
 });
 
 $('.close-promotion').click(function(event) {
@@ -697,6 +708,41 @@ $('.close-promotion').click(function(event) {
 $('.btn-promotion-button').click(function(event) {
   $('#promotion-modal').addClass('modal-show');
 }); 
+
+
+function add_promotion_title(PromotionName){
+  let order_information_promotion = document.querySelector('.order-information-promotion');
+  order_information_promotion.innerHTML = 
+  '<div class="order-information-promotion-item">' +
+    '<p>'+PromotionName+'</p>' +
+    '<button type="button" class="del-promotion"><i class="ti-close"></i></button>' +
+  '</div>';
+  $('.order-information-promotion').removeClass('hidden-promotion');
+  $('.hr-invoice-promotion').removeClass('hidden-promotion');
+}
+
+function remove_promotion_title(PromotionName){
+  const promotions = document.querySelectorAll('.order-information-promotion-item');
+  promotions.forEach(promotion => {
+    if (promotion.querySelector('p').textContent === PromotionName) {
+      promotion.remove();
+      $('.order-information-promotion').addClass('hidden-promotion');
+      $('.hr-invoice-promotion').addClass('hidden-promotion');
+    }
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const buttons_del_promotion = document.querySelectorAll('.del-promotion');
+  buttons_del_promotion.forEach(button => {
+    button.addEventListener('click', () => {
+      buttons_del_promotion.forEach(item => {
+        const promotion_item = parseInt(item.querySelector('.order-information-promotion-item'));
+        var a = 0;
+      });
+    });
+  });
+});
 
 
  //search material
@@ -719,21 +765,76 @@ $('.btn-promotion-button').click(function(event) {
  });
  
 
- //Modal click order-item
- const orderItems = document.querySelectorAll('.order-item');
 
-// Lặp qua từng phần tử order-item và thêm sự kiện double click
-orderItems.forEach(function(orderItem) {
-  orderItem.addEventListener('dblclick', function(event) {
-    // Lấy thông tin sản phẩm được chọn
-    const productInfo = orderItem.querySelector('.item-title').textContent;
-    const productPrice = orderItem.querySelector('.item-price').textContent;
-    // Hiển thị modal với thông tin sản phẩm được chọn
-    const modalTitle = document.querySelector('#product-modal .modal-title');
-    const modalBody = document.querySelector('#product-modal .modal-body');
-    modalTitle.textContent = productInfo;
-    modalBody.innerHTML = '<p>' + productPrice + '</p>';
-    $('#product-modal').modal('show');
+//  document.addEventListener('DOMContentLoaded', () => {
+//   // Lấy tất cả các div có class là "order-item"
+//   const orderItems = document.querySelectorAll('.order-item');
+
+//   // Lặp qua từng order-item và thêm sự kiện double click
+//   orderItems.forEach(orderItem => {
+//     orderItem.addEventListener('dblclick', () => {
+//       // Xử lý sự kiện double click ở đây
+//       console.log('Double clicked on order item!');
+//       console.log('Item name:', orderItem.querySelector('.item-name .item-title').textContent);
+//     });
+//   });
+// });
+
+
+//Function order type
+// const buttons = document.querySelectorAll('.btn-order-type');
+
+// buttons.forEach(button => {
+//   button.addEventListener('click', function() {
+//     // Bỏ đi class 'active' của tất cả các button
+//     buttons.forEach(btn => btn.classList.remove('active'));
+
+//     // Thêm class 'active' vào button được click
+//     this.classList.add('active');
+//   });
+// });
+
+const buttons = document.querySelectorAll('.btn-order-type');
+
+buttons.forEach(button => {
+  button.addEventListener('click', () => {
+    buttons.forEach(button => {
+      button.classList.remove('active');
+    });
+    button.classList.add('active');
+    // const color = window.getComputedStyle(button).getPropertyValue('background-color');
+    // document.documentElement.style.setProperty('--button-active-color', color);
+    const color = window.getComputedStyle(button).getPropertyValue('background-color');
+    const lightColor = tinycolor.mix(color, 'white', 40).toHexString();
+    document.documentElement.style.setProperty('--button-active-color', lightColor);
   });
 });
 
+
+
+//Clock time function
+function updateTime() {
+  const now = new Date();
+  const options_day = { 
+    timeZone: 'Asia/Ho_Chi_Minh', 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric', 
+    hour12: false 
+  };
+  const options_time = { 
+    timeZone: 'Asia/Ho_Chi_Minh', 
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false 
+  };
+  const date = now.toLocaleDateString('en-US', options_day);
+  const time = now.toLocaleTimeString('en-US', options_time);
+
+  document.querySelector('.date').textContent = date;
+  document.querySelector('.time').textContent = time;
+}
+
+setInterval(updateTime, 1000);

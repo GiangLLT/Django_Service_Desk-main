@@ -31,9 +31,11 @@
 </head>
 <body>
 	<header>
-        <nav>
+      <!-- Start Menu -->  
+        <div class="Menu-Left">
+          <nav>
             <ul>
-                <li class="close-btn"><a href="#" id="close-button"><i class="ti-close close-button"></i></a></li>
+                <li class="close-btn"><a id="close-button"><i class="ti-close close-button"></i></a></li>
                 <div class="menu-design">
                     <li><a href="#"><i class="ti-list"></i> Danh Sách Đơn Hàng Chưa Hoàn Thành</a></li>
                     <li><a href="#"><i class="ti-shine"></i> Quản Lý Ca</a></li>
@@ -45,15 +47,22 @@
         <div class="menu-toggle" id="menu-toggle">
             <span></span>
             <span></span>
-            <span></span>
-           
+            <span></span>        
         </div>
+        </div>       
+        <!-- End Menu -->  
+        {% comment %} <div class="order-type">
+          <button type="button" class="btn btn-primary btn-fw btn-order-type" id="btn-dine-in"><i class="ti-alarm-clock"></i>Ăn Tại Bàn</button>
+          <button type="button" class="btn btn-success btn-fw btn-order-type" id="btn-take-away"><i class="ti-bag"></i>Mang Đi</button>
+          <button type="button" class="btn btn-warning btn-fw btn-order-type" id="btn-delivery"><i class="ti-truck"></i>Giao Hàng</button>
+        </div> {% endcomment %}
+        <!-- clock time-->  
+        <div class="clock">
+          <div class="date"></div>
+          <div class="time"></div>
+        </div>
+        <!-- clock time -->  
 
-        {% comment %} <div class="buttons">
-			<button>Đơn hàng ngoài</button>
-			<button>Đơn đã bán</button>
-			<button>Bàn</button>
-		</div> {% endcomment %}
     </header>
 	<section>
         <div class="left-food">
@@ -66,6 +75,7 @@
               <li id="random-border" class="border-radius" value="3"><i class="ti-bookmark-alt"></i><a type="button">Món Mặn</a></li>
               <li id="random-border" class="border-radius" value="4"><i class="ti-bookmark-alt"></i><a type="button">Hương Vị Miền Tây</a></li>
               <li id="random-border" class="border-radius" value="5"><i class="ti-bookmark-alt"></i><a type="button">Tráng Miệng</a></li>
+              <li id="random-border" class="border-radius" value="6"><i class="ti-bookmark-alt"></i><a type="button">Món Thêm</a></li>
             </ul>
           </div>
           <div class="menu-food">
@@ -153,7 +163,7 @@
               <i class="ti-pencil-alt font-size"></i><h1 class="font-size"> CHI TIẾT ĐƠN HÀNG</h1>
             </div>
             <div class="content">
-              <div class="order-info">
+              {% comment %} <div class="order-info">
                 <div class="order-time">
                   <span>Ngày đặt hàng: 27/04/2023</span>              
                 </div>
@@ -162,12 +172,83 @@
                 </div>
                 <div class="order-time">
                   <span>Nhân viên thu ngân: Nguyễn Thị A</span>              
-                </div>
+                </div> 
+              </div>{% endcomment %}
+             
+               <!-- order type -->
+              <div class="order-type">
+                <button type="button" class="btn btn-primary btn-fw btn-order-type" id="btn-dine-in"><i class="ti-alarm-clock"></i>Ăn Tại Bàn</button>
+                <button type="button" class="btn btn-success btn-fw btn-order-type" id="btn-take-away"><i class="ti-bag"></i>Mang Đi</button>
+                <button type="button" class="btn btn-warning btn-fw btn-order-type" id="btn-delivery"><i class="ti-truck"></i>Giao Hàng</button>
               </div>
-              <hr class="hr-invoice">
+               <!-- order type -->
+
+               <!-- order information -->
+               {% comment %} <hr class="hr-invoice"> {% endcomment %}
+               <div class="order-information">
+                <div class="order-information-customer">
+                  <div class="order-information-title">
+                    <img src="{% static 'Asset/img/banner-inform.png' %}" alt="ribbon-information" class="ribbon-information">
+                    <h4 for="information-label">THÔNG TIN KHÁCH HÀNG</h4>
+                  </div>
+                  <div class="information-customer-system">                  
+                    <div class="information-customer-CustID">
+                      <p class="custID"><i class="ti-info"></i> Mã KH: </p>
+                      <p>1000000003</p>
+                    </div>
+                    <div class="information-customer-CustType">
+                      <p class="custID"><i class="ti-id-badge"></i> Loại KH: </p>
+                      <p>Khách hàng Platinum</p>
+                    </div>
+                  </div>
+                  <div class="information-customer-name-birthday">
+                    <div class="information-customer-name">
+                      <p class="custName"><i class="ti-user"></i> Tên KH: </p>
+                      <p>Lê Lộc Trường Giang</p>
+                    </div>
+                    <div class="information-customer-birthday">
+                      <p class="custBirth"><i class="ti-calendar"></i> Ngày Sinh: </p>
+                      <p>16/10/1990</p>
+                    </div>
+                  </div>                 
+                  <div class="information-customer-phone-email">
+                    <div class="information-customer-phone">
+                      <p class="custPhone"><i class="ti-mobile"></i> Điện Thoại:</p>
+                      <p>0909009999</p>
+                    </div>
+                    <div class="information-customer-email">
+                      <p class="custEmail"><i class="ti-email"></i> Email: </p>
+                      <p>giang.llt@bamboocap.com.vn</p>
+                    </div>
+                  </div>
+                  <div class="information-customer-address">
+                    <div class="information-customer-add">
+                      <p class="custAdd"><i class="ti-home"></i> Địa Chỉ: </p>
+                      <p>27 Quốc Hương, Phường 6, Quận 2, Thành Phố HCM.</p>
+                    </div>
+                  </div>
+                </div>
+                <hr class="hr-invoice">
+                <div class="order-information-promotion hidden-promotion">
+                  {% comment %} <div class="order-information-promotion-item">
+                    <p>Chương trình Khuyến mãi Khách hàng thân thiết - Giảm 10%</p>
+                    <button type="button" class="del-promotion"><i class="ti-close"></i></button>
+                  </div>  
+                  <div class="order-information-promotion-item">
+                    <p>Chương trình Khuyến mãi Khách hàng thân thiết - Giảm 20%</p>
+                    <button type="button" class="del-promotion"><i class="ti-close"></i></button>
+                  </div>              
+                </div> {% endcomment %}
+              </div>
+               <!-- order information -->  
+
+              <!-- Content order -->
+              <hr class="hr-invoice hidden-promotion hr-invoice-promotion">
               <div class="order-items" id="order-items" data-food="[]">
                 <p class="text-invoice">Chưa có sản phẩm</p>
-              </div>
+              </div>    
+                <!-- Content order -->
+              
                <!-- The modal NOTE -->
                 <div id="note-modal" class="modal modal-note">
                   <div class="modal-content">
@@ -252,8 +333,7 @@
               </div>
             <!-- The modal -->
             </div>
-
-           
+  
             <div class="footer">
                 <div class="total-tax" id="total-tax">
                   <span class="span-text">Thuế VAT:</span>
@@ -301,6 +381,7 @@
     <script  type="text/javascript" src="{% static 'js/jquery-3.6.4.min.js' %}"></script>
     <script defer type="text/javascript" src="{% static 'js/Pos-login.js' %}"></script>
     <script src="{% static 'Sweetalert2/Js/sweetalert2.all.min.js' %}"></script>
+    <script src="{% static 'js/tinycolor.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/jquery.twbsPagination.min.js' %}"></script>
 
     <!-- sweetalert2 -->
