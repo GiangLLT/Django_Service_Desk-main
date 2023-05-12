@@ -917,12 +917,12 @@ section {
 
 /* Information */
 .order-information-promotion{
-  display: flex;
+  display: grid;
   width: 100%;
   margin: 0px 5px 0px 5px;
   justify-content: center;
 }
-.order-information-promotion .del-promotion{
+.order-information-promotion .del-promotion, .del-promotion-member{
   border: 0px solid #C82A2E;
   color: #C82A2E;
   /* padding: 10px; */
@@ -932,7 +932,11 @@ section {
   width: 22px;
   height: 22px;
 }
-.order-information-promotion-item{
+.order-information-promotion-member{
+  margin-bottom: 5px;
+}
+.order-information-promotion-item,
+.order-information-promotion-member-item{
   display: flex;
 }
 .order-information-promotion .del-promotion:hover{

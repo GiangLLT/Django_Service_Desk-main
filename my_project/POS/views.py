@@ -90,6 +90,45 @@ def Check_promotion(request):
             'success': False,
             'message': f'Login Failed: {str(ex)}',
         })
+    
+
+@csrf_exempt
+def Check_promotion_member(request):
+    try:
+        if request.method == 'POST':
+            PromotionID = request.POST.get('PromotionID')
+            PromotionValue = request.POST.get('PromotionValue')
+            if(PromotionID == '2'):
+                percent = 5
+                promoMember = int(PromotionValue) * percent / 100 
+                return JsonResponse({
+                'success': True,
+                'message': 'Login Successed',
+                'dataPromotion_Member': promoMember})
+            elif(PromotionID == '3'):
+                percent = 10
+                promoMember = int(PromotionValue) * percent / 100 
+                return JsonResponse({
+                'success': True,
+                'message': 'Login Successed',
+                'dataPromotion_Member': promoMember})  
+            elif(PromotionID == '4'):
+                percent = 15
+                promoMember = int(PromotionValue) * percent / 100 
+                return JsonResponse({
+                'success': True,
+                'message': 'Login Successed',
+                'dataPromotion_Member': promoMember})  
+            else:
+                return JsonResponse({
+                'success': True,
+                'message': 'Login Successed',
+                'dataPromotion_Member': '0'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Login Failed: {str(ex)}',
+        })
 
 
 # def login_pos_system(request):
