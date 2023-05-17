@@ -73,12 +73,12 @@ def Check_promotion(request):
             if(PromotionID == '1'):
                 return JsonResponse({
                 'success': True,
-                'message': 'Login Successed',
+                'message': 'Successed',
                 'dataPromotion': '-100000'})
             elif(PromotionID == '2'):
                 return JsonResponse({
                 'success': True,
-                'message': 'Login Successed',
+                'message': 'Successed',
                 'dataPromotion': '-20000'})  
             else:
                 return JsonResponse({
@@ -98,7 +98,14 @@ def Check_promotion_member(request):
         if request.method == 'POST':
             PromotionID = request.POST.get('PromotionID')
             PromotionValue = request.POST.get('PromotionValue')
-            if(PromotionID == '2'):
+            if(PromotionID == '1'):
+                percent = 0
+                promoMember = 0 
+                return JsonResponse({
+                'success': True,
+                'message': 'Login Successed',
+                'dataPromotion_Member': promoMember})
+            elif(PromotionID == '2'):
                 percent = 5
                 promoMember = int(PromotionValue) * percent / 100 
                 return JsonResponse({
@@ -124,6 +131,79 @@ def Check_promotion_member(request):
                 'success': True,
                 'message': 'Login Successed',
                 'dataPromotion_Member': '0'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Login Failed: {str(ex)}',
+        })
+    
+
+@csrf_exempt
+def Check_info_customer(request):
+    try:
+        if request.method == 'POST':
+            CustomerID = request.POST.get('CustomerID')
+            Total_value = request.POST.get('TotalValue')
+            if(CustomerID == '1000000001'):
+                return JsonResponse({
+                'success': True,
+                'message': 'Successed',
+                'CustID': '1000000001',
+                'CustType': '',
+                'CustName': 'Khách Hàng Vãng Lai',
+                'CustBirth': '',
+                'CustPhone': '',
+                'CustEmail': '',
+                'CustAdd': '',
+                'CustProValue': '',
+                'CustProID': '',
+                'CustProName': '',
+                'CustStatus': False})
+            elif(CustomerID == '1000000002'):
+                if(int(Total_value) > 0):
+                    Total_discount = (int(Total_value) * 5) / 100  
+                else:
+                    Total_discount =  Total_value                        
+                Name_discount = "Thành Viên Bạc - Giảm 5%"
+                return JsonResponse({
+                'success': True,
+                'message': 'Successed',
+                'CustID': '1000000002',
+                'CustType': 'Khách hàng Bạc',
+                'CustName': 'Phạm Thanh Thúy',
+                'CustBirth': '16/10/1990',
+                'CustPhone': '0909009999',
+                'CustEmail': 'thuy.pt@bamboocap.com.vn',
+                'CustAdd': '27 Quốc Hương, Phường 6, Quận 2, Thành Phố HCM.',
+                'CustProValue': Total_discount,
+                'CustProID': '2',
+                'CustProName': Name_discount,
+                 'CustStatus': True})  
+            elif(CustomerID == '1000000003'):
+                if(int(Total_value) > 0):
+                    Total_discount = (int(Total_value) * 10 )/ 100
+                else:
+                    Total_discount =  Total_value 
+                Name_discount = "Thành Viên Vàng - Giảm 10%"
+                return JsonResponse({
+                'success': True,
+                'message': 'Login Successed',
+                'CustID': '1000000003',
+                'CustType': 'Khách hàng Vàng',
+                'CustName': 'Lê Lộc Trường Giang',
+                'CustBirth': '16/10/1990',
+                'CustPhone': '0909009999',
+                'CustEmail': 'giang.llt@bamboocap.com.vn',
+                'CustAdd': '27 Quốc Hương, Phường 6, Quận 2, Thành Phố HCM.',
+                'CustProValue': Total_discount,
+                'CustProID': '3',
+                'CustProName': Name_discount,
+                'CustStatus': True})   
+            # else:
+            #     return JsonResponse({
+            #     'success': True,
+            #     'message': 'Login Successed',
+            #     'dataPromotion_Member': '0'})
     except Exception as ex:
         return JsonResponse({
             'success': False,

@@ -15,6 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'Sweetalert2/Css/sweetalert2.min.css' %}">
     <link rel="stylesheet" href="{% static 'star_admin/vendors/ti-icons/css/themify-icons.css' %}">
+    <link rel="stylesheet" href="{% static 'uicons/css/uicons-thin-rounded.css' %}">
     <link rel="stylesheet" href="{% static 'css/_buttons.scss' %}">
     <link rel="stylesheet" href="{% static 'css/_reboot.scss' %}">
     <link rel="stylesheet" href="{% static 'Sweetalert2/Css/sweetalert2.min.css"' %}">
@@ -51,11 +52,10 @@
         </div>
         </div>       
         <!-- End Menu -->  
-        {% comment %} <div class="order-type">
-          <button type="button" class="btn btn-primary btn-fw btn-order-type" id="btn-dine-in"><i class="ti-alarm-clock"></i>Ăn Tại Bàn</button>
-          <button type="button" class="btn btn-success btn-fw btn-order-type" id="btn-take-away"><i class="ti-bag"></i>Mang Đi</button>
-          <button type="button" class="btn btn-warning btn-fw btn-order-type" id="btn-delivery"><i class="ti-truck"></i>Giao Hàng</button>
-        </div> {% endcomment %}
+       <div class="btn-menu">
+          {% comment %} <button type="button" class="btn btn-primary btn-fw btn-menu-function" id="btn-dine-in"><i class="ti-user"></i>Thành viên</button> {% endcomment %}
+          <button type="button" class="btn btn-success btn-fw btn-menu-function" id="btn-info-customer"><i class="ti-agenda"></i>THÀNH VIÊN</button>
+        </div>
         <!-- clock time-->  
         <div class="clock">
           <div class="date"></div>
@@ -160,7 +160,7 @@
           </ul>
           <div class="order-details">
             <div class="header header-invoice">
-              <i class="ti-pencil-alt font-size"></i><h1 class="font-size"> CHI TIẾT ĐƠN HÀNG</h1>
+              <i class="ti-receipt font-size"></i><h1 class="font-size"> CHI TIẾT ĐƠN HÀNG</h1>
             </div>
             <div class="content">
               {% comment %} <div class="order-info">
@@ -194,37 +194,70 @@
                   <div class="information-customer-system">                  
                     <div class="information-customer-CustID">
                       <p class="custID"><i class="ti-info"></i> Mã KH: </p>
-                      <p>1000000003</p>
+                      <p class="custID-value">1000000001</p>
                     </div>
                     <div class="information-customer-CustType">
-                      <p class="custID"><i class="ti-id-badge"></i> Loại KH: </p>
-                      <p>Khách hàng Platinum</p>
+                      <p class="custType"><i class="ti-id-badge"></i> Loại KH: </p>
+                      <p class="custType-value"></p>
                     </div>
                   </div>
                   <div class="information-customer-name-birthday">
                     <div class="information-customer-name">
                       <p class="custName"><i class="ti-user"></i> Tên KH: </p>
-                      <p>Lê Lộc Trường Giang</p>
+                      <p class="custName-value">Khách Hàng Vãng Lai</p>
                     </div>
                     <div class="information-customer-birthday">
                       <p class="custBirth"><i class="ti-calendar"></i> Ngày Sinh: </p>
-                      <p>16/10/1990</p>
+                      <p class="custBirth-value"></p>
                     </div>
                   </div>                 
                   <div class="information-customer-phone-email">
                     <div class="information-customer-phone">
                       <p class="custPhone"><i class="ti-mobile"></i> Điện Thoại:</p>
-                      <p>0909009999</p>
+                      <p class="custPhone-value"></p>
                     </div>
                     <div class="information-customer-email">
                       <p class="custEmail"><i class="ti-email"></i> Email: </p>
-                      <p>giang.llt@bamboocap.com.vn</p>
+                      <p class="custEmail-value"></p>
                     </div>
                   </div>
                   <div class="information-customer-address">
                     <div class="information-customer-add">
                       <p class="custAdd"><i class="ti-home"></i> Địa Chỉ: </p>
-                      <p>27 Quốc Hương, Phường 6, Quận 2, Thành Phố HCM.</p>
+                      <p class="custAdd-value"></p>
+                    </div>
+                  </div>
+                  <div class="information-customer-delivery">
+                    <div class="information-customer-deli">
+                      <p class="custDeli"><i class="icon-location-pin"></i> Địa Chỉ Giao Hàng: </p>
+                      <p class="custDeli-value"></p>
+                    </div>
+                  </div>
+                  <hr class="hr-invoice">
+                  <div class="information-customer-table">
+                    <div class="information-table-number">
+                      <p class="custTable"><i class="icon-calendar"></i> Số Bàn:</p>
+                      <p class="custTable-value"> Bàn 1</p>
+                    </div>
+                    <div class="information-table-person">
+                      <p class="custPerson"><i class="icon-user-following"></i> Số Người: </p>
+                      {% comment %} <p class="custPerson-value"> 5</p> {% endcomment %}
+                      <select class="db-person">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                      </select>
+                    </div>
+                    <div class="information-shift">
+                      <p class="custShift"><i class="icon-login"></i> Ca Làm Việc: </p>
+                      <p class="custShift-value"> Ca 1</p>
                     </div>
                   </div>
                 </div>
@@ -232,10 +265,10 @@
                 {% comment %} <div class="order-information-promotion hidden-promotion"> {% endcomment %}
                 <div class="order-information-promotion">  
                   <div class="order-information-promotion-member">
-                    <div class="order-information-promotion-member-item" value="3">
+                     {% comment %} <div class="order-information-promotion-member-item" value="3">
                       <p>Chương trình Khuyến mãi Thành Viên Vàng - Giảm 10%</p>
                       <button type="button" class="del-promotion-member"><i class="ti-close del-promotion-member-li"></i></button>
-                    </div> 
+                    </div> {% endcomment %}
                   </div>
                   <div class="order-information-promotion-items">
                     {% comment %} <div class="order-information-promotion-item">
@@ -268,7 +301,79 @@
                       </div>
                   </div>
                 </div>
-              <!-- The modal -->
+              <!-- The modal NOTE -->
+
+               <!-- The modal Dine-in -->
+               <div id="Dine-in-modal" class="modal modal-Dine-in">
+                <div class="modal-content">
+                  <div class="div-title">
+                    <span class="close close-Dine"><i class="ti-close"></i></span>
+                    <h2><i class="icon-screen-tablet"></i> DANH SÁCH BÀN</h2>
+                  </div>      
+                  <input id="table-input" placeholder="Tên Bàn"></input>       
+                    <div class="table-container">
+                     <div class="list-group">
+                      <div class="des-table"></div>
+                      <div class="list-group-table"></div>
+                     </div>
+                     <div class="list-table">
+                        <div class="list-table-item list-table-item-active">
+                          {% comment %} <img src="{% static 'Asset/img/Small-table.png' %}" alt="list-table-img" class="list-table-img"> {% endcomment %}
+                          <div class="top-table">
+                            <p class="count-person"><i class="ti-user"></i> 3</p>
+                            <p class="list-menu-table"><i class="ti-list-ol"></i></p>
+                          </div>
+                          <p class="list-table-title" value='1'>Bàn 1</p>
+                          <p class="list-table-cashier">Nguyễn Văn A</p>
+                        </div>
+                        <div class="list-table-item ">
+                          <div class="top-table">
+                            <p class="count-person"><i class="ti-user"></i> 3</p>
+                            <p class="list-menu-table"><i class="ti-list-ol"></i></p>
+                          </div>
+                          <p class="list-table-title" value='2'>Bàn 2</p>
+                        </div>
+                        <div class="list-table-item">
+                          <div class="top-table">
+                            <p class="count-person"><i class="ti-user"></i> 3</p>
+                            <p class="list-menu-table"><i class="ti-list-ol"></i></p>
+                          </div>
+                          <p class="list-table-title" value='3'>Bàn 3</p>
+                        </div>
+                        <div class="list-table-item list-table-item-active">
+                          <div class="top-table">
+                            <p class="count-person"><i class="ti-user"></i> 3</p>
+                            <p class="list-menu-table"><i class="ti-list-ol"></i></p>
+                          </div>
+                          <p class="list-table-title" value='4'>Bàn 4</p>
+                          <p class="list-table-cashier">Nguyễn Văn B</p>
+                        </div>
+                        <div class="list-table-item">
+                          <div class="top-table">
+                            <p class="count-person"><i class="ti-user"></i> 3</p>
+                            <p class="list-menu-table"><i class="ti-list-ol"></i></p>
+                          </div>
+                          <p class="list-table-title" value='5'>Bàn 5</p>
+                        </div>
+                        <div class="list-table-item">
+                          <div class="top-table">
+                            <p class="count-person"><i class="ti-user"></i> 3</p>
+                            <p class="list-menu-table"><i class="ti-list-ol"></i></p>
+                          </div>
+                          <p class="list-table-title" value='6'>Bàn 6</p>
+                        </div>
+                        <div class="list-table-item">
+                          <div class="top-table">
+                            <p class="count-person"><i class="ti-user"></i> 3</p>
+                            <p class="list-menu-table"><i class="ti-list-ol"></i></p>
+                          </div>
+                          <p class="list-table-title" value='7'>Bàn 7</p>
+                        </div>
+                     </div>
+                    </div>
+                </div>
+              </div>
+            <!-- The modal Dine-in -->
 
                <!-- The modal PROMOTION-->
                <div id="promotion-modal" class="modal modal-promotion">
@@ -277,7 +382,7 @@
                     <span class="close-promotion"><i class="ti-close"></i></span>
                     <h2><i class="ti-gift"></i> THÔNG TIN KHUYẾN MÃI</h2>
                   </div>             
-                    <input id="promotion-input"></input>
+                    <input id="promotion-input" placeholder="Tên Chương Trình Khuyến Mãi"></input>
                     <div class="promotion-list">
                       <div class="promotion-item">
                         <img src="{% static 'Asset/img/Ticket-BG-New.png' %}" alt="promotion ticket" class="ticket">
@@ -338,6 +443,117 @@
               </div>
             <!-- The modal -->
             </div>
+
+            <!-- The modal CUSTOMER -->
+            <div id="customer-modal" class="modal modal-customer">
+              <div class="modal-content">
+                <div class="div-title">
+                  <span class="close close-customer"><i class="ti-close"></i></span>
+                  <h2><i class="icon-note"></i> DANH SÁCH KHÁCH HÀNG</h2>
+                </div> 
+                  <div class="input-btn-customer">
+                    <input class="btn-customer" id="custID-input" placeholder="Mã Khách Hàng"></input>
+                    <input class="btn-customer" id="custName-input" placeholder="Tên Khách Hàng"></input>
+                    <input class="btn-customer" id="custPhone-input" placeholder="Số Điện Thoại Khách Hàng"></input>
+                  </div>  
+                  <!-- List CUSTOMER -->  
+                  <div class="display-customer-items">
+                    <div class="display-customer-item">
+                      <div class="display-customer-panel cust-male">
+                        <p class="cust-ID"><i class="ti-id-badge"></i> 1000000001</p>
+                        {% comment %} <img class="cust-img cust-Type" id="cust-img" src="{% static 'Asset/img/medal-gold-hd.png' %}"> {% endcomment %}
+                        {% comment %} <p class="cust-Type"></p> {% endcomment %}
+                      </div>
+                      <div class="display-customer-content">
+                        <div class="display-customer-content-left">
+                          <img class="cust-img" id="cust-img" src="{% static 'Asset/img/icon-male.jpg' %}">
+                        </div>
+                        <div class="display-customer-content-right">
+                          <p class="cust-Name"><i class="ti-user"></i> Khách Hàng Vãng Lai</p>
+                          <p class="cust-birthday"><i class="ti-calendar"></i> </p>
+                          <p class="cust-Phone"><i class="ti-mobile"></i> </p>
+                          <p class="cust-Range"><i class="icon-badge"></i> </p>
+                          <p class="cust-Point"><i class="icon-wallet"></i> </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="display-customer-item">
+                      <div class="display-customer-panel cust-female">
+                        <p class="cust-ID"><i class="ti-id-badge"></i> 1000000002</p>
+                        {% comment %} <p class="cust-Type">Thành Viên Bạc</p> {% endcomment %}
+                      </div>
+                      <div class="display-customer-content">
+                        <div class="display-customer-content-left">
+                          <img class="cust-img" id="cust-img" src="{% static 'Asset/img/icon-female.jpg' %}">
+                        </div>
+                        <div class="display-customer-content-right">
+                          <p class="cust-Name"><i class="ti-user"></i> Phạm Thanh Thúy</p>
+                          <p class="cust-birthday"><i class="ti-calendar"></i> 16/10/1990</p>
+                          <p class="cust-Phone"><i class="ti-mobile"></i> 0909009718</p>
+                          <p class="cust-Range"><i class="icon-badge"></i> Thành Viên Bạc</p>
+                          <p class="cust-Point"><i class="icon-wallet"></i> 1.000</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="display-customer-item">
+                      <div class="display-customer-panel cust-male">
+                        <p class="cust-ID"><i class="ti-id-badge"></i> 1000000003</p>
+                        {% comment %} <p class="cust-Type">Thành Viên Bạc</p> {% endcomment %}
+                      </div>
+                      <div class="display-customer-content">
+                        <div class="display-customer-content-left">
+                          <img class="cust-img" id="cust-img" src="{% static 'Asset/img/icon-male.jpg' %}">
+                        </div>
+                        <div class="display-customer-content-right">
+                          <p class="cust-Name"><i class="ti-user"></i> Lê Lộc Trường Giang</p>
+                          <p class="cust-birthday"><i class="ti-calendar"></i> 16/10/1990</p>
+                          <p class="cust-Phone"><i class="ti-mobile"></i> 0909009718</p>
+                          <p class="cust-Range"><i class="icon-badge"></i> Thành Viên Vàng</p>
+                          <p class="cust-Point"><i class="icon-wallet"></i> 2.000</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="display-customer-item">
+                      <div class="display-customer-panel cust-male">
+                        <p class="cust-ID"><i class="ti-id-badge"></i> 1000000003</p>
+                        {% comment %} <p class="cust-Type">Thành Viên Bạc</p> {% endcomment %}
+                      </div>
+                      <div class="display-customer-content">
+                        <div class="display-customer-content-left">
+                          <img class="cust-img" id="cust-img" src="{% static 'Asset/img/icon-male.jpg' %}">
+                        </div>
+                        <div class="display-customer-content-right">
+                          <p class="cust-Name"><i class="ti-user"></i> Lê Lộc Trường Giang</p>
+                          <p class="cust-birthday"><i class="ti-calendar"></i> 16/10/1990</p>
+                          <p class="cust-Phone"><i class="ti-mobile"></i> 0909009719</p>
+                          <p class="cust-Range"><i class="icon-badge"></i> Thành Viên Vàng</p>
+                          <p class="cust-Point"><i class="icon-wallet"></i> 3.000</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="display-customer-item">
+                      <div class="display-customer-panel cust-male">
+                        <p class="cust-ID"><i class="ti-id-badge"></i> 1000000003</p>
+                        {% comment %} <p class="cust-Type">Thành Viên Bạc</p> {% endcomment %}
+                      </div>
+                      <div class="display-customer-content">
+                        <div class="display-customer-content-left">
+                          <img class="cust-img" id="cust-img" src="{% static 'Asset/img/icon-male.jpg' %}">
+                        </div>
+                        <div class="display-customer-content-right">
+                          <p class="cust-Name"><i class="ti-user"></i> Lê Lộc Trường Giang</p>
+                          <p class="cust-birthday"><i class="ti-calendar"></i> 16/10/1990</p>
+                          <p class="cust-Phone"><i class="ti-mobile"></i> 0909009716</p>
+                          <p class="cust-Range"><i class="icon-badge"></i> Thành Viên Vàng</p>
+                          <p class="cust-Point"><i class="icon-wallet"></i> 4.000</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>       
+                  <!-- List CUSTOMER -->
+              </div>
+            </div>
+          <!-- The modal CUSTOMER -->
   
             <div class="footer">
                 <div class="total-tax" id="total-tax">
@@ -393,6 +609,7 @@
     <script src="{% static 'Sweetalert2/Js/sweetalert2.all.min.js' %}"></script>
     <!-- plugins:js -->
     <script src="{% static 'star_admin/vendors/js/vendor.bundle.base.js' %}"></script>
+    <script src="{% static 'js/select2.min.js' %}"></script>
     <!-- endinject -->
     <!-- Plugin js for this page -->
     <script src="{% static 'star_admin/vendors/chart.js/Chart.min.js' %}"></script>
@@ -411,6 +628,7 @@
     <script src="{% static 'star_admin/js/jquery.cookie.js' %}" type="text/javascript"></script>
     <script src="{% static 'star_admin/js/dashboard.js' %}"></script>
     <script src="{% static 'star_admin/js/Chart.roundedBarCharts.js' %}"></script>
+    <script src="{% static 'js/select2.js' %}"></script>
     {% comment %} Javascript {% endcomment %}
     <script  type="text/javascript">
         //Menu  toggle

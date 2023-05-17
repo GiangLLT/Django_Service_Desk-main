@@ -208,14 +208,110 @@ addButton.addEventListener('click', () => {
       <span>Thành tiền: ${food.totalPrice}</span>
     </li>
   `).join('');
+  // check_promotion_member();
+});
 });
 
-});
 
 //Order POS
 //up quantity Bill detail
     document.addEventListener('DOMContentLoaded', function() {
+      //Popup Modal Login - check cookie
+       // Kiểm tra cookie có bị trống không
+        var companyCookie = getCookie("company-login");
+        if (companyCookie === "") {
+          // Hiển thị modal nếu cookie trống
+          // window.location.href = "/login-pos/";
+        }
+
+
         // Lấy phần tử cha chứa các nút plus-invoice và note-invoice     
+        const buttons_Customer = document.querySelector('.display-customer-items');    
+        buttons_Customer.addEventListener('click', function(event) {
+          const target = event.target;
+          var custID = target.closest('.display-customer-item');
+          if(custID){
+            var custID_value =  custID.querySelector('.cust-ID').textContent.trim();
+            // var custID_value = custID.textContent;
+            var total_amount1 = document.querySelector('.total-amount-price');
+            var total_amount = document.querySelector('.total-amount-price').getAttribute('value');
+            $.ajax({
+              url: '/Check-info-customer/',
+              method: 'POST',
+              data: { 'CustomerID': custID_value,
+                      'TotalValue': total_amount,
+             },
+              success: function(response) {
+                if (response.success) {   
+                 var custID = document.querySelector('.custID-value');
+                 custID.textContent = response.CustID;
+                 var custType = document.querySelector('.custType-value');
+                 custType.textContent = response.CustType;
+                 var custName = document.querySelector('.custName-value');
+                 custName.textContent = response.CustName;
+                 var custBirth = document.querySelector('.custBirth-value');
+                 custBirth.textContent = response.CustBirth;
+                 var custPhone = document.querySelector('.custPhone-value');
+                 custPhone.textContent = response.CustPhone;
+                 var custEmail = document.querySelector('.custEmail-value');
+                 custEmail.textContent = response.CustEmail;
+                 var custAdd = document.querySelector('.custAdd-value');
+                 custAdd.textContent = response.CustAdd;
+                 if(response.CustStatus){
+                  add_promotion_title_member(response.CustProName, response.CustProID)                 
+                 }
+                 else{
+                  del_promotion_title_member();
+                 }
+                 check_promotion_member();
+                $('#customer-modal').removeClass('modal-show');
+                 
+                } else {
+                  Swal.fire({
+                      icon: 'error',
+                      title: 'Oops...',
+                      text: response.error,
+                    })
+                }
+              },
+              error: function(response) {
+                  Swal.fire({
+                      icon: 'error',
+                      title: 'Oops...',
+                      text: response.error,
+                    })
+              }
+            });
+          }
+          
+        });
+        
+        const buttons_table = document.querySelector('.list-table');    
+        buttons_table.addEventListener('click', function(event) {
+          const target = event.target;
+          var table_item = target.closest('.list-table-item');
+          if(table_item)
+          {
+            if (target.classList.contains('ti-list-ol')) {
+              alert('ti-list-ol');
+            }
+            else {
+              var table_order = document.querySelector('.custTable-value');
+              var table_title1 = table_item.querySelector('.list-table-title');
+              var table_title = table_item.querySelector('.list-table-title').textContent;
+
+              //kiểm tra bàn có được order chưa
+              //kiểm tra bàn có được order chưa
+
+              table_order.textContent = table_title;
+              $('#Dine-in-modal').removeClass('modal-show');
+            }
+          }
+          
+        });
+
+
+
         const buttons_del_promotion = document.querySelector('.order-information-promotion');    
         buttons_del_promotion.addEventListener('click', function(event) {
           const target = event.target;
@@ -347,7 +443,9 @@ addButton.addEventListener('click', () => {
             priceElement.textContent = newTotalPrice;
             // orderItem.querySelector('.item-total-price p').textContent = newTotalPrice;
 
+            check_promotion_member();
             calculate_total_payment();
+            
 
           } else if (target.classList.contains('note-invoice') || target.classList.contains('note-invoice-li')) {
             
@@ -425,6 +523,7 @@ addButton.addEventListener('click', () => {
                 }
               };
               // Đăng ký sự kiện click
+              
               saveNoteBtn.addEventListener('click', clickHandler);
             }       
 
@@ -462,12 +561,13 @@ addButton.addEventListener('click', () => {
               // console.log(orderItem);
               orderItem.remove();
               calculate_total_payment();
+              check_promotion_del();
               if(updatedDataFood.length <= 2){
                 orderItems.insertAdjacentHTML('beforeend', '<p class="text-invoice">Chưa có sản phẩm</p>');
               }
             }
             // check_promotion();
-            check_promotion_del();
+            
           }
           // else if (target.classList.contains('img-invoice')) {
           //   alert("abc");
@@ -570,8 +670,8 @@ addButton.addEventListener('click', () => {
               </div>
             </div>`
           ).join('');
-
-          calculate_total_payment();
+          calculate_total_payment();     
+          check_promotion_member();  
           addButton.removeEventListener('click', event);
         });      
       });
@@ -714,7 +814,7 @@ function check_promotion(promotionID, promotionName){
                       }
                       else{
                         calculate_total_payment();
-                        remove_promotion_title(ProName);
+                        remove_promotion_title(PromotionName);
                         Swal.fire({
                           icon: 'error',
                           title: 'Thông báo lỗi',
@@ -811,12 +911,20 @@ function check_promotion(promotionID, promotionName){
   }
 }
 
+
 function check_promotion_del(){
-  var PromotionID = document.querySelector('.order-information-promotion-item').getAttribute('value');
-  var PromotionName = document.querySelector('.order-information-promotion-item').textContent;
+  var promotion_discount = document.querySelector('.order-information-promotion-item');
+  var PromotionID = 0;
+  var PromotionName = '';
+  if(promotion_discount){
+    PromotionID = promotion_discount.getAttribute('value');
+    PromotionName = promotion_discount.textContent;
+  }
+ 
   // var PromotionID = ProID;
   var PaymentValue = document.querySelector('.payment-value').getAttribute('value');
   var TotalAmount = document.querySelector('.total-amount-price').getAttribute('value');
+
   if(PaymentValue > 0 ){
     $.ajax({
       url: '/check-promotion/',
@@ -827,24 +935,145 @@ function check_promotion_del(){
           var respone_value =  Math.abs(parseInt(response.dataPromotion));
           if(respone_value > 0){
             if(TotalAmount > respone_value){
-              var discount_promotion = document.querySelector('.discount-value');    
-              let discount =  parseInt(response.dataPromotion).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
-              discount_promotion.textContent = discount;
-              discount_promotion.value = respone_value;
-              calculate_total_payment();
-              // $('#promotion-modal').removeClass('modal-show'); 
-              ProID = PromotionID;
+              var promo_member = document.querySelector('.order-information-promotion-member-item');
+              if(promo_member){
+                var promo_member_value = promo_member.getAttribute('value');
+                $.ajax({
+                  url: '/check-promotion-member/',
+                  method: 'POST',
+                  data: { 'PromotionID': promo_member_value,
+                          'PromotionValue': TotalAmount,
+                 },
+                  success: function(response) {
+                    if (response.success) {   
+                      var respone_discount_member =  Math.abs(parseInt(response.dataPromotion_Member));
+                      if(respone_discount_member){
+                        var discount_promotion = document.querySelector('.discount-value');
+                        var total_discount = respone_discount_member + respone_value;
+                        let discount =  (-total_discount).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+                        discount_promotion.textContent = discount;
+                        discount_promotion.value = total_discount;
+                        calculate_total_payment();
+                        // $('#promotion-modal').removeClass('modal-show'); 
+                        ProID = PromotionID;
+                      }
+                    } else {
+                      Swal.fire({
+                          icon: 'error',
+                          title: 'Oops...',
+                          text: response.error,
+                        })
+                    }
+                  },
+                  error: function(response) {
+                      Swal.fire({
+                          icon: 'error',
+                          title: 'Oops...',
+                          text: response.error,
+                        })
+                  }
+                });
+              }
+              else{
+                var discount_promotion = document.querySelector('.discount-value');   
+                var  int_discount = parseInt(response.dataPromotion);
+                let discount =  (-int_discount).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+                discount_promotion.textContent = discount;
+                discount_promotion.value = respone_value;
+                calculate_total_payment();
+                ProID = PromotionID;
+              }
+              
               
             }
             else{
-              calculate_total_payment();
-              remove_promotion_title(ProName);
+              var promo_member = document.querySelector('.order-information-promotion-member-item');
+              if(promo_member){
+                var promo_member_value = promo_member.getAttribute('value');
+                $.ajax({
+                  url: '/check-promotion-member/',
+                  method: 'POST',
+                  data: { 'PromotionID': promo_member_value,
+                          'PromotionValue': TotalAmount,
+                 },
+                  success: function(response) {
+                    if (response.success) {   
+                      var respone_discount_member =  Math.abs(parseInt(response.dataPromotion_Member));
+                      if(respone_discount_member){
+                        var discount_promotion = document.querySelector('.discount-value');
+                        let discount =  (-respone_discount_member).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+                        discount_promotion.textContent = discount;
+                        discount_promotion.value = respone_discount_member;
+                        calculate_total_payment();
+                      }
+                    } else {
+                      Swal.fire({
+                          icon: 'error',
+                          title: 'Oops...',
+                          text: response.error,
+                        })
+                    }
+                  },
+                  error: function(response) {
+                      Swal.fire({
+                          icon: 'error',
+                          title: 'Oops...',
+                          text: response.error,
+                        })
+                  }
+                });
+                
+              }
+              remove_promotion_title(PromotionName);
               Swal.fire({
                 icon: 'error',
                 title: 'Thông báo lỗi',
                 text: 'Số tiền thanh toán phải lớn hơn khuyển mãi/giảm giá.',
               })
             }
+          }
+          else if(respone_value === 0) // value nhỏ hơn  = 0
+          {
+            var promo_member = document.querySelector('.order-information-promotion-member-item');
+              if(promo_member){
+                var promo_member_value = promo_member.getAttribute('value');
+                $.ajax({
+                  url: '/check-promotion-member/',
+                  method: 'POST',
+                  data: { 'PromotionID': promo_member_value,
+                          'PromotionValue': TotalAmount,
+                 },
+                  success: function(response) {
+                    if (response.success) {   
+                      var respone_discount_member =  Math.abs(parseInt(response.dataPromotion_Member));
+                      if(respone_discount_member){
+                        var discount_promotion = document.querySelector('.discount-value');
+                        var total_discount = respone_discount_member + respone_value;
+                        let discount =  (-total_discount).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+                        discount_promotion.textContent = discount;
+                        discount_promotion.value = total_discount;
+                        calculate_total_payment();
+                        // $('#promotion-modal').removeClass('modal-show'); 
+                        ProID = PromotionID;
+                      }
+                    } else {
+                      Swal.fire({
+                          icon: 'error',
+                          title: 'Oops...',
+                          text: response.error,
+                        })
+                    }
+                  },
+                  error: function(response) {
+                      Swal.fire({
+                          icon: 'error',
+                          title: 'Oops...',
+                          text: response.error,
+                        })
+                  }
+                });
+                
+              }
           }
 
         } else {
@@ -873,66 +1102,6 @@ function check_promotion_del(){
   }
 }
 
-// function check_promotion_del(){
-//   var PromotionID = document.querySelector('.order-information-promotion-item').getAttribute('value');
-//   // var PromotionID = ProID;
-//   var PaymentValue = document.querySelector('.payment-value').getAttribute('value');
-//   var TotalAmount = document.querySelector('.total-amount-price').getAttribute('value');
-//   if(PaymentValue > 0 ){
-//     $.ajax({
-//       url: '/check-promotion/',
-//       method: 'POST',
-//       data: { 'PromotionID': PromotionID },
-//       success: function(response) {
-//         if (response.success) {   
-//           var respone_value =  Math.abs(parseInt(response.dataPromotion));
-//           if(respone_value > 0){
-//             if(TotalAmount > respone_value){
-//               var discount_promotion = document.querySelector('.discount-value');    
-//               let discount =  parseInt(response.dataPromotion).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
-//               discount_promotion.textContent = discount;
-//               discount_promotion.value = respone_value;
-//               calculate_total_payment();
-//               // $('#promotion-modal').removeClass('modal-show'); 
-//               ProID = PromotionID;
-              
-//             }
-//             else{
-//               calculate_total_payment();
-//               remove_promotion_title(ProName);
-//               Swal.fire({
-//                 icon: 'error',
-//                 title: 'Thông báo lỗi',
-//                 text: 'Số tiền thanh toán phải lớn hơn khuyển mãi/giảm giá.',
-//               })
-//             }
-//           }
-
-//         } else {
-//           Swal.fire({
-//               icon: 'error',
-//               title: 'Oops...',
-//               text: response.error,
-//             })
-//         }
-//       },
-//       error: function(response) {
-//           Swal.fire({
-//               icon: 'error',
-//               title: 'Oops...',
-//               text: response.error,
-//             })
-//       }
-//     });
-//   }
-//   else{
-//     Swal.fire({
-//       icon: 'error',
-//       title: 'Thông báo lỗi',
-//       text: 'Số tiền thanh toán phải lớn hơn 0.',
-//     })
-//   }
-// }
 
 $(document).on('click', '#save-promotion-btn', function(event) {
   // check_promotion();
@@ -941,11 +1110,24 @@ $(document).on('click', '#save-promotion-btn', function(event) {
   check_promotion(promotionID,promotionName);
 });
 
+$(document).on('click', '#btn-dine-in', function(event) {
+  $('#Dine-in-modal').addClass('modal-show');
+});
+
+
+
+
 $('.close-promotion').click(function(event) {
   $('#promotion-modal').removeClass('modal-show');
+});   
+$('.close-customer').click(function(event) {
+  $('#customer-modal').removeClass('modal-show');
 });      
 $('.btn-promotion-button').click(function(event) {
   $('#promotion-modal').addClass('modal-show');
+}); 
+$('.close-Dine').click(function(event) {
+  $('#Dine-in-modal').removeClass('modal-show');
 }); 
 
 
@@ -962,34 +1144,104 @@ function add_promotion_title(PromotionName, PromotionID){
 }
 
 function remove_promotion_title(PromotionName){
+  const member = document.querySelectorAll('.order-information-promotion-member-item');
   const promotions = document.querySelectorAll('.order-information-promotion-item');
   promotions.forEach(promotion => {
     if (promotion.querySelector('p').textContent === PromotionName) {
       promotion.remove();
-      $('.order-information-promotion').addClass('hidden-promotion');
-      $('.hr-invoice-promotion').addClass('hidden-promotion');
+      $('.order-information-promotion-item').addClass('hidden-promotion');
+      if(membe){
+        $('.hr-invoice-promotion').removeClass('hidden-promotion');
+      }
+      else{
+        $('.hr-invoice-promotion').addClass('hidden-promotion');
+      }
+      
     }
   });
 }
 
-function check_promotion_member(PromotionID, PromotionValue){
-  
+function add_promotion_title_member(DiscountName, DiscountID){
+  // let order_information_promotion = document.querySelector('.order-information-promotion');
+  let order_information_member = document.querySelector('.order-information-promotion-member');
+  order_information_member.innerHTML = 
+  '<div class="order-information-promotion-member-item" value="'+DiscountID+'">' +
+    '<p>'+DiscountName+'</p>' +
+    '<button type="button" class="del-promotion-member"><i class="ti-close del-promotion-member-li"></i></button>' +
+  '</div>';
+  $('.order-information-promotion').removeClass('hidden-promotion');
+  $('.hr-invoice-promotion').removeClass('hidden-promotion');
+}
+function del_promotion_title_member(DiscountName, DiscountID){
+  // let order_information_promotion = document.querySelector('.order-information-promotion');
+  // let order_information_member = document.querySelector('.order-information-promotion-member');
+  let order_information_member = document.querySelector('.order-information-promotion-member-item');
+  let hr_promotion = document.querySelector('.hr-invoice-promotion');
+  if(order_information_member){
+    order_information_member.remove();
+    // hr_promotion.addClass('hidden-promotion');
+    hr_promotion.classList.add('hidden-promotion');
+  }
 }
 
-// document.addEventListener('DOMContentLoaded', function() {
-//   const buttons_del_promotion = document.querySelectorAll('.del-promotion');
-//   buttons_del_promotion.forEach(button => {
-//     button.addEventListener('click', () => {
-//       buttons_del_promotion.forEach(item => {
-//         const promotion_item = parseInt(item.querySelector('.order-information-promotion-item'));
-//         var a = 0;
-//       });
-//     });
-//   });
-// });
 
+function check_promotion_member(){
+  var pro_mem = document.querySelector('.order-information-promotion-member-item');
+  var Total_amount = 0;
+  if(pro_mem){
+    var pro_mem_id = pro_mem.getAttribute('value');
+    var item_price = document.querySelectorAll('.item-price');
+    if(item_price){     
+      item_price.forEach(item => {
+        var i = parseInt(item.textContent.trim().replace(' đ', '').replace(/\./g, ''));
+        Total_amount += parseInt(item.textContent.trim().replace(' đ', '').replace(/\./g, ''));
+      });
+    }
+    $.ajax({
+      url: '/check-promotion-member/',
+      method: 'POST',
+      data: { 'PromotionID': pro_mem_id,
+              'PromotionValue': Total_amount,
+     },
+      success: function(response) {
+        if (response.success) {   
+          var respone_discount_member =  Math.abs(parseInt(response.dataPromotion_Member));
+          if(respone_discount_member){
+            const discount_data = document.querySelector('.discount-value');
+            discount_data.textContent = (-respone_discount_member).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+            discount_data.setAttribute('value', respone_discount_member);
+            calculate_total_payment();
+            // $('.hr-invoice-promotion').removeClass('hidden-promotion');
+          }
+        } else {
+          Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: response.error,
+            })
+        }
+      },
+      error: function(response) {
+          Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: response.error,
+            })
+      }
+    });
+  }
+  else{
+    var discount = document.querySelector('.discount-value');
+    var discount_value = parseInt(discount.getAttribute('value'));
+    if(discount_value > 0){
+      var remove_discount = 0;
+      discount.textContent = remove_discount.toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+      discount.setAttribute('value', remove_discount );
+    }
+  }
+}
 
- //search material
+ //search Promotion
  const searchpromotion = document.querySelector('#promotion-input');
  const promotionList = document.querySelector('.promotion-list');
  
@@ -1007,7 +1259,58 @@ function check_promotion_member(PromotionID, PromotionValue){
      }
    });
  });
+
+ //search table
+ const searchtable = document.querySelector('#table-input');
+ const TableList = document.querySelector('.table-container');
  
+ searchtable.addEventListener('input', function() {
+   const searchtable_value = searchtable.value.toLowerCase();
+   const TableItems = TableList.querySelectorAll('.list-table-item');
+   
+   TableItems.forEach(item => {
+     const TableName = item.querySelector('.list-table-title').textContent.toLowerCase();
+     
+     if (TableName.includes(searchtable_value)) {
+       item.style.display = 'block';
+     } else {
+       item.style.display = 'none';
+     }
+   });
+ });
+
+//search Customer
+
+const searchID = document.querySelector('#custID-input');
+const searchName = document.querySelector('#custName-input');
+const searchPhone = document.querySelector('#custPhone-input');
+const CustList = document.querySelectorAll('.display-customer-item');
+
+function searchCustomer() {
+  // Lấy giá trị từ các input
+  const idValue = searchID.value.toLowerCase().trim();
+  const nameValue = searchName.value.toLowerCase().trim();
+  const phoneValue = searchPhone.value.toLowerCase().trim();
+
+  // Tìm kiếm trong danh sách khách hàng và hiển thị kết quả
+  CustList.forEach(item => {
+    const CustomerID = item.querySelector('.cust-ID').textContent.toLowerCase().trim();
+    const CustomerName = item.querySelector('.cust-Name').textContent.toLowerCase().trim();
+    const CustomerPhone = item.querySelector('.cust-Phone').textContent.toLowerCase().trim();
+
+    if ((idValue === "" || CustomerID.includes(idValue)) && (nameValue === "" || CustomerName.includes(nameValue)) && (phoneValue === "" || CustomerPhone.includes(phoneValue))) {
+      item.style.display = 'block';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+}
+
+// Lắng nghe sự kiện nhập liệu trên các input và gọi hàm tìm kiếm
+searchID.addEventListener('input', searchCustomer);
+searchName.addEventListener('input', searchCustomer);
+searchPhone.addEventListener('input', searchCustomer);
+
 
 
 //  document.addEventListener('DOMContentLoaded', () => {
@@ -1054,6 +1357,10 @@ buttons.forEach(button => {
   });
 });
 
+//function info cusstomer
+$('#btn-info-customer').click(function(){
+  $('#customer-modal').addClass('modal-show'); 
+});
 
 
 //Clock time function
@@ -1082,3 +1389,28 @@ function updateTime() {
 }
 
 setInterval(updateTime, 1000);
+
+
+
+//cookie 
+// Hàm lấy giá trị của cookie
+function getCookie(name) {
+  var value = "; " + document.cookie;
+  var parts = value.split("; " + name + "=");
+  if (parts.length === 2) {
+    return parts.pop().split(";").shift();
+  }
+  return "";
+}
+
+// Hàm lưu cookie
+function setCookie(name, value, days) {
+  var expires = "";
+  if (days) {
+    var date = new Date();
+    date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+    expires = "; expires=" + date.toUTCString();
+  }
+  document.cookie = name + "=" + value + expires + "; path=/";
+}
+

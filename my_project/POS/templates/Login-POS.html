@@ -5,15 +5,19 @@
 <head>
 	<title>POS Login</title>
 	<link rel="stylesheet" href="{% static 'css/css-pos.css' %}">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link href="https://fonts.googleapis.com/css2?family=Castoro+Titling&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'Sweetalert2/Css/sweetalert2.min.css' %}">
     <link rel="stylesheet" href="{% static 'star_admin/vendors/ti-icons/css/themify-icons.css' %}">
 </head>
 <body>
+
+   
+
 	<div class="left">
         <img src="{% static '/Asset/img/restaurant.jpeg' %}" alt="image-restaurant">
-        <img src="{% static '/Asset/img/logo.png' %}" alt="image-logo" id="image-logo">
-    </div>
+        <img src="{% static '/Asset/img/logo.png' %}" alt="image-logo" id="image-logo">     
+  </div>
     {% comment %} <div class="middle"></div> {% endcomment %}
 	<div class="right">
         <form class="form-login">
@@ -22,7 +26,7 @@
             <input type="text" id="username" name="username">
             <label for="password">Password:</label>
             <input type="password" id="password" name="password">
-          </form>
+          </form>   
         <div class="keypad">
             <div class="row">
               <button onclick="addValue('1')">1</button>
@@ -46,10 +50,36 @@
               {% comment %} <button class="enter" onclick="submitForm()" id="enter-login-pos">Enter</button> {% endcomment %}
               <button class="enter-circle" onclick="submitForm()" id="enter-login-pos"><i class="ti-arrow-right"></i></button>
             </div>
-          
+          </div>
     </div>
+
+
+    <div class="modal-background"></div>
+    <!-- The modal NOTE -->
+   <div id="company-modal" class="modal modal-company">
+    <div class="modal-content">
+      <div class="div-title">
+        <h2><i class="ti-check-box"></i> DANH SÁCH CÔNG TY</h2>
+      </div>  
+      <div class="cbb-companySelect">           
+        <select id="companySelect">
+          <!-- Thêm các tùy chọn công ty vào đây -->
+          <option value="company1">Company 1</option>
+          <option value="company2">Company 2</option>
+          <option value="company3">Company 3</option>
+        </select>
+       </div>
+        <div class="company-button">
+          {% comment %} <button type="button" class="btn btn-outline-danger btn-fw" id="save-note-btn"><i class="icon-note"><i/> Lưu Ghi Chú</button> {% endcomment %}
+          <button type="button" class="btn btn-outline-danger btn-fw" id="save-company-btn"><i class="ti-save"></i> Lưu</button>
+        </div>
+    </div>
+  </div>
+  <!-- The modal NOTE -->
+
     <script type="text/javascript" src="{% static 'js/jquery-3.6.4.min.js' %}"></script>
-    <script type="text/javascript" src="{% static 'js/Pos-login.js' %}"></script>
+    {% comment %} <script type="text/javascript" src="{% static 'js/Pos-login.js' %}"></script> {% endcomment %}
+    <script type="text/javascript" src="{% static 'js/Pos.js' %}"></script>
     <script src="{% static 'Sweetalert2/Js/sweetalert2.all.min.js' %}"></script>
 </body>
     
