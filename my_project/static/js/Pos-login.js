@@ -775,19 +775,22 @@ function check_promotion(promotionID, promotionName){
   var PromotionName = promotionName;
   var PaymentValue = document.querySelector('.payment-value').getAttribute('value');
   var TotalAmount = document.querySelector('.total-amount-price').getAttribute('value');
+  var Channel = document.querySelector('.order-type .active');
+  var Channel_value = Channel.getAttribute('data-channel');
   
   if(PaymentValue > 0 ){
     $.ajax({
       url: '/check-promotion/',
       method: 'POST',
-      data: { 'PromotionID': PromotionID },
+      data: { 'PromotionID': PromotionID ,
+              'TotalAmount': TotalAmount,
+              'Channel': Channel_value,},
       success: function(response) {
         if (response.success) {   
           var respone_value =  Math.abs(parseInt(response.dataPromotion));
           if(respone_value > 0){
             let promo_member = document.querySelector('.order-information-promotion-member-item');
             if(promo_member){
-
               let promo_member_ID = promo_member.getAttribute('value');
               $.ajax({
                 url: '/check-promotion-member/',
@@ -888,16 +891,16 @@ function check_promotion(promotionID, promotionName){
         } else {
           Swal.fire({
               icon: 'error',
-              title: 'Oops...',
-              text: response.error,
+              title: 'Thông báo Lỗi',
+              text: response.message,
             })
         }
       },
       error: function(response) {
           Swal.fire({
               icon: 'error',
-              title: 'Oops...',
-              text: response.error,
+              title: 'Oops...222',
+              text: response.message,
             })
       }
     });
@@ -1110,12 +1113,10 @@ $(document).on('click', '#save-promotion-btn', function(event) {
   check_promotion(promotionID,promotionName);
 });
 
+
 $(document).on('click', '#btn-dine-in', function(event) {
   $('#Dine-in-modal').addClass('modal-show');
 });
-
-
-
 
 $('.close-promotion').click(function(event) {
   $('#promotion-modal').removeClass('modal-show');

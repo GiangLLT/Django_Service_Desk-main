@@ -119,6 +119,27 @@ CREATE TABLE CURRENCY (
 );
 GO
 
+--danh sách VAT --
+CREATE TABLE MATERIAL_VAT (
+	VATID			int PRIMARY IDENTITY(1,1) KEY NOT NULL,
+    VATName			nvarchar(255),
+	VATValue		int,
+    VATStatus		bit
+
+);
+GO
+
+--danh sách Material Group --
+CREATE TABLE MATERIAL_GROUP (
+	MaterialGroupID			int PRIMARY KEY IDENTITY(1,1) NOT NULL,
+    MaterialGroupName		nvarchar(255),
+	MaterialGroupIcon		nvarchar(255),
+    MaterialGroupStatus		bit
+
+);
+GO
+
+
 --danh sách sản phẩm --
 CREATE TABLE MATERIAL (
 	MaterialID			nvarchar(10) PRIMARY KEY NOT NULL,
@@ -127,6 +148,7 @@ CREATE TABLE MATERIAL (
 	DivisionID			int,
 	MaterialUnitID		nvarchar(3),
 	MaterialTypeID		int,
+	MaterialGroupID		int,
 	MaterialNote		nvarchar(max),
 	MaterialUserCreate	int,
 	MaterialDate		datetime,
@@ -137,6 +159,8 @@ CREATE TABLE MATERIAL (
 	FOREIGN KEY (MaterialUnitID) REFERENCES MATERIAL_UNIT(MaterialUnitID),
 	FOREIGN KEY (MaterialTypeID) REFERENCES MATERIAL_TYPE(MaterialTypeID),
 	FOREIGN KEY (MaterialUserCreate) REFERENCES USER_SY(UserID),
+	FOREIGN KEY (MaterialVAT) REFERENCES MATERIAL_VAT(VATID),
+	FOREIGN KEY (MaterialGroupID) REFERENCES MATERIAL_GROUP(MaterialGroupID),
 );
 GO
 
@@ -208,6 +232,7 @@ CREATE TABLE TABLE_ORDER (
     TableOrderID			int PRIMARY KEY IDENTITY(1,1) NOT NULL,
     TableOrderName			nvarchar(255),
     TableOrderStatus		bit
+    TableOrderPerson		int
 );
 GO
 
@@ -240,10 +265,12 @@ CREATE TABLE PROMOTION (
 	PromotionTo				date,
 	PromotionTypeID			int,
 	PromotionRoleID			int,
+	Companycode				nvarchar(5),
     PromotionStatus			bit
 
 	FOREIGN KEY (PromotionTypeID) REFERENCES PROMOTION_TYPE(PromotionTypeID),
 	FOREIGN KEY (PromotionRoleID) REFERENCES PROMOTION_ROLE(PromotionRoleID)
+	FOREIGN KEY (Companycode) REFERENCES Company(Companycode)
 );
 GO
 
@@ -252,6 +279,7 @@ CREATE TABLE CUSTOMER (
     CustomerID			int PRIMARY KEY IDENTITY(1000000001,1) NOT NULL,
     CustomerName		nvarchar(max),
 	CustomerImage		nvarchar(max),
+	CustomerGender		nvarchar(15),
 	CustomerBirthday	date,
     CustomerAddress		nvarchar(max),
 	CustomerPhone		nvarchar(15),
@@ -432,6 +460,15 @@ CREATE TABLE BILL_ITEM (
 );
 GO
 
+--Table session --
+CREATE TABLE django_session (
+    session_key			nvarchar(40) PRIMARY KEY NOT NULL,
+    session_data		nvarchar(max),
+	expire_date			date,
+);
+GO
+
+
 -- tạo table--
 --------------------------------------------------------------------------------------------------------
 
@@ -540,6 +577,20 @@ INSERT INTO MATERIAL_TYPE (MaterialTypeID, MaterialTypeName, MaterialTypeStatus)
 VALUES (2,N'Nguyên Vật liệu', 1);
 
 
+-- thêm danh sách nhóm món ăn --
+INSERT INTO Material_Group (MaterialGroupName, MaterialGroupStatus)
+VALUES (N'Cà Phê', 1);
+INSERT INTO Material_Group (MaterialGroupName, MaterialGroupStatus)
+VALUES (N'Nước Ép', 1);
+INSERT INTO Material_Group (MaterialGroupName, MaterialGroupStatus)
+VALUES (N'Trà Sữa', 1);
+INSERT INTO Material_Group (MaterialGroupName, MaterialGroupStatus)
+VALUES (N'Đá Xay', 1);
+INSERT INTO Material_Group (MaterialGroupName, MaterialGroupStatus)
+VALUES (N'Sinh Tố', 1);
+INSERT INTO Material_Group (MaterialGroupName, MaterialGroupStatus)
+VALUES (N'Tráng Miệng', 1);
+
 -- thêm danh sách đơn vị tiền tệ --
 INSERT INTO CURRENCY (CurrencyID, CurrencyName, CurrencyStatus)
 VALUES (N'VND',N'Việt Nam Đồng', 1);
@@ -548,59 +599,73 @@ VALUES (N'USD',N'Đô La Mỹ', 1);
 INSERT INTO CURRENCY (CurrencyID, CurrencyName, CurrencyStatus)
 VALUES (N'EUR',N'Đồng EURO', 1);
 
+-- thêm danh sách VAT --
+INSERT INTO MATERIAL_VAT (VATName, VATValue, VATStatus)
+VALUES (N'TKhông Chịu Thuế',0, 1);
+INSERT INTO MATERIAL_VAT (VATName, VATValue, VATStatus)
+VALUES (N'Thuế 0%',0, 1);
+INSERT INTO MATERIAL_VAT (VATName, VATValue, VATStatus)
+VALUES (N'Thuế 5%',5, 1);
+INSERT INTO MATERIAL_VAT (VATName, VATValue, VATStatus)
+VALUES (N'Thuế 8%',8, 1);
+INSERT INTO MATERIAL_VAT (VATName, VATValue, VATStatus)
+VALUES (N'Thuế 10%',10, 1);
+
 
 -- thêm danh sách món ăn -- 
-INSERT INTO MATERIAL(MaterialID, MaterialName, MaterialImage, DivisionID, MaterialUnitID, MaterialStatus )
-VALUES (N'CFD0000001',N'Cà Phê Đen', '' , 4, N'LY', 1);
-INSERT INTO MATERIAL(MaterialID, MaterialName, MaterialImage,  DivisionID, MaterialUnitID, MaterialStatus )
-VALUES (N'CFD0000002',N'Cà Phê Đen Đá', '' ,  4, N'LY', 1);
-INSERT INTO MATERIAL(MaterialID, MaterialName, MaterialImage,  DivisionID, MaterialUnitID, MaterialStatus )
-VALUES (N'CFS0000001',N'Cà Phê Sữa', '' ,  4, N'LY', 1);
-INSERT INTO MATERIAL(MaterialID, MaterialName, MaterialImage,  DivisionID, MaterialUnitID, MaterialStatus )
-VALUES (N'CFS0000002',N'Cà Phê Sữa Đá', '' ,  4, N'LY', 1);
-INSERT INTO MATERIAL(MaterialID, MaterialName, MaterialImage,  DivisionID, MaterialUnitID, MaterialStatus )
-VALUES (N'TSU0000001',N'Trà Sữa Nguyên Chất', '' ,  1, N'LY', 1);
+INSERT INTO MATERIAL(MaterialID, MaterialName, MaterialImage, DivisionID, MaterialUnitID, MaterialStatus,  MaterialGroupID)
+VALUES (N'1000000001',N'Cà Phê Đen', '' , 4, N'LY', 1, 1);
+INSERT INTO MATERIAL(MaterialID, MaterialName, MaterialImage, DivisionID, MaterialUnitID, MaterialStatus,  MaterialGroupID)
+VALUES (N'1000000002',N'Cà Phê Đen Đá', '' ,  4, N'LY', 1 , 1);
+INSERT INTO MATERIAL(MaterialID, MaterialName, MaterialImage, DivisionID, MaterialUnitID, MaterialStatus,  MaterialGroupID)
+VALUES (N'1000000003',N'Cà Phê Sữa', '' ,  4, N'LY', 1, 1);
+INSERT INTO MATERIAL(MaterialID, MaterialName, MaterialImage, DivisionID, MaterialUnitID, MaterialStatus,  MaterialGroupID)
+VALUES (N'1000000004',N'Cà Phê Sữa Đá', '' ,  4, N'LY', 1, 1);
+INSERT INTO MATERIAL(MaterialID, MaterialName, MaterialImage, DivisionID, MaterialUnitID, MaterialStatus,  MaterialGroupID)
+VALUES (N'1000000005',N'Trà Sữa Nguyên Chất', '' ,  1, N'LY', 1, 3);
+INSERT INTO MATERIAL(MaterialID, MaterialName, MaterialImage, DivisionID, MaterialUnitID, MaterialStatus,  MaterialGroupID)
+VALUES (N'1000000006',N'Sinh Tố Cà Chua', '' ,  1, N'LY', 1, 5);
 
 
 -- thêm danh sách món ăn theo công ty -- 
 --1000--
 INSERT INTO MATERIAL_COMPANY (MaterialID, MaterialName, CompanyCode, CompanyName, MaterialComFrom,MaterialComTo,MaterialStatus)
-VALUES (N'CFD0000001',N'Cà Phê Đen', 1000 , N'Công Ty TNHH LLTG','2020-07-01', '9999-12-31', 1);
+VALUES (N'1000000001',N'Cà Phê Đen', 1000 , N'Công Ty TNHH LLTG','2020-07-01', '9999-12-31', 1);
 INSERT INTO MATERIAL_COMPANY (MaterialID, MaterialName, CompanyCode, CompanyName, MaterialComFrom,MaterialComTo,MaterialStatus)
-VALUES (N'CFD0000002',N'Cà Phê Đen Đá', 1000 , N'Công Ty TNHH LLTG','2020-07-01', '9999-12-31', 1);
+VALUES (N'1000000002',N'Cà Phê Đen Đá', 1000 , N'Công Ty TNHH LLTG','2020-07-01', '9999-12-31', 1);
 --1001--
 INSERT INTO MATERIAL_COMPANY (MaterialID, MaterialName, CompanyCode, CompanyName, MaterialComFrom,MaterialComTo,MaterialStatus)
-VALUES (N'CFS0000001',N'Cà Phê Sữa', 1001 , N'Công Ty TNHH Giang Lê','2020-07-01', '9999-12-31', 1);
+VALUES (N'1000000003',N'Cà Phê Sữa', 1001 , N'Công Ty TNHH Giang Lê','2020-07-01', '9999-12-31', 1);
 INSERT INTO MATERIAL_COMPANY (MaterialID, MaterialName, CompanyCode, CompanyName, MaterialComFrom,MaterialComTo,MaterialStatus)
-VALUES (N'CFS0000002',N'Cà Phê Sữa Đá', 1001 , N'Công Ty TNHH Giang Lê','2020-07-01', '9999-12-31', 1);
+VALUES (N'1000000004',N'Cà Phê Sữa Đá', 1001 , N'Công Ty TNHH Giang Lê','2020-07-01', '9999-12-31', 1);
 --1002--
 INSERT INTO MATERIAL_COMPANY (MaterialID, MaterialName, CompanyCode, CompanyName, MaterialComFrom,MaterialComTo,MaterialStatus)
-VALUES (N'TSU0000001',N'rà Sữa Nguyên Chất', 1002 , N'Công Ty TNHH GLLT','2020-07-01', '9999-12-31', 1);
+VALUES (N'1000000005',N'rà Sữa Nguyên Chất', 1002 , N'Công Ty TNHH GLLT','2020-07-01', '9999-12-31', 1);
 
 
 -- thêm danh sách giá --
 INSERT INTO PRICE_MATERIAL(PriceAmount, MaterialID, CompanyCode, CurencyID, PriceFrom, PriceTo, CreateBy, CreateDate  )
-VALUES (20000,'CFD0000001', '1001', N'VND', '2020-07-01', '9999-12-31','','' );
+VALUES (20000,'1000000001', '1001', N'VND', '2020-07-01', '9999-12-31','','' );
 INSERT INTO PRICE_MATERIAL(PriceAmount, MaterialID, CompanyCode, CurencyID, PriceFrom, PriceTo, CreateBy, CreateDate  )
-VALUES (22000,'CFD0000001', '1002', N'VND', '2020-07-01', '9999-12-31','','' );
+VALUES (22000,'1000000001', '1002', N'VND', '2020-07-01', '9999-12-31','','' );
 INSERT INTO PRICE_MATERIAL(PriceAmount, MaterialID, CompanyCode, CurencyID, PriceFrom, PriceTo, CreateBy, CreateDate  )
-VALUES (20000,'CFD0000002', '1001', N'VND', '2020-07-01', '9999-12-31','','' );
+VALUES (20000,'1000000002', '1001', N'VND', '2020-07-01', '9999-12-31','','' );
 INSERT INTO PRICE_MATERIAL(PriceAmount, MaterialID, CompanyCode, CurencyID, PriceFrom, PriceTo, CreateBy, CreateDate  )
-VALUES (22000,'CFD0000002', '1002', N'VND', '2020-07-01', '9999-12-31','','' );
+VALUES (22000,'1000000002', '1002', N'VND', '2020-07-01', '9999-12-31','','' );
 
 INSERT INTO PRICE_MATERIAL(PriceAmount, MaterialID, CompanyCode, CurencyID, PriceFrom, PriceTo, CreateBy, CreateDate  )
-VALUES (22000,'CFS0000001', '1001', N'VND', '2020-07-01', '9999-12-31','','' );
+VALUES (22000,'1000000003', '1001', N'VND', '2020-07-01', '9999-12-31','','' );
 INSERT INTO PRICE_MATERIAL(PriceAmount, MaterialID, CompanyCode, CurencyID, PriceFrom, PriceTo, CreateBy, CreateDate  )
-VALUES (25000,'CFS0000001', '1002', N'VND', '2020-07-01', '9999-12-31','','' );
+VALUES (25000,'1000000003', '1002', N'VND', '2020-07-01', '9999-12-31','','' );
 INSERT INTO PRICE_MATERIAL(PriceAmount, MaterialID, CompanyCode, CurencyID, PriceFrom, PriceTo, CreateBy, CreateDate  )
-VALUES (22000,'CFS0000002', '1001', N'VND', '2020-07-01', '9999-12-31','','' );
+VALUES (22000,'1000000004', '1001', N'VND', '2020-07-01', '9999-12-31','','' );
 INSERT INTO PRICE_MATERIAL(PriceAmount, MaterialID, CompanyCode, CurencyID, PriceFrom, PriceTo, CreateBy, CreateDate  )
-VALUES (25000,'CFS0000002', '1002', N'VND', '2020-07-01', '9999-12-31','','' );
+VALUES (25000,'1000000004', '1002', N'VND', '2020-07-01', '9999-12-31','','' );
 
 INSERT INTO PRICE_MATERIAL(PriceAmount, MaterialID, CompanyCode, CurencyID, PriceFrom, PriceTo, CreateBy, CreateDate  )
-VALUES (30000,'TSU0000001', '1001', N'VND',	'2020-07-01', '9999-12-31','','' );
+VALUES (30000,'1000000005', '1001', N'VND',	'2020-07-01', '9999-12-31','','' );
 INSERT INTO PRICE_MATERIAL(PriceAmount, MaterialID, CompanyCode, CurencyID, PriceFrom, PriceTo, CreateBy, CreateDate  )
-VALUES (32000,'TSU0000001', '1002', N'VND', '2020-07-01', '9999-12-31','','' );
+VALUES (32000,'1000000005', '1002', N'VND', '2020-07-01', '9999-12-31','','' );
 
 
 -- thêm danh sách hình thức thanh toán --
@@ -724,23 +789,23 @@ N'lepham1622@gmail.com' , 123456789 , NULL , NULL , 1 , N'Tiền Mặt', 10005 ,
 INSERT INTO SALE_ORDER_ITEM (SaleOrderID, SaleItem , MaterialID, MaterialName,  DivisionID, DivisionName, ChannelID, ChannelName, 
 SaleQuantity, MaterialUnitID, MaterialUnitName, PromotionID, PromotionName, PromotionTypeID, PromotionTypeName, SalePriceUnit, SalePriceDiscount,
 SalePriceUnitTax, SalePrice, SaleCurencyID, SaleItemNote)
-VALUES (1000000000, 1 , N'CFD0000001', N'Cà Phê Đen', 4 , N'Cà phê' , 1 , N'Trực Tiếp', 1 , N'LY' , N'Ly', NULL ,'','','', 18000, '', 2000, 20000,
+VALUES (1000000000, 1 , N'1000000001', N'Cà Phê Đen', 4 , N'Cà phê' , 1 , N'Trực Tiếp', 1 , N'LY' , N'Ly', NULL ,'','','', 18000, '', 2000, 20000,
 N'VND' , N'Nhiều đường')
 INSERT INTO SALE_ORDER_ITEM (SaleOrderID, SaleItem , MaterialID, MaterialName,  DivisionID, DivisionName, ChannelID, ChannelName, 
 SaleQuantity, MaterialUnitID, MaterialUnitName, PromotionID, PromotionName, PromotionTypeID, PromotionTypeName, SalePriceUnit, SalePriceDiscount,
 SalePriceUnitTax, SalePrice, SaleCurencyID, SaleItemNote)
-VALUES (1000000000, 2 , N'CFD0000002', N'Cà Phê Đen Đá', 4 , N'Cà phê' , 1 , N'Trực Tiếp', 1 , N'LY' , N'Ly', NULL ,'','','', 18000, '', 2000, 20000,
+VALUES (1000000000, 2 , N'1000000002', N'Cà Phê Đen Đá', 4 , N'Cà phê' , 1 , N'Trực Tiếp', 1 , N'LY' , N'Ly', NULL ,'','','', 18000, '', 2000, 20000,
 N'VND' , N'Ít đá')
 
 INSERT INTO SALE_ORDER_ITEM (SaleOrderID, SaleItem , MaterialID, MaterialName,  DivisionID, DivisionName, ChannelID, ChannelName, 
 SaleQuantity, MaterialUnitID, MaterialUnitName, PromotionID, PromotionName, PromotionTypeID, PromotionTypeName, SalePriceUnit, SalePriceDiscount,
 SalePriceUnitTax, SalePrice, SaleCurencyID, SaleItemNote)
-VALUES (1000000001, 1 , N'CFD0000001', N'Cà Phê Đen', 4 , N'Cà phê' , 2 , N'Mang đi', 1 , N'LY' , N'Ly', NULL ,'','','', 19800, '', 2200, 22000,
+VALUES (1000000001, 1 , N'1000000001', N'Cà Phê Đen', 4 , N'Cà phê' , 2 , N'Mang đi', 1 , N'LY' , N'Ly', NULL ,'','','', 19800, '', 2200, 22000,
 N'VND' , '')
 INSERT INTO SALE_ORDER_ITEM (SaleOrderID, SaleItem , MaterialID, MaterialName,  DivisionID, DivisionName, ChannelID, ChannelName, 
 SaleQuantity, MaterialUnitID, MaterialUnitName, PromotionID, PromotionName, PromotionTypeID, PromotionTypeName, SalePriceUnit, SalePriceDiscount,
 SalePriceUnitTax, SalePrice, SaleCurencyID, SaleItemNote)
-VALUES (1000000001, 2 , N'CFD0000002', N'Cà Phê Đen Đá', 4 , N'Cà phê' , 2 , N'Mang đi', 1 , N'LY' , N'Ly', NULL ,'','','', 19800, '', 2200, 22000,
+VALUES (1000000001, 2 , N'1000000002', N'Cà Phê Đen Đá', 4 , N'Cà phê' , 2 , N'Mang đi', 1 , N'LY' , N'Ly', NULL ,'','','', 19800, '', 2200, 22000,
 N'VND' , '')
 
 -- thêm dánh data--
@@ -814,5 +879,22 @@ WHERE SH.SaleOrderID = SI.SaleOrderID
 --------------------------------------------------------------------------------------------------------
 
 
+-- Struct data--
+ALTER TABLE MATERIAL
+ADD CONSTRAINT FK_MATERIAL_MaterialVAT
+FOREIGN KEY (MaterialVAT) REFERENCES Material_VAT(VATID);
 
+ALTER TABLE MATERIAL_VAT
+DROP CONSTRAINT PK__Material__4A9628CE9958A960;
 
+-- Xóa liên kết khóa ngoại
+ALTER TABLE Material
+DROP CONSTRAINT FK_MATERIAL_MaterialVAT;
+
+-- Xóa cột hiện tại
+ALTER TABLE MATERIAL_VAT
+DROP COLUMN VATID;
+
+-- Tạo lại cột với thuộc tính IDENTITY
+ALTER TABLE MATERIAL_VAT
+ADD VATID INT IDENTITY(1,1) PRIMARY KEY;

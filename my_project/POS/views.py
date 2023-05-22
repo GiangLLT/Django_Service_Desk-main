@@ -8,7 +8,11 @@ from oauth2_provider.views.generic import ProtectedResourceView
 
 from django.core.paginator import Paginator
 from django.db.models import Count
-# from .models import Users
+# from .models import Company
+from .models import *
+from django.db.models import Prefetch
+from django.db import connection
+from django.db.models import Q
 
 from django.shortcuts import render, redirect
 from django.conf import settings
@@ -27,64 +31,278 @@ import adal
 import requests
 import msal
 
-# Create your views here.
 
+# Create your views here.
 def POS(request):
     #load template in folder teamplates
-    template =  loader.get_template('Login-POS.html')
-    return HttpResponse(template.render())
+    # template =  loader.get_template('Login-POS.html')
+    template =  'Login-POS.html'
+    companies = Company.objects.filter(CompanyStatus = True)
+    # Trả về template và danh sách công ty qua context
+    context = {'companies': companies}
+    # return HttpResponse(request, template, context)
+    return render(request, template, context)
+
 
 @csrf_exempt
 def login_pos_system(request):
     try:
         if request.method == 'POST':
-            username = request.POST.get('username')
+            Userid = request.POST.get('UserID')
             password = request.POST.get('password')
-            if(username == '1' and  password =='123'):
-                return JsonResponse({
-                'success': True,
-                'message': 'Login Successed',}) 
-    # except Users.DoesNotExist:
-    #     return JsonResponse({
-    #         'success': False,
-    #         'message': 'User does not exist',
-    #     })
+            company_cookie = request.COOKIES.get('company-POS')
+            if company_cookie:
+                user = UserSY.objects.filter(UserID=Userid, Password=password, CompanyCode=company_cookie)
+                if not user.exists():
+                    return JsonResponse({
+                        'success': False,
+                        'message': 'UserID không tồn tại.',
+                    })
+                else:
+                    user = user.first()
+                    request.session['User_Info'] = {
+                        'UserID': user.UserID,
+                        'Username': user.Username,
+                        'FullName': user.FullName,
+                        'ImageUrl': user.ImageUrl,
+                    }
+                    request.session.save()
+                    a = request.session.get('UserID')
+                    if not user.UserStatus:
+                        return JsonResponse({
+                            'success': False,
+                            'message': 'User chưa được kích hoạt.',
+                        })
+                    else:    
+                        if user.UserGroupID.UserGroupName == "Quản Trị":
+                            return JsonResponse({
+                                'success': True,
+                                'message': 'Đăng nhập thành công.',
+                                'Group': 'Admin'
+                            })
+                        else:
+                            return JsonResponse({
+                                'success': True,
+                                'message': 'Đăng nhập thành công.',
+                                'Group': 'Member'
+                            })
+
     except Exception as ex:
         return JsonResponse({
             'success': False,
-            'message': f'Login Failed: {str(ex)}',
+            'message': f'Đăng nhập không thành công: {str(ex)}',
         })
 
-def Order_POS(request):
-    #load template in folder teamplates
-    template =  loader.get_template('Order-POS.html')
-    return HttpResponse(template.render())
+
+
+# def Order_POS(request):
+#     #load template in folder teamplates
+#     template =  loader.get_template('Order-POS.html')
+#     return HttpResponse(template.render())
+
+# def Home_POS(request):
+#     #load template in folder teamplates
+#     template =  'Home-POS.html'
+#     company_cookie = request.COOKIES.get('company-POS')
+#     current_time = datetime.datetime.now().date()
+#     Groups = MaterialGroup.objects.filter(MaterialGroupStatus = True)
+#     Customers = Customer.objects.filter(CustomerStatus = True)
+#     query_sql = """
+#     select a.MaterialID as MaterialID, a.MaterialName, a.CompanyCode, b.MaterialImage, b.MaterialGroupID, c.PriceAmount, c.PriceFrom, c.PriceTo
+#     from MATERIAL_COMPANY as a, material as b, PRICE_MATERIAL as c
+#     where a.MaterialID = b.MaterialID and a.MaterialID = c.MaterialID
+#     and a.MaterialStatus = 1 and a.CompanyCode = 1002
+#     and a.MaterialComFrom <= '2023-05-19' and a.MaterialComTo >= '2023-05-19'
+#     and c.CompanyCode = 1002 and c.PriceFrom <= '2023-05-19' and c.PriceTo >= '2023-05-19'
+#     """
+
+#     materials = execute_raw_sql_query(query_sql)
+#     context = {
+#         'Groups': Groups,
+#         'Customers': Customers,
+#         'Materials': materials}
+#     return render(request, template, context)
 
 def Home_POS(request):
     #load template in folder teamplates
-    template =  loader.get_template('Home-POS.html')
-    return HttpResponse(template.render())
+    # template =  loader.get_template('Home-POS.html')
+    # return HttpResponse(template.render())
+
+    template =  'Home-POS.html'
+    company_cookie = request.COOKIES.get('company-POS')
+    current_time = datetime.datetime.now().date()
+    Groups = MaterialGroup.objects.filter(MaterialGroupStatus = True)
+    Customers = Customer.objects.filter(CustomerStatus = True)
+    Material_companys =  list(MaterialCompany.objects.filter(
+            MaterialStatus = True,
+            MaterialComFrom__lte = current_time ,  
+            CompanyCode = company_cookie, 
+            MaterialComTo__gte = current_time).select_related('MaterialID', 'CompanyCode').prefetch_related(
+            Prefetch('MaterialID__pricematerial_set', queryset=PriceMaterial.objects.filter(
+            PriceFrom__lte=current_time,
+            CompanyCode=company_cookie,
+            PriceTo__gte=current_time
+        ).order_by('-MaterialID'))
+    ))
+    # materials = list(Material.objects.filter(MaterialID__in = Material_companys.values('MaterialID')).values('MaterialImage'))
+    promotions1 = list(Promotion.objects.filter(
+        PromotionStatus   = True,
+        PromotionFrom__lte = current_time,
+        PromotionTo__gte   = current_time,
+        ))
+
+    promotions = list(Promotion.objects.filter(
+        Q(CompanyCode=None) | Q(CompanyCode=company_cookie),
+        PromotionStatus   = True,
+        PromotionFrom__lte = current_time,
+        PromotionTo__gte   = current_time,
+        ))
+    context = { 
+        'Groups': Groups,
+        'Customers': Customers,
+        'Materials': Material_companys,
+        'promotions': promotions}
+    return render(request, template, context)
+
 
 @csrf_exempt
 def Check_promotion(request):
     try:
         if request.method == 'POST':
             PromotionID = request.POST.get('PromotionID')
-            if(PromotionID == '1'):
-                return JsonResponse({
-                'success': True,
-                'message': 'Successed',
-                'dataPromotion': '-100000'})
-            elif(PromotionID == '2'):
-                return JsonResponse({
-                'success': True,
-                'message': 'Successed',
-                'dataPromotion': '-20000'})  
+            TotalAmount = request.POST.get('TotalAmount')
+            Channel = request.POST.get('Channel')
+            int_TotalAmount = int(TotalAmount)
+            int_Channel = int(Channel)
+            if(PromotionID and TotalAmount):
+                promotions = Promotion.objects.filter(PromotionID = PromotionID).first()
+                if(promotions):
+                    DiscountPer = int(promotions.PromotionDiscountPer)
+                    DiscountAmount = int(promotions.PromotionDiscountAmount)
+                    DiscountMax = int(promotions.PromotionDiscountMax)
+                    DiscountOrderMin = int(promotions.PromotionRoleID.PromotionRoleMin)
+                    DiscountChannel = int(promotions.PromotionRoleID.PromotionRoleChannel)
+                    if(DiscountOrderMin > 0):
+                        if(int_TotalAmount >= DiscountOrderMin):
+                           if(DiscountChannel > 0):
+                               if(DiscountChannel == int_Channel):
+                                    if(DiscountAmount):
+                                        return JsonResponse({
+                                        'success': True,
+                                        'message': 'Success',
+                                        'dataPromotion': DiscountAmount})
+                                    if(DiscountPer):
+                                        Total_discount = (DiscountPer * TotalAmount )/ 100
+                                        if(Total_discount > DiscountMax):
+                                                return JsonResponse({
+                                                'success': True,
+                                                'message': 'Success',
+                                                'dataPromotion': DiscountMax})
+                                        else:
+                                                return JsonResponse({
+                                                'success': True,
+                                                'message': 'Success',
+                                                'dataPromotion': Total_discount})
+                                    else:
+                                        return JsonResponse({
+                                        'success': False,
+                                        'message': 'Tổng giá trị đơn hàng phải lớn hơn '+ DiscountOrderMin + ' Đồng' })
+                               else:
+                                   return JsonResponse({
+                                    'success': False,
+                                    'message': 'Promotion chỉ áp dụng cho kênh' +  Channel})
+                           else:
+                            if(DiscountAmount):
+                                    return JsonResponse({
+                                    'success': True,
+                                    'message': 'Success',
+                                    'dataPromotion': DiscountAmount})
+                            if(DiscountPer):
+                                Total_discount = (DiscountPer * TotalAmount )/ 100
+                                if(Total_discount > DiscountMax):
+                                        return JsonResponse({
+                                        'success': True,
+                                        'message': 'Success',
+                                        'dataPromotion': DiscountMax})
+                                else:
+                                        return JsonResponse({
+                                        'success': True,
+                                        'message': 'Success',
+                                        'dataPromotion': Total_discount})
+                            else:
+                                return JsonResponse({
+                                'success': False,
+                                'message': 'Tổng giá trị đơn hàng phải lớn hơn '+ DiscountOrderMin + ' Đồng' })
+                        else:
+                            if(DiscountChannel > 0):
+                               if(DiscountChannel == int_Channel):
+                                    if(DiscountAmount):
+                                        return JsonResponse({
+                                        'success': True,
+                                        'message': 'Success',
+                                        'dataPromotion': DiscountAmount})
+                                    if(DiscountPer):
+                                        Total_discount = (DiscountPer * TotalAmount )/ 100
+                                        if(Total_discount > DiscountMax):
+                                                return JsonResponse({
+                                                'success': True,
+                                                'message': 'Success',
+                                                'dataPromotion': DiscountMax})
+                                        else:
+                                                return JsonResponse({
+                                                'success': True,
+                                                'message': 'Success',
+                                                'dataPromotion': Total_discount})
+                                    else:
+                                        return JsonResponse({
+                                        'success': False,
+                                        'message': 'Tổng giá trị đơn hàng phải lớn hơn '+ DiscountOrderMin + ' Đồng' })
+                               else:
+                                   return JsonResponse({
+                                    'success': False,
+                                    'message': 'Promotion chỉ áp dụng cho kênh' +  Channel})
+                            else:
+                                if(DiscountAmount):
+                                        return JsonResponse({
+                                        'success': True,
+                                        'message': 'Success',
+                                        'dataPromotion': DiscountAmount})
+                                if(DiscountPer):
+                                    Total_discount = (DiscountPer * TotalAmount )/ 100
+                                    if(Total_discount > DiscountMax):
+                                            return JsonResponse({
+                                            'success': True,
+                                            'message': 'Success',
+                                            'dataPromotion': DiscountMax})
+                                    else:
+                                            return JsonResponse({
+                                            'success': True,
+                                            'message': 'Success',
+                                            'dataPromotion': Total_discount})
+                                else:
+                                    return JsonResponse({
+                                    'success': False,
+                                    'message': 'Tổng giá trị đơn hàng phải lớn hơn '+ DiscountOrderMin + ' Đồng' })  
             else:
                 return JsonResponse({
-                'success': True,
-                'message': 'Login Successed',
-                'dataPromotion': '0'})
+                'success': False,
+                'message': 'Dữ liệu trống'})
+
+            # if(PromotionID == '1'):
+            #     return JsonResponse({
+            #     'success': True,
+            #     'message': 'Successed',
+            #     'dataPromotion': '-100000'})
+            # elif(PromotionID == '2'):
+            #     return JsonResponse({
+            #     'success': True,
+            #     'message': 'Successed',
+            #     'dataPromotion': '-20000'})  
+            # else:
+            #     return JsonResponse({
+            #     'success': True,
+            #     'message': 'Login Successed',
+            #     'dataPromotion': '0'})
     except Exception as ex:
         return JsonResponse({
             'success': False,
@@ -258,3 +476,13 @@ def Check_info_customer(request):
 #             'success': False,
 #             'message': f'Login Failed: {str(ex)}',
 #         })
+
+
+def execute_raw_sql_query(QuerySQL):
+    
+    with connection.cursor() as cursor:
+        sql_query = QuerySQL
+        cursor.execute(sql_query)
+        results = cursor.fetchall()
+        connection.commit()
+        return results

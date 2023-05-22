@@ -314,6 +314,7 @@ section {
       #food-list li h3{
        line-height: 0;
        margin-top: 30px;
+       font-size: 20px !important;
       }
       #food-list li .add-food{
         width: 40px;
@@ -674,6 +675,7 @@ section {
 
       .footer {
         padding: 10px 2.45rem !important;
+        border-top: 0px !important;
       }
       
       .order-detail__footer {
@@ -904,7 +906,7 @@ section {
    padding: 0;
 }
 .btn-menu-function{
-  width: 15%;
+  width: 18%;
   border-radius: 0px !important;
   font-size: 18px !important;
   font-weight: lighter;
@@ -947,7 +949,7 @@ section {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 10%;
+  width: 11%;
   /* font-weight: bold; */
 }
 
@@ -1208,4 +1210,26 @@ section {
     width: 30% !important;
     border: 0;
     font-size: 15px;
+}
+
+/* User Menu */
+.user-menu{
+  display: flex;
+  width: 18%;
+  margin: 0 5px 0 5px;
+  border-right: 2px dashed;
+}
+.user-menu-avatar{
+  width: 28%;
+  border: 1px solid #F6F6F7;
+  text-align: center;
+  margin-right: 5px;
+  border-radius: 100%;
+    background-color: white;
+}
+.user-img{
+  margin-top: 30%;
+    font-size: 45px;
+    font-weight: bolder;
+    color: #C82A2E;
 }

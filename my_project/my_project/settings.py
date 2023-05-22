@@ -195,10 +195,23 @@ WSGI_APPLICATION = 'my_project.wsgi.application'
 # }
 
 #SQL server
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "mssql",
+#         "NAME": "Python_Test",
+#         "USER": "sa",
+#         "PASSWORD": "Abc@123",
+#         "HOST": "localhost\SQLEXPRESS",
+#         # "PORT": "1433",
+#         "OPTIONS": {"driver": "ODBC Driver 17 for SQL Server", 
+#         },
+#     },
+# }
+
 DATABASES = {
     "default": {
         "ENGINE": "mssql",
-        "NAME": "Python_Test",
+        "NAME": "FoodApp",
         "USER": "sa",
         "PASSWORD": "Abc@123",
         "HOST": "localhost\SQLEXPRESS",
@@ -207,6 +220,7 @@ DATABASES = {
         },
     },
 }
+
 
 
 # Password validation

@@ -21,10 +21,10 @@
     {% comment %} <div class="middle"></div> {% endcomment %}
 	<div class="right">
         <form class="form-login">
-            <label for="username">Username:</label>
+            <label for="username">USERID:</label>
             {% comment %} <input type="text" id="username" name="username" autofocus> {% endcomment %}
-            <input type="text" id="username" name="username">
-            <label for="password">Password:</label>
+            <input type="text" id="userid" name="userid">
+            <label for="password">PASSWORD:</label>
             <input type="password" id="password" name="password">
           </form>   
         <div class="keypad">
@@ -63,10 +63,10 @@
       </div>  
       <div class="cbb-companySelect">           
         <select id="companySelect">
-          <!-- Thêm các tùy chọn công ty vào đây -->
-          <option value="company1">Company 1</option>
-          <option value="company2">Company 2</option>
-          <option value="company3">Company 3</option>
+          {% comment %} <input class="search-company" placeholder="Tim Kiếm Công Ty"> {% endcomment %}
+          {% for company in companies %}
+              <option value="{{ company.CompanyCode }}">{{ company.CompanyCode }} - {{ company.CompanyName }}</option>
+           {% endfor %}
         </select>
        </div>
         <div class="company-button">
@@ -74,6 +74,7 @@
           <button type="button" class="btn btn-outline-danger btn-fw" id="save-company-btn"><i class="ti-save"></i> Lưu</button>
         </div>
     </div>
+    
   </div>
   <!-- The modal NOTE -->
 

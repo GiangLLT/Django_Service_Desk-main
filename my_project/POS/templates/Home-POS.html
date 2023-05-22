@@ -53,8 +53,24 @@
         </div>       
         <!-- End Menu -->  
        <div class="btn-menu">
+        {% comment %} {% if request.session.FullName %} 
+          <p>{{ request.session.User_Info.FullName}}</p>
+        {% else  %} 
+          <p>aaaaaaaaaaa</p>
+        {% endif %} {% endcomment %}
           {% comment %} <button type="button" class="btn btn-primary btn-fw btn-menu-function" id="btn-dine-in"><i class="ti-user"></i>Thành viên</button> {% endcomment %}
           <button type="button" class="btn btn-success btn-fw btn-menu-function" id="btn-info-customer"><i class="ti-agenda"></i>THÀNH VIÊN</button>
+          {% comment %} <button type="button" class="btn btn-success btn-fw btn-menu-function" id="btn-info-customer"><i class="ti-agenda"></i>THÀNH VIÊN 1</button> {% endcomment %}
+        </div>
+        <div class="user-menu">
+          <div class="user-menu-avatar">
+            {% comment %} <img class="user-img" id="user-img" src="{% static 'Asset/img/buncha.jpg' %}" alt="Bún chả"> {% endcomment %}
+            <p class="user-img">G</p>
+          </div>
+          <div class="user-menu-info">
+            <p class="user-fullname">Lê Lộc Trường Giang</p>
+            <p class="user-position">Quản Lý</p>
+          </div>
         </div>
         <!-- clock time-->  
         <div class="clock">
@@ -69,13 +85,23 @@
           <div class="categories">
             {% comment %} <h2>Danh mục món ăn</h2> {% endcomment %}
             <ul id="category-list">
-              <li id="random-border" class="border-radius" value="Tất cả"><i class="ti-bookmark-alt"></i><a type="button">Tất cả</a></li>
-              <li id="random-border" class="border-radius" value="1"><i class="ti-bookmark-alt"></i><a type="button">Thức ăn nhanh</a></li>
+              <li id="random-border" class="border-radius" value="Tất cả"><i class="fi-tr-hamburger-soda"></i><a type="button">Tất cả</a></li>
+              {% for Group in Groups %}
+                <li id="random-border" class="border-radius" value="{{ Group.MaterialGroupID }}">
+                    {% if Group.MaterialGroupIcon %}
+                        <i class="{{ Group.MaterialGroupIcon }}"></i>
+                    {% else %}
+                        <i class="fi-tr-hamburger-soda"></i>
+                    {% endif %}
+                    <a type="button">{{ Group.MaterialGroupName }}</a>
+                </li>
+              {% endfor %}
+              {% comment %} <li id="random-border" class="border-radius" value="1"><i class="ti-bookmark-alt"></i><a type="button">Thức ăn nhanh</a></li>
               <li id="random-border" class="border-radius" value="2"><i class="ti-bookmark-alt"></i><a type="button">Món Chay</a></li>
               <li id="random-border" class="border-radius" value="3"><i class="ti-bookmark-alt"></i><a type="button">Món Mặn</a></li>
               <li id="random-border" class="border-radius" value="4"><i class="ti-bookmark-alt"></i><a type="button">Hương Vị Miền Tây</a></li>
               <li id="random-border" class="border-radius" value="5"><i class="ti-bookmark-alt"></i><a type="button">Tráng Miệng</a></li>
-              <li id="random-border" class="border-radius" value="6"><i class="ti-bookmark-alt"></i><a type="button">Món Thêm</a></li>
+              <li id="random-border" class="border-radius" value="6"><i class="ti-bookmark-alt"></i><a type="button">Món Thêm</a></li> {% endcomment %}
             </ul>
           </div>
           <div class="menu-food">
@@ -86,69 +112,30 @@
             
             {% comment %} <h2>Danh sách món ăn</h2> {% endcomment %}
             <ul id="food-list">
-              <li >
-                <img class="food-img" id="food-img" src="{% static 'Asset/img/banhmi.png' %}" alt="Bánh mì">
-                <div class="food-info">
-                  <h3 id="food-name" class="food-name" value="Bánh mì">Bánh mì</h3>
-                  <p  id="food-price" class="food-price" value="15000">15.000đ</p>
-                  <p  id="food-group" class="food-group" value="1"></p>
-                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img class="food-img" id="food-img" src="{% static 'Asset/img/buncha.jpg' %}" alt="Bún chả">
-                <div class="food-info">
-                    <h3 id="food-name" class="food-name" value="Bún chả">Bún chả</h3>
-                    <p  id="food-price" class="food-price" value="50000">50.000đ</p>
-                    <p  id="food-group" class="food-group" value="1"></p>
-                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img class="food-img" id="food-img" src="{% static 'Asset/img/phobo.png' %}" alt="Bún chả">
-                <div class="food-info">
-                    <h3 id="food-name" class="food-name" value="Bún chả">Phở bò</h3>
-                    <p  id="food-price" class="food-price" value="100000">100.000đ</p>
-                    <p  id="food-group" class="food-group" value="2"></p>
-                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img class="food-img" id="food-img" src="{% static 'Asset/img/hutiunamvang.png' %}" alt="Bún chả">
-                <div class="food-info">
-                    <h3 id="food-name" class="food-name" value="Bún chả">Hủ Tíu Nam Vang</h3>
-                    <p  id="food-price" class="food-price" value="90000">90.000đ</p>
-                    <p  id="food-group" class="food-group" value="3"></p>
-                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img class="food-img" id="food-img" src="{% static 'Asset/img/hutiunamvang.png' %}" alt="Bún chả">
-                <div class="food-info">
-                    <h3 id="food-name" class="food-name" value="Bún chả">Hủ Tíu Sóc Trăng</h3>
-                    <p  id="food-price" class="food-price" value="80000">80.000đ</p>
-                    <p  id="food-group" class="food-group" value="4"></p>
-                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img class="food-img" id="food-img" src="{% static 'Asset/img/trangmieng-1.jpg' %}" alt="Bún chả">
-                <div class="food-info">
-                    <h3 id="food-name" class="food-name" value="Bún chả">Bánh Flan</h3>
-                    <p  id="food-price" class="food-price" value="20000">20.000đ</p>
-                    <p  id="food-group" class="food-group" value="5"></p>
-                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
-              <li>
-                <img class="food-img" id="food-img" src="{% static 'Asset/img/trangmieng-2.png' %}" alt="Bún chả">
-                <div class="food-info">
-                    <h3 id="food-name" class="food-name" value="Bún chả">Bánh Tiramisu</h3>
-                    <p  id="food-price" class="food-price" value="30000">30.000đ</p>
-                    <p  id="food-group" class="food-group" value="5"></p>
-                  <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
-                </div>
-              </li>
+               <!-- Add more food items here -->
+               {% for Material in Materials %}
+                {% comment %} <li >
+                  <img class="food-img" id="food-img" src="../static/Asset/img-product/{{Materials.MaterialID.MaterialImage}}" alt="{{Materials.MaterialName}}">
+                  <div class="food-info">
+                    <h3 id="food-name" class="food-name" value="{{Materials.MaterialName}}">{{Materials.MaterialName}}</h3>
+                    <p  id="food-price" class="food-price" value="15000">{{Materials.MaterialID.PriceMaterial.PriceAmount}}đ</p>
+                    <p  id="food-group" class="food-group" value="{{Materials.MaterialID.MaterialGroupID}}1"></p>
+                    <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
+                  </div>
+                </li> {% endcomment %}
+                {% if Material.MaterialID.pricematerial_set.first.PriceAmount >= 0%}
+                <li >
+                  <img class="food-img" id="food-img" src="../static/Asset/img-product/{{Material.MaterialID.MaterialImage}}" alt="{{Material.MaterialName}}">
+                  <div class="food-info">
+                    <h3 id="food-name" class="food-name" value="{{Material.MaterialName}}">{{Material.MaterialName}}</h3>
+                    <p  id="food-price" class="food-price" value="{{Material.MaterialID.pricematerial_set.first.PriceAmount}}">{{Material.MaterialID.pricematerial_set.first.PriceAmount | intcomma}}đ</p>
+                    <p  id="food-group" class="food-group" value="{{Material.MaterialID.MaterialGroupID.MaterialGroupID}}"></p>
+                    <button type="button" id="add-food" class="add-food"><i class="ti-plus"></i></button>
+                  </div>
+                </li>
+                {% endif%}
+              
+                {% endfor %}
               <!-- Add more food items here -->            
             </ul>
           </div>
@@ -177,9 +164,9 @@
              
                <!-- order type -->
               <div class="order-type">
-                <button type="button" class="btn btn-primary btn-fw btn-order-type" id="btn-dine-in"><i class="ti-alarm-clock"></i>Ăn Tại Bàn</button>
-                <button type="button" class="btn btn-success btn-fw btn-order-type" id="btn-take-away"><i class="ti-bag"></i>Mang Đi</button>
-                <button type="button" class="btn btn-warning btn-fw btn-order-type" id="btn-delivery"><i class="ti-truck"></i>Giao Hàng</button>
+                <button type="button" class="btn btn-primary btn-fw btn-order-type" id="btn-dine-in" data-channel="1"><i class="ti-alarm-clock"></i>Ăn Tại Bàn</button>
+                <button type="button" class="btn btn-success btn-fw btn-order-type active" id="btn-take-away" data-channel="2"><i class="ti-bag"></i>Mang Đi</button>
+                <button type="button" class="btn btn-warning btn-fw btn-order-type" id="btn-delivery" data-channel="6"><i class="ti-truck"></i>Giao Hàng</button>
               </div>
                <!-- order type -->
 
@@ -384,61 +371,21 @@
                   </div>             
                     <input id="promotion-input" placeholder="Tên Chương Trình Khuyến Mãi"></input>
                     <div class="promotion-list">
+                      {% for promotion in promotions %}
                       <div class="promotion-item">
+                        <img src="{% static 'Asset/img/Ticket-BG-New.png' %}" alt="promotion ticket" class="ticket">
+                        <div class="promotion-name" data-promotion="{{promotion.PromotionID}}">{{promotion.PromotionName}}</div>
+                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
+                      </div>
+                      {% endfor  %}
+                      {% comment %} <div class="promotion-item">
                         <img src="{% static 'Asset/img/Ticket-BG-New.png' %}" alt="promotion ticket" class="ticket">
                         <div class="promotion-name" data-promotion="1">Giảm giá 10% cho tất cả khách hàng</div>
                         <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
-                      </div>
-                      <div class="promotion-item">
-                        <img src="{% static 'Asset/img/Ticket-BG-New.png' %}" alt="promotion ticket" class="ticket">
-                        <div class="promotion-name" data-promotion="2">Miễn phí vận chuyển cho đơn hàng trên 500.000đ</div>
-                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
-                      </div>
-                      <div class="promotion-item">
-                        <img src="{% static 'Asset/img/Ticket-BG-New.png' %}" alt="promotion ticket" class="ticket">
-                        <div class="promotion-name">Giảm giá 30% cho các sản phẩm thương hiệu ABC</div>
-                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
-                      </div> 
-                      <div class="promotion-item">
-                        <img src="{% static 'Asset/img/Ticket-BG-New.png' %}" alt="promotion ticket" class="ticket">
-                        <div class="promotion-name">Giảm giá Khách hàng thân thiết</div>
-                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
-                      </div>     
-                      <div class="promotion-item">
-                        <img src="{% static 'Asset/img/Ticket-BG-New.png' %}" alt="promotion ticket" class="ticket">
-                        <div class="promotion-name">Giảm giá Khách hàng thân thiết</div>
-                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
-                      </div>        
-                      <div class="promotion-item">
-                        <img src="{% static 'Asset/img/Ticket-BG-New.png' %}" alt="promotion ticket" class="ticket">
-                        <div class="promotion-name">Giảm giá Khách hàng thân thiết</div>
-                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
-                      </div> 
-                      <div class="promotion-item">
-                        <img src="{% static 'Asset/img/Ticket-BG-New.png' %}" alt="promotion ticket" class="ticket">
-                        <div class="promotion-name">Giảm giá Khách hàng thân thiết</div>
-                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
-                      </div>        
-                      <div class="promotion-item">
-                        <img src="{% static 'Asset/img/Ticket-BG-New.png' %}" alt="promotion ticket" class="ticket">
-                        <div class="promotion-name">Giảm giá Khách hàng thân thiết</div>
-                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
-                      </div> 
-                      <div class="promotion-item">
-                        <img src="{% static 'Asset/img/Ticket-BG-New.png' %}" alt="promotion ticket" class="ticket">
-                        <div class="promotion-name">Giảm giá Khách hàng thân thiết</div>
-                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
-                      </div>        
-                      <div class="promotion-item">
-                        <img src="{% static 'Asset/img/Ticket-BG-New.png' %}" alt="promotion ticket" class="ticket">
-                        <div class="promotion-name">Giảm giá Khách hàng thân thiết</div>
-                        <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn">Áp Dụng</button>
-                      </div>      
+                      </div> {% endcomment %}
+                      
                     </div>                                     
                   </div>
-                    {% comment %} <div class="display-button">
-                      <button type="button" class="btn btn-outline-danger btn-fw" id="save-promotion-btn"><i class="ti-save"></i> Áp Dụng Khuyến Mãi</button>
-                    </div> {% endcomment %}
                 </div>
               </div>
             <!-- The modal -->
@@ -457,30 +404,10 @@
                     <input class="btn-customer" id="custPhone-input" placeholder="Số Điện Thoại Khách Hàng"></input>
                   </div>  
                   <!-- List CUSTOMER -->  
-                  <div class="display-customer-items">
-                    <div class="display-customer-item">
-                      <div class="display-customer-panel cust-male">
-                        <p class="cust-ID"><i class="ti-id-badge"></i> 1000000001</p>
-                        {% comment %} <img class="cust-img cust-Type" id="cust-img" src="{% static 'Asset/img/medal-gold-hd.png' %}"> {% endcomment %}
-                        {% comment %} <p class="cust-Type"></p> {% endcomment %}
-                      </div>
-                      <div class="display-customer-content">
-                        <div class="display-customer-content-left">
-                          <img class="cust-img" id="cust-img" src="{% static 'Asset/img/icon-male.jpg' %}">
-                        </div>
-                        <div class="display-customer-content-right">
-                          <p class="cust-Name"><i class="ti-user"></i> Khách Hàng Vãng Lai</p>
-                          <p class="cust-birthday"><i class="ti-calendar"></i> </p>
-                          <p class="cust-Phone"><i class="ti-mobile"></i> </p>
-                          <p class="cust-Range"><i class="icon-badge"></i> </p>
-                          <p class="cust-Point"><i class="icon-wallet"></i> </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="display-customer-item">
+                  <div class="display-customer-items">                   
+                    {% comment %} <div class="display-customer-item">
                       <div class="display-customer-panel cust-female">
                         <p class="cust-ID"><i class="ti-id-badge"></i> 1000000002</p>
-                        {% comment %} <p class="cust-Type">Thành Viên Bạc</p> {% endcomment %}
                       </div>
                       <div class="display-customer-content">
                         <div class="display-customer-content-left">
@@ -494,61 +421,39 @@
                           <p class="cust-Point"><i class="icon-wallet"></i> 1.000</p>
                         </div>
                       </div>
-                    </div>
-                    <div class="display-customer-item">
-                      <div class="display-customer-panel cust-male">
-                        <p class="cust-ID"><i class="ti-id-badge"></i> 1000000003</p>
-                        {% comment %} <p class="cust-Type">Thành Viên Bạc</p> {% endcomment %}
-                      </div>
-                      <div class="display-customer-content">
-                        <div class="display-customer-content-left">
-                          <img class="cust-img" id="cust-img" src="{% static 'Asset/img/icon-male.jpg' %}">
+                    </div> {% endcomment %}
+                   
+                    {% comment %} Loop Customer {% endcomment %}
+                    {% for customer in Customers %}
+                      <div class="display-customer-item">
+                        <div class="display-customer-panel {% if customer.CustomerGender == 'Nam' %}cust-male{% else %}cust-female{% endif %}">
+                          <p class="cust-ID"><i class="ti-id-badge"></i> {{ customer.CustomerID}}</p>
                         </div>
-                        <div class="display-customer-content-right">
-                          <p class="cust-Name"><i class="ti-user"></i> Lê Lộc Trường Giang</p>
-                          <p class="cust-birthday"><i class="ti-calendar"></i> 16/10/1990</p>
-                          <p class="cust-Phone"><i class="ti-mobile"></i> 0909009718</p>
-                          <p class="cust-Range"><i class="icon-badge"></i> Thành Viên Vàng</p>
-                          <p class="cust-Point"><i class="icon-wallet"></i> 2.000</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="display-customer-item">
-                      <div class="display-customer-panel cust-male">
-                        <p class="cust-ID"><i class="ti-id-badge"></i> 1000000003</p>
-                        {% comment %} <p class="cust-Type">Thành Viên Bạc</p> {% endcomment %}
-                      </div>
-                      <div class="display-customer-content">
-                        <div class="display-customer-content-left">
-                          <img class="cust-img" id="cust-img" src="{% static 'Asset/img/icon-male.jpg' %}">
-                        </div>
-                        <div class="display-customer-content-right">
-                          <p class="cust-Name"><i class="ti-user"></i> Lê Lộc Trường Giang</p>
-                          <p class="cust-birthday"><i class="ti-calendar"></i> 16/10/1990</p>
-                          <p class="cust-Phone"><i class="ti-mobile"></i> 0909009719</p>
-                          <p class="cust-Range"><i class="icon-badge"></i> Thành Viên Vàng</p>
-                          <p class="cust-Point"><i class="icon-wallet"></i> 3.000</p>
+                        <div class="display-customer-content">
+                          <div class="display-customer-content-left">
+                            {% if customer.CustomerImage %}
+                              {% comment %} <img class="cust-img" id="cust-img" src="{% static 'Asset/img/{{customer.CustomerImage}}' %}"> {% endcomment %}
+                              <img class="cust-img" id="cust-img" src="../static/Asset/img/{{customer.CustomerImage}}">
+                            {% else %}
+                                {% if customer.CustomerGender == 'Nam' %}
+                                  <img class="cust-img" id="cust-img" src="{% static 'Asset/img/icon-male.jpg' %}">
+                                {% else %}
+                                  <img class="cust-img" id="cust-img" src="{% static 'Asset/img/icon-female.jpg' %}">
+                                {% endif %}
+                            {% endif %}
+                          </div>
+                          <div class="display-customer-content-right">
+                            <p class="cust-Name"><i class="ti-user"></i>{{ customer.CustomerName}}</p>
+                            <p class="cust-birthday"><i class="ti-calendar"></i> {{ customer.CustomerBirthday|date:"d/m/Y"}}</p>
+                            <p class="cust-Phone"><i class="ti-mobile"></i> {{ customer.CustomerPhone}}</p>
+                            <p class="cust-Range"><i class="icon-badge"></i> {{ customer.CustomerTypeID.CustomerTypeName}}</p>
+                            {% comment %} <p class="cust-Point"><i class="icon-wallet"></i>{% if customer.CustomerPoint != '0' %} {{customer.CustomerPoint}} {% else %}0{% endif %}</p> {% endcomment %}
+                            <p class="cust-Point" value="{{ customer.CustomerPoint }}"><i class="icon-wallet"></i>{{ customer.CustomerPoint | intcomma }}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div class="display-customer-item">
-                      <div class="display-customer-panel cust-male">
-                        <p class="cust-ID"><i class="ti-id-badge"></i> 1000000003</p>
-                        {% comment %} <p class="cust-Type">Thành Viên Bạc</p> {% endcomment %}
-                      </div>
-                      <div class="display-customer-content">
-                        <div class="display-customer-content-left">
-                          <img class="cust-img" id="cust-img" src="{% static 'Asset/img/icon-male.jpg' %}">
-                        </div>
-                        <div class="display-customer-content-right">
-                          <p class="cust-Name"><i class="ti-user"></i> Lê Lộc Trường Giang</p>
-                          <p class="cust-birthday"><i class="ti-calendar"></i> 16/10/1990</p>
-                          <p class="cust-Phone"><i class="ti-mobile"></i> 0909009716</p>
-                          <p class="cust-Range"><i class="icon-badge"></i> Thành Viên Vàng</p>
-                          <p class="cust-Point"><i class="icon-wallet"></i> 4.000</p>
-                        </div>
-                      </div>
-                    </div>
+                    {% endfor %}
+                    {% comment %} Loop Customer {% endcomment %}
                   </div>       
                   <!-- List CUSTOMER -->
               </div>

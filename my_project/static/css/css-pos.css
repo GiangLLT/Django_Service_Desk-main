@@ -191,6 +191,7 @@
   height: 40px;
   border: 1px solid black;
   font-size: 15px;
+  position: relative;
 }
 .select {
   border-radius: 0 !important;
@@ -211,3 +212,17 @@
     font-size: 15px;
     margin-right: 10px;
 }
+
+#companySelect option {
+  position: absolute ;
+  font-size: 15px;
+  border-radius: 0;
+}
+#companySelect option:hover {
+  color: #C82A2E !important;
+}
+
+#companySelect.show-options option {
+  display: block;
+}
+

@@ -5,7 +5,7 @@ from . import views
 urlpatterns = [
     # path('test/', views.test, name='test'),
     path('login-pos/', views.POS, name='Pos Login'),
-    path('order-pos/', views.Order_POS, name='Order Login'),
+    # path('order-pos/', views.Order_POS, name='Order Login'),
     path('home-pos/', views.Home_POS, name='Home POS'),
 
     #Function

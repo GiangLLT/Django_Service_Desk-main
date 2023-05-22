@@ -3,7 +3,7 @@
   /* ==============================================Login POS================================================================= */
   /* ======================================================================================================================== */
   let currentInput = null;
-  const usernameInput = document.getElementById('username');
+  const usernameInput = document.getElementById('userid');
   const passwordInput = document.getElementById('password');
 
   function onFocus(event) {
@@ -32,56 +32,113 @@
   });
 
   function submitForm() {
+    var UserID = document.getElementById('userid').value;
+    var password = document.getElementById('password').value;
+    if (UserID !== "" && password !== "") {
+        $.ajax({
+            url: '/login-pos-check/',
+            dataType: 'json',
+            method: 'POST',
+            data: {
+                "UserID": UserID,
+                "password": password
+            },
+            success: function(response) {
+                if (response.success) {
+                    var group = response.Group;
+                    if (group === 'Admin') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Đăng Nhập Thành Công',
+                            text: 'Welcome Trang Admin',
+                        });
+                    } else {
+                        window.location.href = "/home-pos/";
+                    }
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Oops...',
+                        text: response.message,
+                    });
+                }
+            },
+            error: function(xhr, textStatus, errorThrown) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: errorThrown,
+                });
+            }
+        });
+    } else {
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: "Username or Password is not empty.",
+        });
+    }
+}
+
+
+  // function submitForm() {
       
-  //   document.querySelector('.form-login').submit();
+  // //   document.querySelector('.form-login').submit();
   
-  var username = document.getElementById('username').value;
-  var password = document.getElementById('password').value;
-  if(username != "" || password != "")
-  {
-      $.ajax({
-          url: '/login-pos-check/',
-          dataType: 'json',
-          method: 'POST',
-          data:{
-              "username": username,
-              "password": password
-          },
-          success: function(response) {
-          if (response.success) {
-              window.location.href = "/home-pos/";
-              Swal.fire(
-                  'Notification',
-                  'Logout Success!!!',
-                  'success'
-              )
-          } else {
-              Swal.fire({
-                  icon: 'error',
-                  title: 'Oops...',
-                  text: response.error,
-              })
-          }
-          },
-          error: function(response) {
-              Swal.fire({
-                  icon: 'error',
-                  title: 'Oops...',
-                  text: response.error,
-              })
-          }
-      });
-  }
-  else
-  {
-      Swal.fire({
-          icon: 'error',
-          title: 'Oops...',
-          text: "Username or Password is not empty.",
-      })
-  }
+  // var UserID = document.getElementById('userid').value;
+  // var password = document.getElementById('password').value;
+  // if(UserID != "" || password != "")
+  // {
+  //     $.ajax({
+  //         url: '/login-pos-check/',
+  //         dataType: 'json',
+  //         method: 'POST',
+  //         data:{
+  //             "UserID": UserID,
+  //             "password": password
+  //         },
+  //         success: function(response) {
+  //           if (response.success) {
+  //             var group  = response.Group;
+  //               if(response.Group === 'Admin'){
+  //                 Swal.fire({
+  //                   icon: 'Success',
+  //                   title: 'Đăng Nhập Thành Công',
+  //                   text:  'Wellcome Trang Admin',
+  //               })
+  //               }
+  //               else{
+  //                 window.location.href = "/home-pos/";
+  //               }
+                
+            
+  //           } else {
+  //               Swal.fire({
+  //                   icon: 'error',
+  //                   title: 'Oops...11111',
+  //                   text: response.message,
+  //               })
+  //           }
+  //         },
+  //         error: function(response) {
+  //             Swal.fire({
+  //                 icon: 'error',
+  //                 title: 'Oops...22222',
+  //                 text: response.error,
+  //             })
+  //         }
+  //     });
+  // }
+  // else
+  // {
+  //     Swal.fire({
+  //         icon: 'error',
+  //         title: 'Oops...',
+  //         text: "Username or Password is not empty.",
+  //     })
+  // }
   
-  }
+  // }
 
   usernameInput.addEventListener('focus', onFocus);
   passwordInput.addEventListener('focus', onFocus);
@@ -150,4 +207,32 @@ function getCookie(name) {
   // Khi muốn ẩn modal
   modalBackground.classList.add('hidden');
   companyModal.classList.add('hidden');
+// });
+
+
+
+
+// var companySelect = document.getElementById("companySelect");
+// var searchInput = document.querySelector(".search-company");
+
+// searchInput.addEventListener("input", function() {
+//   var searchValue = searchInput.value.toLowerCase();
+//   var options = companySelect.getElementsByTagName("option");
+
+//   for (var i = 0; i < options.length; i++) {
+//     var option = options[i];
+//     var text = option.text.toLowerCase();
+
+//     if (text.includes(searchValue)) {
+//       option.style.display = "block";
+//     } else {
+//       option.style.display = "none";
+//     }
+//   }
+
+//   companySelect.classList.add("show-options");
+// });
+
+// companySelect.addEventListener("click", function() {
+//   companySelect.classList.remove("show-options");
 // });
