@@ -13,5 +13,6 @@ urlpatterns = [
     path('check-promotion/', views.Check_promotion, name='Check_promotion'),
     path('check-promotion-member/', views.Check_promotion_member, name='Check_promotion_member'),
     path('Check-info-customer/', views.Check_info_customer, name='Check_info_customer'),
+    path('logout-pos/', views.Logout_POS, name='Logout_POS'),
 
 ]

@@ -41,7 +41,7 @@
                     <li><a href="#"><i class="ti-list"></i> Danh Sách Đơn Hàng Chưa Hoàn Thành</a></li>
                     <li><a href="#"><i class="ti-shine"></i> Quản Lý Ca</a></li>
                     <li><a href="#"><i class="ti-list-ol"></i> Danh Sách Đơn Hàng Cần Phục Vụ</a></li>
-                    <li><a href="#"><i class="ti-power-off"></i> Đăng Xuất</a></li>
+                    <li><a href="/logout-pos/"><i class="ti-power-off"></i> Đăng Xuất</a></li>
                 </div>
             </ul>
         </nav>
@@ -59,17 +59,21 @@
           <p>aaaaaaaaaaa</p>
         {% endif %} {% endcomment %}
           {% comment %} <button type="button" class="btn btn-primary btn-fw btn-menu-function" id="btn-dine-in"><i class="ti-user"></i>Thành viên</button> {% endcomment %}
+          <button type="button" class="btn btn-success btn-fw btn-menu-function" id="btn-info-list-order"><i class="ti-list"></i>ĐƠN HÀNG</button>
           <button type="button" class="btn btn-success btn-fw btn-menu-function" id="btn-info-customer"><i class="ti-agenda"></i>THÀNH VIÊN</button>
           {% comment %} <button type="button" class="btn btn-success btn-fw btn-menu-function" id="btn-info-customer"><i class="ti-agenda"></i>THÀNH VIÊN 1</button> {% endcomment %}
         </div>
         <div class="user-menu">
           <div class="user-menu-avatar">
-            {% comment %} <img class="user-img" id="user-img" src="{% static 'Asset/img/buncha.jpg' %}" alt="Bún chả"> {% endcomment %}
-            <p class="user-img">G</p>
+            {% if request.session.User_Info.ImageUrl %}
+              <img class="user-img" id="user-img" src="../Asset/img/{{request.session.User_Info.ImageUrl}}" alt="">
+            {% else %}
+              <p class="user-img">{{ request.session.User_Info.FullName.0}}</p>
+            {% endif %}
           </div>
           <div class="user-menu-info">
-            <p class="user-fullname">Lê Lộc Trường Giang</p>
-            <p class="user-position">Quản Lý</p>
+            <p class="user-fullname">{{ request.session.User_Info.FullName }}</p>
+            <p class="user-position">{{ request.session.User_Info.Group_User }}</p>
           </div>
         </div>
         <!-- clock time-->  
@@ -214,12 +218,25 @@
                       <p class="custAdd-value"></p>
                     </div>
                   </div>
-                  <div class="information-customer-delivery">
-                    <div class="information-customer-deli">
-                      <p class="custDeli"><i class="icon-location-pin"></i> Địa Chỉ Giao Hàng: </p>
-                      <p class="custDeli-value"></p>
+                  <div class="deliver-information hidden-info">
+                    <hr class="hr-invoice">
+                    <div class="information-customer-name-birthday">
+                      <div class="information-customer-name">
+                        <p class="custName"><i class="ti-user"></i> Người Nhận: </p>
+                        <p class="custName-value-deli">Khách Hàng Vãng Lai</p>
+                      </div>
+                      <div class="information-customer-phone">
+                        <p class="custPhone"><i class="ti-mobile"></i> ĐT Người Nhận:</p>
+                        <p class="custPhone-value-deli">0909009718</p>
+                      </div>
                     </div>
-                  </div>
+                    <div class="information-customer-delivery">
+                      <div class="information-customer-deli">
+                        <p class="custDeli"><i class="icon-location-pin"></i> Địa Chỉ Giao Hàng: </p>
+                        <p class="custDeli-value-deli"></p>
+                      </div>
+                    </div>
+                  </div>                 
                   <hr class="hr-invoice">
                   <div class="information-customer-table">
                     <div class="information-table-number">
@@ -300,62 +317,106 @@
                   <input id="table-input" placeholder="Tên Bàn"></input>       
                     <div class="table-container">
                      <div class="list-group">
-                      <div class="des-table"></div>
-                      <div class="list-group-table"></div>
+                      <div class="des-table">
+                        <div class="table-all">
+                          <p class="table-all-number">{{table_all}}</p>
+                          <p class="table-all-title">Tổng Số Bàn</p>
+                        </div>
+                        <div class="table-active">
+                          <p class="table-active-number">{{table_guests}}</p>
+                          <p class="table-active-title">Bàn Có Khách</p>
+                        </div>
+                        <div class="table-empty">
+                          <p class="table-empty-number">{{table_without_guests}}</p>
+                          <p class="table-empty-title">Bàn Trống</p>
+                        </div>
+                      </div>
+                      <div class="list-group-table">
+                        <div class="table-group" data-group="0">
+                          <p class="table-group-name">Tất Cả</p>
+                      </div>
+                        <div class="table-group" data-group="1">
+                            <p class="table-group-name">Tầng Trệt</p>
+                        </div>
+                        <div class="table-group" data-group="2">
+                          <p class="table-group-name">Tầng 1</p>
+                        </div>
+                        <div class="table-group" data-group="3">
+                          <p class="table-group-name">Tầng 2</p>
+                        </div>
+                          <div class="table-group" data-group="4">
+                            <p class="table-group-name">Balcony</p>
+                        </div>
+                          <div class="table-group" data-group="5">
+                            <p class="table-group-name">Sân Thượng</p>
+                        </div>                       
+                      </div>
                      </div>
                      <div class="list-table">
-                        <div class="list-table-item list-table-item-active">
-                          {% comment %} <img src="{% static 'Asset/img/Small-table.png' %}" alt="list-table-img" class="list-table-img"> {% endcomment %}
+                        {% comment %} <div class="list-table-item list-table-item-active">
+                          <img src="{% static 'Asset/img/Small-table.png' %}" alt="list-table-img" class="list-table-img">
                           <div class="top-table">
                             <p class="count-person"><i class="ti-user"></i> 3</p>
                             <p class="list-menu-table"><i class="ti-list-ol"></i></p>
                           </div>
                           <p class="list-table-title" value='1'>Bàn 1</p>
                           <p class="list-table-cashier">Nguyễn Văn A</p>
-                        </div>
-                        <div class="list-table-item ">
-                          <div class="top-table">
-                            <p class="count-person"><i class="ti-user"></i> 3</p>
-                            <p class="list-menu-table"><i class="ti-list-ol"></i></p>
+                        </div> {% endcomment %}
+
+                        <!-- Table Order -->
+                        {% for tableOrder in tableOrders %}
+                        {% comment %} <div class="list-table-item {% if tableOrder.SaleOrderID %}list-table-item-active{% else %}list-table-item-none-active{% endif %}"> {% endcomment %}
+                        <div data-group="{{tableOrder.TableOrderID}}" class="list-table-item {% if tableOrder.SaleOrderID %}list-table-item-active{% else %}list-table-item-none-active{% endif %}">
+                          <div class="top-table">                           
+                            {% if tableOrder.SaleOrderID %}
+                              <p class="count-person"><i class="ti-user"></i> {{tableOrder.TablePerson}}</p>
+                              <p class="list-menu-table" data-id="{{tableOrder.SaleOrderID}}"><i class="ti-list-ol"></i></p>
+                            {% endif %}
                           </div>
-                          <p class="list-table-title" value='2'>Bàn 2</p>
-                        </div>
-                        <div class="list-table-item">
-                          <div class="top-table">
-                            <p class="count-person"><i class="ti-user"></i> 3</p>
-                            <p class="list-menu-table"><i class="ti-list-ol"></i></p>
+                          <p class="list-table-title" value="{{tableOrder.TableOrderID}}">{{tableOrder.TableOrderName}}</p>
+                          <p class="list-table-cashier">{{tableOrder.FullName}}</p>
+
+                           <!-- panel -->
+                          {% if tableOrder.Items %}
+                          <div class="panel panel_table_order hidden-table">
+                            <!-- Các trường thông tin trong panel -->
+                            <div class="panel-header">
+                              <p>#{{tableOrder.SaleOrderID}}</p>
+                            </div>
+                            <div class="panel-content">
+                              <div class="panel-items">
+                                
+                                  {% for Item in tableOrder.Items %}
+                                  <div class="panel-item">
+                                    <p class="panel-item-name">{{Item.MaterialName}}</p>
+                                    <p class="panel-item-quantity">{{Item.SaleQuantity}}</p>
+                                  </div>
+                                  {% endfor %}
+                                
+                                {% comment %} <div class="panel-item">
+                                  <p class="panel-item-name">Bánh Flan</p>
+                                  <p class="panel-item-quantity">3</p>
+                               </div> {% endcomment %}
+                              </div>
+                              <hr class="hr-panel">
+                              <div class="panel-footer">
+                                <p class="panel-footer-title"> THANH TOÁN: </p>
+                                <p class="panel-footer-price"> {{tableOrder.Amount | intcomma}}đ</p>
+                              </div>
+                              <div class="panel-function"> 
+                                <button type="button" class="btn btn-primary btn-fw" id="btn-panel-payment"><i class="ti-credit-card"></i></button>
+                                <button type="button" class="btn btn-danger btn-fw" id="btn-panel-transfer"><i class="ti-control-shuffle"></i></button>
+                              </div>
+                            </div>
+                            <!-- ... -->
                           </div>
-                          <p class="list-table-title" value='3'>Bàn 3</p>
+                          <!-- panel -->
+                          {% endif %}
+
                         </div>
-                        <div class="list-table-item list-table-item-active">
-                          <div class="top-table">
-                            <p class="count-person"><i class="ti-user"></i> 3</p>
-                            <p class="list-menu-table"><i class="ti-list-ol"></i></p>
-                          </div>
-                          <p class="list-table-title" value='4'>Bàn 4</p>
-                          <p class="list-table-cashier">Nguyễn Văn B</p>
-                        </div>
-                        <div class="list-table-item">
-                          <div class="top-table">
-                            <p class="count-person"><i class="ti-user"></i> 3</p>
-                            <p class="list-menu-table"><i class="ti-list-ol"></i></p>
-                          </div>
-                          <p class="list-table-title" value='5'>Bàn 5</p>
-                        </div>
-                        <div class="list-table-item">
-                          <div class="top-table">
-                            <p class="count-person"><i class="ti-user"></i> 3</p>
-                            <p class="list-menu-table"><i class="ti-list-ol"></i></p>
-                          </div>
-                          <p class="list-table-title" value='6'>Bàn 6</p>
-                        </div>
-                        <div class="list-table-item">
-                          <div class="top-table">
-                            <p class="count-person"><i class="ti-user"></i> 3</p>
-                            <p class="list-menu-table"><i class="ti-list-ol"></i></p>
-                          </div>
-                          <p class="list-table-title" value='7'>Bàn 7</p>
-                        </div>
+                        {% endfor %}
+                        <!-- Table Order -->
+
                      </div>
                     </div>
                 </div>
@@ -459,6 +520,197 @@
               </div>
             </div>
           <!-- The modal CUSTOMER -->
+
+          <!-- The modal DELIVERY-->
+          <div id="delivery-modal" class="modal modal-delivery">
+            <div class="modal-content">
+              <div class="div-title">
+                <span class="close-delivery"><i class="ti-close"></i></span>
+                <h2><i class="ti-truck"></i> THÔNG TIN ĐẶT HÀNG</h2>
+              </div>                            
+              <div class="delivery-info">
+                <div class="delivery-info-top">
+                  <div class="delivery-name-phone">
+                    <div class="delivery-input">
+                      <p><i class="ti-user"></i> Tên Khách Hàng: </p>
+                      <input id="delivery-input-name" placeholder=""></input>
+                    </div>
+                    <div class="delivery-input">
+                      <p><i class="ti-mobile"></i> Số ĐT Khách Hàng: </p>
+                      <input id="delivery-input-phone" placeholder=""></input>
+                    </div>
+                  </div>               
+                  <div class="delivery-input">
+                    <p><i class="ti-home"></i> Địa Chỉ: </p>
+                    <input id="delivery-input-address" placeholder=""></input>
+                  </div>
+                  <label class="form-check-label delivery-input-check">
+                    <input class="checkbox delivery-input-checkbox" type="checkbox">
+                    Thông Tin Người Nhận Giống Thông Tin Khách Hàng.
+                  <i class="input-helper"></i></label>
+                </div>
+                <hr class="hr-delivery">
+                <div class="delivery-info-bottom">
+                  <p class="delivery-title"><i class="ti-info ti-info-custom"></i>Thông Tin Người Nhận Hàng</p>
+                  <div class="delivery-name-phone-deli">
+                    <div class="delivery-input-deli">
+                      <p><i class="ti-user"></i> Tên Người Nhận <b class="delivery-input-require">*</b> : </p>
+                      <input id="delivery-input-name-deli" placeholder="" required> </input>
+                    </div>
+                    <div class="delivery-input-deli">
+                      <p><i class="ti-mobile"></i> Số ĐT Người Nhận <b class="delivery-input-require">*</b> : </p>
+                      <input id="delivery-input-phone-deli" placeholder="" required></input>
+                    </div>
+                  </div>               
+                  <div class="delivery-input-deli">
+                    <p><i class="icon-location-pin"></i> Địa Chỉ Giao Hàng <b class="delivery-input-require">*</b> : </p> 
+                    <input id="delivery-input-address-deli" placeholder="" required></input>
+                  </div>
+                </div>
+                <div class="delivery-function">
+                  <button type="button" class="btn btn-outline-danger btn-fw" id="save-info-btn"><i class="ti-save"></i> LƯU THÔNG TIN</button>
+                </div>
+              </div>                                                   
+            </div>
+          </div>
+          <!-- The modal DELIVERY-->
+
+           <!-- PANEL LIST ALL ORDER START-->
+            <div class="panel-all-order hidden-info">
+              <div class="panel-all-order-top">
+                <button class="panel-all-order-back"><i class="ti-angle-left ti-angle-left-custom"></i></button>
+                <p class="panel-all-order-title">DANH SÁCH ĐƠN HÀNG</p>
+                <div class="panel-search">
+                  <input type="text" id="search-input" class="hidden-search" placeholder="Nhập từ khóa tìm kiếm">
+                  <button class="panel-all-order-search"><i class="ti-search ti-search-custom"></i></button>
+                </div>
+              </div>
+              <div class="panel-all-order-bottom">
+                <div class="panel-all-order-filter"></div>
+                <div class="panel-all-order-list">
+                   <!--items-->
+                  <div class="panel-order-list-item">
+                      <div class="order-item-title">
+                        <p>14:00 - 25/05</p>
+                        <p class="order-item-title-OrderID">#123456781</p>
+                      </div>
+                      <div class="order-item-body">
+                        <div class="item-list-order">
+                          <p class="item-list-order-name">Cà phê đen</p>
+                          <p class="item-list-order-quantity">3</p>
+                        </div>
+                        <div class="item-list-order">
+                          <p class="item-list-order-name">Cà phê đá</p>
+                          <p class="item-list-order-quantity">4</p>
+                        </div>
+                        <div class="item-list-order">
+                          <p class="item-list-order-name">Cà phê sữa</p>
+                          <p class="item-list-order-quantity">5</p>
+                        </div>
+                        <div class="item-list-order">
+                          <p class="item-list-order-name">Cà phê sữa</p>
+                          <p class="item-list-order-quantity">5</p>
+                        </div>
+                      </div>
+                      <hr class="hr-list-item">
+                      <div class="order-item-footer">
+                        <div class="order-item-footer-detail">
+                          <button type="button" class="btn btn-success btn-payment-method">Tiền Mặt</button>
+                          <p class="order-item-payement">400,000đ</p>
+                        </div>
+                        <div class="order-item-footer-function">
+                          <button type="button" class="btn btn-danger btn-fw btn-function-cancel btn-function-cancel-custom" id=""><i class="ti-trash"></i>HỦY ĐƠN</button>
+                          <button type="button" class="btn btn-success btn-fw btn-function-payment btn-function-payment-custom button-disabled" id=""><i class="ti-shopping-cart-full"></i>THANH TOÁN</button>                       
+                        </div>
+                      </div>
+                      <button id="show-more-button" class="show-more-button"><i class="ti-angle-double-down"></i></button>
+                  </div>
+                   <!--items-->
+                   <div class="panel-order-list-item">
+                    <div class="order-item-title">
+                      <p>14:00 - 25/05</p>
+                      <p class="order-item-title-OrderID">#123456782</p>
+                    </div>
+                    <div class="order-item-body">
+                      <div class="item-list-order">
+                        <p class="item-list-order-name">Cà phê đen</p>
+                        <p class="item-list-order-quantity">3</p>
+                      </div>
+                      <div class="item-list-order">
+                        <p class="item-list-order-name">Cà phê đá</p>
+                        <p class="item-list-order-quantity">4</p>
+                      </div>
+                      <div class="item-list-order">
+                        <p class="item-list-order-name">Cà phê sữa</p>
+                        <p class="item-list-order-quantity">5</p>
+                      </div>
+                      <div class="item-list-order">
+                        <p class="item-list-order-name">Cà phê sữa</p>
+                        <p class="item-list-order-quantity">5</p>
+                      </div>
+                      <div class="item-list-order">
+                        <p class="item-list-order-name">Cà phê sữa</p>
+                        <p class="item-list-order-quantity">5</p>
+                      </div>
+                    </div>
+                    <hr class="hr-list-item">
+                    <div class="order-item-footer">
+                      <div class="order-item-footer-detail">
+                        <button type="button" class="btn btn-warning btn-payment-method">Chưa TT</button>
+                        <p class="order-item-payement ">500,000đ</p>
+                      </div>
+                      <div class="order-item-footer-function">
+                        <button type="button" class="btn btn-danger btn-fw btn-function-cancel btn-function-cancel-custom" id=""><i class="ti-trash"></i>HỦY ĐƠN</button>
+                        <button type="button" class="btn btn-success btn-fw btn-function-payment btn-function-payment-custom" id=""><i class="ti-shopping-cart-full"></i>THANH TOÁN</button>                       
+                      </div>
+                    </div>
+                    <button id="show-more-button" class="show-more-button"><i class="ti-angle-double-down"></i></button>
+                  </div>
+                  <div class="panel-order-list-item">
+                    <div class="order-item-title">
+                      <p>14:00 - 25/05</p>
+                      <p class="order-item-title-OrderID">#123456783</p>
+                    </div>
+                    <div class="order-item-body">
+                      <div class="item-list-order">
+                        <p class="item-list-order-name">Cà phê đen</p>
+                        <p class="item-list-order-quantity">3</p>
+                      </div>
+                      <div class="item-list-order">
+                        <p class="item-list-order-name">Cà phê đá</p>
+                        <p class="item-list-order-quantity">4</p>
+                      </div>
+                      <div class="item-list-order">
+                        <p class="item-list-order-name">Cà phê sữa</p>
+                        <p class="item-list-order-quantity">5</p>
+                      </div>
+                      <div class="item-list-order">
+                        <p class="item-list-order-name">Cà phê sữa</p>
+                        <p class="item-list-order-quantity">5</p>
+                      </div>
+                      <div class="item-list-order">
+                        <p class="item-list-order-name">Cà phê sữa</p>
+                        <p class="item-list-order-quantity">5</p>
+                      </div>
+                    </div>
+                    <hr class="hr-list-item">
+                    <div class="order-item-footer">
+                      <div class="order-item-footer-detail">
+                        {% comment %} <button type="button" class="btn btn-success btn-payment-method">Tiền Mặt</button> {% endcomment %}
+                        <button type="button" class="btn btn-danger btn-payment-method">Hủy Đơn</button>
+                        <p class="order-item-payement">500,000đ</p>
+                      </div>
+                      <div class="order-item-footer-function">
+                        <button type="button" class="btn btn-danger btn-fw btn-function-cancel btn-function-cancel-custom button-disabled" id=""><i class="ti-trash"></i>HỦY ĐƠN</button>
+                        <button type="button" class="btn btn-success btn-fw btn-function-payment btn-function-payment-custom button-disabled" id=""><i class="ti-shopping-cart-full"></i>THANH TOÁN</button>
+                      </div>
+                    </div>
+                    <button id="show-more-button" class="show-more-button"><i class="ti-angle-double-down"></i></button>
+                </div>
+                </div>
+              </div>
+            </div>
+            <!-- PANEL LIST ALL ORDER END-->
   
             <div class="footer">
                 <div class="total-tax" id="total-tax">
@@ -490,7 +742,8 @@
                 <button type="button" class="btn btn-outline-danger btn-fw btn-promotion-button" id=""><i class="ti-gift"></i>CHƯƠNG TRÌNH KHUYẾN MÃI</button>
               </div>
               <div class="btn-function">
-                <button type="button" class="btn btn-danger btn-fw btn-function-cancel" id=""><i class="ti-trash"></i>HỦY ĐƠN</button>
+                <button type="button" class="btn btn-danger btn-fw btn-function-cancel" id=""><i class="ti-save-alt"></i>LƯU TẠM</button>
+                {% comment %} <button type="button" class="btn btn-danger btn-fw btn-function-cancel" id=""><i class="ti-trash"></i>LƯU TẠM</button> {% endcomment %}
                 <button type="button" class="btn btn-success btn-fw btn-function-payment" id=""><i class="ti-shopping-cart-full"></i>THANH TOÁN</button>
               </div>
             </div>

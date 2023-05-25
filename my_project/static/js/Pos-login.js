@@ -293,7 +293,8 @@ addButton.addEventListener('click', () => {
           if(table_item)
           {
             if (target.classList.contains('ti-list-ol')) {
-              alert('ti-list-ol');
+              // alert('ti-list-ol');
+              // togle_order_table();
             }
             else {
               var table_order = document.querySelector('.custTable-value');
@@ -308,6 +309,62 @@ addButton.addEventListener('click', () => {
             }
           }
           
+        });
+
+        const table_status = document.querySelector('.list-group');    
+        table_status.addEventListener('click', function(event) {
+          const target = event.target;
+          var des_table = target.closest('.des-table');
+          var list_group_table = target.closest('.list-group-table');
+          if(des_table){
+            var status_active = target.closest('.table-active');
+            var status_none_active = target.closest('.table-empty');
+            var status_all = target.closest('.table-all');
+            if(status_active)
+            {         
+                var items_none = document.querySelectorAll('.list-table-item-none-active');
+                items_none.forEach(item => {
+                  item.style.display = 'none';
+              })   
+              var items_active = document.querySelectorAll('.list-table-item-active');
+              items_active.forEach(item => {
+                  item.style.display = 'block';
+              })          
+            }
+            if(status_none_active)
+            {         
+                var items_none = document.querySelectorAll('.list-table-item-none-active');
+                items_none.forEach(item => {
+                  item.style.display = 'block';
+              })   
+              var items_active = document.querySelectorAll('.list-table-item-active');
+              items_active.forEach(item => {
+                  item.style.display = 'none';
+              })          
+            }   
+            if(status_all)
+            {         
+                var items_all = document.querySelectorAll('.list-table-item');
+                items_all.forEach(item => {
+                  item.style.display = 'block';
+              })                     
+            }
+          }
+          if(list_group_table){
+            var list_item = document.querySelectorAll('.list-table-item');
+            var btn_group = target.closest('.table-group').getAttribute('data-group');
+            list_item.forEach(item => {
+              var a = item.getAttribute('data-group')
+              if(item.getAttribute('data-group') === btn_group || btn_group === "0"){
+                item.style.display = 'block';
+              }
+              else{
+                item.style.display = 'none';
+              }
+              
+          }) 
+          }
+               
         });
 
 
@@ -343,7 +400,7 @@ addButton.addEventListener('click', () => {
                     Swal.fire({
                         icon: 'error',
                         title: 'Oops...',
-                        text: response.error,
+                        text: response.message,
                       })
                   }
                 },
@@ -351,17 +408,24 @@ addButton.addEventListener('click', () => {
                     Swal.fire({
                         icon: 'error',
                         title: 'Oops...',
-                        text: response.error,
+                        text: response.message,
                       })
                 }
               });
             }
             else{
+              var total_amount = document.querySelector('.total-amount-price').getAttribute('value');
+              var Channel = document.querySelector('.order-type .active');
+              var Channel_value = Channel.getAttribute('data-channel');
+
               if(PromoID){
                 $.ajax({
                   url: '/check-promotion/',
                   method: 'POST',
-                  data: { 'PromotionID': PromoID },
+                  // data: { 'PromotionID': PromoID },
+                  data: { 'PromotionID': PromoID ,
+                          'TotalAmount': total_amount,
+                          'Channel': Channel_value,},
                   success: function(response) {
                     if (response.success) {   
                       var respone_discount =  Math.abs(parseInt(response.dataPromotion));
@@ -388,7 +452,7 @@ addButton.addEventListener('click', () => {
                       Swal.fire({
                           icon: 'error',
                           title: 'Oops...',
-                          text: response.error,
+                          text: response.message,
                         })
                     }
                   },
@@ -396,7 +460,7 @@ addButton.addEventListener('click', () => {
                       Swal.fire({
                           icon: 'error',
                           title: 'Oops...',
-                          text: response.error,
+                          text: response.message,
                         })
                   }
                 });
@@ -766,6 +830,7 @@ categoryButtons.forEach(button => {
 });
 
 
+
 //Modal promotion
 let ProID = 0;
 let ProName = "";
@@ -846,7 +911,7 @@ function check_promotion(promotionID, promotionName){
             else{
               if(TotalAmount > respone_value){
                 var discount_promotion = document.querySelector('.discount-value');    
-                let discount =  parseInt(response.dataPromotion).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
+                let discount =  parseInt(-response.dataPromotion).toLocaleString('vi-VN', {style: 'currency', currency: 'VND'});
                 discount_promotion.textContent = discount;
                 discount_promotion.setAttribute('value', respone_value);
                 calculate_total_payment();
@@ -889,6 +954,20 @@ function check_promotion(promotionID, promotionName){
           }
 
         } else {
+          if(response.Channel_failed){
+            var style_button = document.querySelectorAll(".btn-order-type");
+            style_button.forEach(function(button) {
+              // Xóa lớp active từ tất cả các button
+              button.classList.remove('active');
+              
+              var dataChannel = parseInt(button.getAttribute('data-channel'));
+              var channelVal = parseInt(response.Channel_val);
+              if (dataChannel === channelVal) {
+                // Gán lớp active cho button có data-channel tương ứng
+                button.classList.add('active');
+              }
+            });
+          }
           Swal.fire({
               icon: 'error',
               title: 'Thông báo Lỗi',
@@ -896,7 +975,7 @@ function check_promotion(promotionID, promotionName){
             })
         }
       },
-      error: function(response) {
+      error: function(response) {      
           Swal.fire({
               icon: 'error',
               title: 'Oops...222',
@@ -928,11 +1007,16 @@ function check_promotion_del(){
   var PaymentValue = document.querySelector('.payment-value').getAttribute('value');
   var TotalAmount = document.querySelector('.total-amount-price').getAttribute('value');
 
+  var Channel = document.querySelector('.order-type .active');
+  var Channel_value = Channel.getAttribute('data-channel');
+
   if(PaymentValue > 0 ){
     $.ajax({
       url: '/check-promotion/',
       method: 'POST',
-      data: { 'PromotionID': PromotionID },
+      data: { 'PromotionID': PromotionID ,
+              'TotalAmount': TotalAmount,
+              'Channel': Channel_value,},
       success: function(response) {
         if (response.success) {   
           var respone_value =  Math.abs(parseInt(response.dataPromotion));
@@ -1063,7 +1147,7 @@ function check_promotion_del(){
                       Swal.fire({
                           icon: 'error',
                           title: 'Oops...',
-                          text: response.error,
+                          text: response.message,
                         })
                     }
                   },
@@ -1071,7 +1155,7 @@ function check_promotion_del(){
                       Swal.fire({
                           icon: 'error',
                           title: 'Oops...',
-                          text: response.error,
+                          text: response.message,
                         })
                   }
                 });
@@ -1083,7 +1167,7 @@ function check_promotion_del(){
           Swal.fire({
               icon: 'error',
               title: 'Oops...',
-              text: response.error,
+              text: response.message,
             })
         }
       },
@@ -1091,7 +1175,7 @@ function check_promotion_del(){
           Swal.fire({
               icon: 'error',
               title: 'Oops...',
-              text: response.error,
+              text: response.message,
             })
       }
     });
@@ -1115,7 +1199,58 @@ $(document).on('click', '#save-promotion-btn', function(event) {
 
 
 $(document).on('click', '#btn-dine-in', function(event) {
+  $('.deliver-information').addClass('hidden-info');
   $('#Dine-in-modal').addClass('modal-show');
+  var promotionID = $(this).prev('.promotion-name').attr('data-promotion');
+  var promotionName = $(this).prev('.promotion-name').text();
+  if(promotionID & promotionName){
+    check_promotion(promotionID, promotionName)
+  }
+});
+
+$(document).on('click', '#btn-take-away', function(event) {
+  $('.deliver-information').addClass('hidden-info');
+  var promotionID = document.querySelector('.order-information-promotion-item').getAttribute('value');
+  var promotionName =document.querySelector('.order-information-promotion-item p').textContent;
+  if(promotionID && promotionName){
+    check_promotion(promotionID, promotionName)
+  }
+});
+
+$(document).on('click', '#btn-delivery', function(event) {
+  $('#delivery-modal').addClass('modal-show');
+  get_info_customer()
+  // var promotionID = document.querySelector('.order-information-promotion-item').getAttribute('value');
+  // var promotionName =document.querySelector('.order-information-promotion-item p').textContent;
+  // if(promotionID && promotionName){
+  //   check_promotion(promotionID, promotionName)
+  // }
+});
+
+
+$(document).on('click', '#save-info-btn', function(event) {
+  var delivery_input_name = document.querySelector('#delivery-input-name-deli').value;
+  var delivery_input_phone = document.querySelector('#delivery-input-phone-deli').value;
+  var delivery_input_address = document.querySelector('#delivery-input-address-deli').value;
+  if(delivery_input_name && delivery_input_phone && delivery_input_phone){
+    var delivery_input_name_deli = document.querySelector('.custName-value-deli');
+    delivery_input_name_deli.textContent  = delivery_input_name
+    var delivery_input_phone_deli = document.querySelector('.custPhone-value-deli');
+    delivery_input_phone_deli.textContent  = delivery_input_phone
+    var delivery_input_address_deli = document.querySelector('.custDeli-value-deli');
+    delivery_input_address_deli.textContent  = delivery_input_address;
+    
+    $('.deliver-information').removeClass('hidden-info');
+    $('#delivery-modal').removeClass('modal-show');
+  }
+  else{
+    Swal.fire({
+      icon: 'error',
+      title: 'Thông tin Chưa Đầy Đủ',
+      text: 'Nhập Đầy Đủ Các Trường Thông Tin Có Dấu *.',
+    })
+  }
+  
 });
 
 $('.close-promotion').click(function(event) {
@@ -1130,6 +1265,50 @@ $('.btn-promotion-button').click(function(event) {
 $('.close-Dine').click(function(event) {
   $('#Dine-in-modal').removeClass('modal-show');
 }); 
+$('.close-delivery').click(function(event) {
+  $('#delivery-modal').removeClass('modal-show');
+}); 
+
+function get_info_customer(){
+   var custName_value = document.querySelector('.custName-value').textContent;
+   var custPhone_value = document.querySelector('.custPhone-value').textContent;
+   var custAdd_value = document.querySelector('.custAdd-value').textContent;
+
+   var delivery_input_name = document.querySelector('#delivery-input-name');
+   delivery_input_name.value  = custName_value
+   var delivery_input_phone = document.querySelector('#delivery-input-phone');
+   delivery_input_phone.value  = custPhone_value
+   var delivery_input_address = document.querySelector('#delivery-input-address');
+   delivery_input_address.value  = custAdd_value
+}
+
+var checkbox = document.querySelector('.delivery-input-checkbox');
+
+checkbox.addEventListener('change', function() {
+  if (this.checked) {
+    // alert('Checkbox đã được check');
+    var delivery_input_name = document.querySelector('#delivery-input-name').value;
+    var delivery_input_phone = document.querySelector('#delivery-input-phone').value;
+    var delivery_input_address = document.querySelector('#delivery-input-address').value;
+
+    var delivery_input_name_deli = document.querySelector('#delivery-input-name-deli');
+    delivery_input_name_deli.value  = delivery_input_name
+    var delivery_input_phone_deli = document.querySelector('#delivery-input-phone-deli');
+    delivery_input_phone_deli.value  = delivery_input_phone
+    var delivery_input_address_deli = document.querySelector('#delivery-input-address-deli');
+    delivery_input_address_deli.value  = delivery_input_address
+  } else {
+    // alert('Checkbox đã được uncheck');
+    var delivery_input_name_deli = document.querySelector('#delivery-input-name-deli');
+    delivery_input_name_deli.value  = ""
+    var delivery_input_phone_deli = document.querySelector('#delivery-input-phone-deli');
+    delivery_input_phone_deli.value  = ""
+    var delivery_input_address_deli = document.querySelector('#delivery-input-address-deli');
+    delivery_input_address_deli.value  = ""
+  }
+});
+
+
 
 
 function add_promotion_title(PromotionName, PromotionID){
@@ -1280,8 +1459,8 @@ function check_promotion_member(){
    });
  });
 
-//search Customer
 
+//search Customer
 const searchID = document.querySelector('#custID-input');
 const searchName = document.querySelector('#custName-input');
 const searchPhone = document.querySelector('#custPhone-input');
@@ -1313,6 +1492,24 @@ searchName.addEventListener('input', searchCustomer);
 searchPhone.addEventListener('input', searchCustomer);
 
 
+//search sale order
+ const search_order = document.querySelector('#search-input');
+ 
+ search_order.addEventListener('input', function() {
+   const searchorder_value = search_order.value.toLowerCase();
+   const OrderList = document.querySelectorAll('.panel-order-list-item');
+   
+   OrderList.forEach(item => {
+     const OrderID = item.querySelector('.order-item-title-OrderID').textContent.toLowerCase();
+     
+     if (OrderID.includes(searchorder_value)) {
+       item.style.display = 'block';
+     } else {
+       item.style.display = 'none';
+     }
+   });
+ });
+
 
 //  document.addEventListener('DOMContentLoaded', () => {
 //   // Lấy tất cả các div có class là "order-item"
@@ -1329,18 +1526,26 @@ searchPhone.addEventListener('input', searchCustomer);
 // });
 
 
-//Function order type
-// const buttons = document.querySelectorAll('.btn-order-type');
+var showMoreButtons = document.querySelectorAll('.show-more-button');
 
-// buttons.forEach(button => {
-//   button.addEventListener('click', function() {
-//     // Bỏ đi class 'active' của tất cả các button
-//     buttons.forEach(btn => btn.classList.remove('active'));
+showMoreButtons.forEach(function(button) {
+  button.addEventListener('click', function() {
+    var panel = this.parentElement.querySelector('.order-item-body');
+    var showMoreIcon = this.querySelector('i');
 
-//     // Thêm class 'active' vào button được click
-//     this.classList.add('active');
-//   });
-// });
+    if (panel.classList.contains('expanded')) {
+      panel.style.maxHeight = '110px'; // Chiều cao giới hạn khi thu gọn
+      showMoreIcon.classList.remove('ti-angle-double-up');
+      showMoreIcon.classList.add('ti-angle-double-down');
+      panel.classList.remove('expanded');
+    } else {
+      panel.style.maxHeight = panel.scrollHeight + 'px';
+      showMoreIcon.classList.remove('ti-angle-double-down');
+      showMoreIcon.classList.add('ti-angle-double-up');
+      panel.classList.add('expanded');
+    }
+  });
+});
 
 const buttons = document.querySelectorAll('.btn-order-type');
 
@@ -1361,6 +1566,19 @@ buttons.forEach(button => {
 //function info cusstomer
 $('#btn-info-customer').click(function(){
   $('#customer-modal').addClass('modal-show'); 
+});
+$('#btn-info-list-order').click(function(){
+  $('.panel-all-order').removeClass('hidden-info'); 
+});
+$('.panel-all-order-back').click(function(){
+  $('.panel-all-order').addClass('hidden-info'); 
+});
+
+var search_Button = document.querySelector('.panel-all-order-search');
+var search_Input = document.getElementById('search-input');
+
+search_Button.addEventListener('click', function() {
+  search_Input.classList.toggle('hidden-search');
 });
 
 
@@ -1415,3 +1633,15 @@ function setCookie(name, value, days) {
   document.cookie = name + "=" + value + expires + "; path=/";
 }
 
+
+// var item = document.querySelector('.list-menu-table');
+// function  togle_order_table() {
+//   // Toggle hiển thị/ẩn panel khi được nhấp vào
+//       var panel = document.querySelector('.panel_table_order');
+//       if(panel){
+//         panel.classList.remove('hidden-table');
+//       }
+// }
+
+// item.addEventListener('click', togle_order_table);
+// item.removeEventListener('click', togle_order_table);

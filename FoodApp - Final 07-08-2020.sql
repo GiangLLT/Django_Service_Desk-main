@@ -327,6 +327,7 @@ CREATE TABLE SALE_ORDER_HEADER (
 	SaleOrderPriceTax	bigint,
 	SaleOrderAmount		bigint,
 	SaleHeaderNote		nvarchar(max),
+	SaleOrderDate		date,
 	SaleOrderStatus		nvarchar(255),
 
 	FOREIGN KEY (UserID) REFERENCES USER_SY (UserID),
