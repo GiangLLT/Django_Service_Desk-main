@@ -21,7 +21,7 @@ urlpatterns = [
     # path('users/', UsersViewSet.as_view(), name='users-list'),
     # path('users/<str:pk>/', UsersViewSet.as_view(), name='users-detail'),
 
-    path('', include(router.urls)),
+    # path('', include(router.urls)),
 
 
     path('api/', schema_view),

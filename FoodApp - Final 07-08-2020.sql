@@ -469,6 +469,14 @@ CREATE TABLE django_session (
 );
 GO
 
+--Table session --
+CREATE TABLE django_session (
+    session_key			nvarchar(40) PRIMARY KEY NOT NULL,
+    session_data		nvarchar(max),
+	expire_date			DATETIMEOFFSET(7),
+);
+GO
+
 
 -- tạo table--
 --------------------------------------------------------------------------------------------------------

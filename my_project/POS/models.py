@@ -7,7 +7,7 @@ class Company(models.Model):
     CompanyVAT = models.CharField(max_length=20)
     CompanyStatus = models.BooleanField()
     class Meta:
-        db_table = 'Company'
+        db_table = 'Company_'
 
 class Department(models.Model):
     DepartID = models.CharField(primary_key=True, max_length=5)

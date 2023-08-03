@@ -21,3 +21,8 @@ git merge origin/main
 git add Note.txt
 git commit -m "Update Note.txt"
 
+
+https://stackoverflow.com/questions/54824864/django-python-sql-server-pyodbc-isnt-an-available-database-backend 
+# pip uninstall django-pyodbc-azure 
+# pip uninstall django-mssql-backend 
+# pip install mssql-django

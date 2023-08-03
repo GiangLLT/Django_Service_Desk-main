@@ -1,0 +1,138 @@
+{% extends 'Admin_Helpdesk.html' %}
+
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Trang Chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Quản Lý Phân Quyền</span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper ">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="top-title">
+                <div class="row row-custom">
+                    <div class="func-title col-lg-4 col-md-12 col-sm-12">
+                        <h4 class="card-title card-title-edit">QUẢN LÝ PHÂN QUYỀN</h4>
+                    </div>
+                    <div class="func-date col-lg-4 col-md-6 col-sm-12">
+                        <input type="date" class="form-control" id="input-from" name="input-from">
+                        <input type="date" class="form-control" id="input-to" name="input-to">
+                    </div>
+                    <div class="func-auth col-lg-4 col-md-6 col-sm-12">
+                        <button type="button" class="btn btn-danger btn-icon-text addRoleUser" id="addRoleUser">
+                            <i class="ti-user btn-icon-prepend"></i>                                                    
+                            SAO CHÉP QUYỀN
+                        </button>
+                        <button type="button" class="btn btn-danger btn-icon-text addRole" id="addRole">
+                        <i class="ti-files btn-icon-prepend"></i>                                                    
+                        PHÂN QUYỀN
+                        </button>
+                    </div>
+                </div>
+              </div>   
+              <div class="row grid-margin">        
+                <div class="col-lg-5 grid-margin stretch-card">
+                    <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+
+                            <table id="product-table-user" class="table table-hover">
+                                <thead>
+                                <tr class="tr-table">
+                                    <th >#</th>
+                                    <th>MÃ</th>
+                                    <th>HỌ TÊN</th>                                                       
+                                    <th></th>
+                                </tr>
+                                <tr>
+                                    {% comment %} Search box {% endcomment %}
+                                    <th class="auth-custom-user">
+                                    </th>
+                                    <th class="auth-custom-user">
+                                    <input type="text" class="form-control" id="search-UserID" name="search-UserID" placeholder="#">
+                                    </th>
+                                    <th class="auth-custom-user">
+                                    <input type="text" class="form-control" id="search-Name" name="search-Name"  placeholder="Tên Người Dùng">
+                                    </th >
+                                    {% comment %} Search box {% endcomment %}
+                                    <th class="auth-custom-user">                                                           
+                                    </th>                                                           
+                                </tr>                               
+                                </thead>                          
+                                <tbody>
+                                </tbody>                          
+                            </table>                    
+                        </div>
+                        <ul class="pagination" id="pagination"></ul>                                    
+                    </div>
+                    </div>
+                </div>
+                <div class="col-lg-7 grid-margin stretch-card">
+                    <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <div class="role-container">
+                                {% comment %} <div class="role-item">
+                                    <div class="role-item-group checkbox-wrapper-14">
+                                        <input id="s1-14 checkbox-group" type="checkbox" class="switch">
+                                        <label for="s1-14">Role DashBoard</label>
+                                    </div>
+                                    <div class="role-item-data checkbox-wrapper-14">
+                                        <table>
+                                            <thead><tr></tr></thead>
+                                            <tbody>
+                                              <tr>
+                                                <td>
+                                                    <div class="role-single-item-data">
+                                                        <input type="checkbox" id="checkbox-role" data-group="" value="" />
+                                                        <p>View Data Performance</p>
+                                                    </div>
+                                                </td>
+                                                <td>Dữ liệu 2</td>
+                                                <td>Dữ liệu 3</td>
+                                              </tr>
+                                              <!-- Thêm các hàng dữ liệu khác tại đây -->
+                                            </tbody>
+                                        </table>
+                                        <table><thead><tr></tr></thead><tbody><tr>
+                                                <td>
+                                                    <div class="role-single-item-data">
+                                                        <input type="checkbox" id="checkbox-role" data-group="" value="" />
+                                                        <p>View Data Performance</p>
+                                                    </div>
+                                                </td>
+                                                <td>Dữ liệu 2</td>
+                                                <td>Dữ liệu 3</td>
+                                              </tr></tbody>
+                                        </table>
+                                        <div class="role-single-item-data">
+                                            <input type="checkbox" id="checkbox-role" data-group="" value="" />
+                                            <p>View Data Performance</p>
+                                        </div>
+                                        <div class="role-single-item-data">
+                                            <input type="checkbox" id="checkbox-role" data-group="" value="" />
+                                            <p>View Data User</p>
+                                        </div>
+                                        <div class="role-single-item-data">
+                                            <input type="checkbox" id="checkbox-role" data-group="" value="" />
+                                            <p>View Data Ticket</p>
+                                        </div>
+                                    </div>
+                                </div> {% endcomment %}
+                            </div>                 
+                        </div>                            
+                    </div>
+                    </div>
+                </div>
+              </div>
+            </div>
+          </div>
+    </div>
+
+{% endblock %}

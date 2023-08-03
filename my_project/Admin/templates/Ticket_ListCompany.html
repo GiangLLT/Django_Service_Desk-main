@@ -1,0 +1,181 @@
+{% extends 'Admin_Helpdesk.html' %}
+
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Trang Chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Danh Sách Công Ty </span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper ">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="top-title">
+                <h4 class="card-title card-title-edit">DANH SÁCH CÔNG TY</h4>
+                <button type="button" class="btn btn-danger btn-icon-text addCompany disable-button" id="addCompany">
+                  <i class="ti-files btn-icon-prepend"></i>                                                    
+                  TẠO CÔNG TY
+                </button>
+              </div>
+              
+              {% comment %} <p class="card-description">A basic data list T001</p> {% endcomment %}
+              {% comment %} <div id="js-grid" class="pt-3"></div> {% endcomment %}
+
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    {% comment %} <h4 class="card-title">Hoverable Table</h4>
+                    <p class="card-description">
+                      Add class <code>.table-hover</code>
+                    </p> {% endcomment %}
+                    <div class="table-responsive">
+
+                        <table id="product-table" class="table table-hover">
+                            <thead>
+                              <tr class="tr-table">
+                                <th>#</th>
+                                <th>TÊN CÔNG TY</th>                                                       
+                                <th>NGƯỜI TẠO</th>
+                                <th>NGÀY TẠO</th>
+                                <th>GIỜ TẠO</th>
+                                <th>TÌNH TRẠNG</th>
+                                <th>CHỨC NĂNG</th>
+                              </tr>
+                              <tr>
+                                {% comment %} Search box {% endcomment %}
+                                <th>
+                                  <input type="text" class="form-control" id="search-CompanyID" name="search-CompanyID" placeholder="#">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-CompanyName" name="search-CompanyName"  placeholder="Tên Công Ty">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-CompanyCreate" name="search-CompanyCreate"  placeholder="Người Tạo">
+                                </th>                               
+                                <th>
+                                  <input type="date" class="form-control" id="search-CompanyDate" name="search-CompanyDate" >
+                                </th>
+                                <th>
+                                  <input type="time" class="form-control" id="search-CompanyTime" name="search-CompanyTime">
+                                </th>
+                                <th>
+                                  <select class="db-status">
+                                    <option value="">Tất Cả</option>
+                                    <option value="true">Kích Hoạt</option>
+                                    <option value="false">Không Kích Hoạt</option>
+                                  </select>
+                                </th>
+                                {% comment %} Search box {% endcomment %}
+                                <th>
+                                  {% comment %} Action {% endcomment %}
+                                  {% comment %} <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon addTicket" id="addTicket">
+                                    <i class="ti-plus text-danger"></i>
+                                  </button>  {% endcomment %}
+                                  <button type="button" class="btn btn-danger btn-icon-text btn-remove-filter" id="">
+                                    <i class="ti-files btn-icon-prepend"></i>                                                    
+                                    XÓA FILTER
+                                  </button>
+                                  
+                                  <!-- Modal Create Ticket -->
+                                  <div class="modal fade modal-hidden" id="CreateCompanyModal" tabindex="-1" role="dialog" aria-labelledby="CreateCompanyModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="CreateCompanyModalLabel"><i class="ti-write"></i> TẠO MỚI CÔNG TY</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="CreateCompanyForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                            <div class="form-group">
+                                              <label for="name">Tên Công Ty <b class="require-form">*</b></label>
+                                              <input type="text" class="form-control" id="input_company_name" name="name" placeholder="Tên Công Ty" required>
+                                            </div>                                        
+                                          </div>                                         
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="create-company-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal Create Ticket  -->   
+                                  
+                                  <!-- Modal Update Ticket -->
+                                  <div class="modal fade modal-hidden" id="UpdateCompanyModal" tabindex="-1" role="dialog" aria-labelledby="UpdateCompanyModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="UpdateCompanyModalLabel"><i class="ti-write"></i> CẬP NHẬT CÔNG TY</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="UpdateCompanyForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                            <div class="form-group">
+                                                <label for="name">Mã Công Ty <b class="require-form">*</b></label>
+                                                <input type="text" class="form-control" id="input_company_id" name="id" readonly required>
+                                              </div>
+                                            <div class="form-group">
+                                              <label for="name">Tên Công Ty <b class="require-form">*</b></label>
+                                              <input type="text" class="form-control" id="input_company_name" name="name" required>
+                                            </div>   
+                                            <div class="form-group">
+                                                <label for="name">Trạng Thái <b class="require-form">*</b></label>
+                                                <select class="form-select input_status" aria-label="Default select example" id="input_company_status" name="type" readonly required>
+                                                  <option value="true">Kích Hoạt</option>
+                                                  <option value="false">Không Kích Hoạt</option>
+                                                </select>
+                                              </div>                                     
+                                          </div>                                        
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="Update-company-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal Update Ticket  -->                                   
+                                </th>                                                           
+                              </tr>                               
+                            </thead>                          
+                            <tbody>
+                            </tbody>                          
+                          </table>                    
+                    </div>
+                    <ul class="pagination" id="pagination"></ul>                                    
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+    </div>
+    {% comment %} <script src="https://cdn.tiny.cloud/1/z25cg6a4w4qz1dd1lxrsft0b1yo8z5z33z6v7uhfnhnu6ekm/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script type="text/javascript" src="{% static 'js/jszip.min.js' %}"></script>
+  <script>
+    tinymce.init({
+      selector: 'textarea',
+      plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount checklist mediaembed casechange export formatpainter pageembed linkchecker a11ychecker tinymcespellchecker permanentpen powerpaste advtable advcode editimage tinycomments tableofcontents footnotes mergetags autocorrect typography inlinecss',
+      toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+      tinycomments_mode: 'embedded',
+      tinycomments_author: 'Author name',
+      mergetags_list: [
+        { value: 'First.Name', title: 'First Name' },
+        { value: 'Email', title: 'Email' },
+      ]
+    });
+  </script> {% endcomment %}
+    {% comment %} <script type="text/javascript" src="{% static 'js/tinymce.min.js' %}"></script>  
+ <script type="text/javascript" src="{% static 'js/editor.js' %}"></script>   {% endcomment %}
+
+{% endblock %}

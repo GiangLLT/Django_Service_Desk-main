@@ -1,0 +1,40 @@
+Để tạo client_id và client_secret để sử dụng với Office 365, bạn cần đăng ký ứng dụng trên trang web Azure Portal. Bạn có thể làm theo các bước sau:
+
+Đăng nhập vào trang web Azure Portal (https://portal.azure.com/).
+Chọn "Azure Active Directory" từ menu bên trái.
+Chọn "App registrations" và sau đó chọn "New registration".
+Đặt tên cho ứng dụng của bạn và chọn "Web" cho loại ứng dụng.
+Cung cấp URI đăng nhập và URI chuyển hướng. Đây là URL mà người dùng sẽ sử dụng để đăng nhập vào ứng dụng của bạn.
+Chọn các phương thức xác thực mà bạn muốn sử dụng. Đối với đăng nhập bằng tên người dùng và mật khẩu, bạn cần chọn "Implicit grant".
+Sau đó, bạn sẽ nhận được client_id của ứng dụng của mình. Bạn có thể tìm thấy client_secret trong phần "Certificates & secrets" của ứng dụng của bạn. Nhấp vào "New client secret" để tạo một `
+
+Client ID : 5c17ff26-50a1-4003-bc31-f0545709c2f
+EeJ8Q~ip-6TA~p1C7Y9t24l81qig0lFv1t5CPdwO
+
+giang.llt@bamboocap.com.vn
+Gllt@1622
+
+"https://login.microsoftonline.com/c43d3f81-f57a-48cc-8b07-74b39935d876/oauth2/v2.0/authorize?client_id=5c17ff26-50a1-4003-bc31-f0545709c2f7&response_type=code&redirect_uri=http://localhost:8000/danh-sach-test/&response_mode=query&scope=https://graph.microsoft.com/.default&state=bambocap"
+
+
+899604034596998
+ <script>
+  window.fbAsyncInit = function() {
+    FB.init({
+      appId      : '899604034596998',
+      cookie     : true,
+      xfbml      : true,
+      version    : 'v16.0'
+    });
+    FB.AppEvents.logPageView();   
+  };
+       
+  
+  (function(d, s, id){
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) {return;}
+     js = d.createElement(s); js.id = id;
+     js.src = "https://connect.facebook.net/en_US/sdk.js";
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
+</script>

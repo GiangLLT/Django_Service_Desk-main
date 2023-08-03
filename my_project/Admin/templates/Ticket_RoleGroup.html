@@ -1,0 +1,178 @@
+{% extends 'Admin_Helpdesk.html' %}
+
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Trang Chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Danh Sách Nhóm Quyền</span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper ">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="top-title">
+                <h4 class="card-title card-title-edit">DANH SÁCH NHÓM QUYỀN</h4>
+                <button type="button" class="btn btn-danger btn-icon-text addGroupRole" id="addGroupRole">
+                  <i class="ti-files btn-icon-prepend"></i>                                                    
+                  TẠO NHÓM QUYỀN
+                </button>
+              </div>           
+
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <div class="table-responsive">
+
+                        <table id="product-table" class="table table-hover">
+                            <thead>
+                              <tr class="tr-table">
+                                <th>#</th>
+                                <th>TÊN NHÓM</th> 
+                                <th>MENU</th>
+                                <th>LINK</th>                                                       
+                                <th>NGƯỜI TẠO</th>
+                                <th>NGÀY TẠO</th>
+                                <th>GIỜ TẠO</th>
+                                <th>TÌNH TRẠNG</th>
+                                <th>CHỨC NĂNG</th>
+                              </tr>
+                              <tr>
+                                {% comment %} Search box {% endcomment %}
+                                <th>
+                                  <input type="text" class="form-control" id="search-GroupRoleID" name="search-GroupRoleID" placeholder="#">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-GroupRoleName" name="search-GroupRoleName"  placeholder="Tên Nhóm">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-MenuName" name="search-MenuName"  placeholder="Tên Menu">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-MenuAddress" name="search-MenuAddress"  placeholder="Đường Dẫn">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-GroupRoleCreate" name="search-GroupRoleCreate"  placeholder="Người Tạo">
+                                </th>                               
+                                <th>
+                                  <input type="date" class="form-control" id="search-GroupRoleDate" name="search-GroupRoleDate" >
+                                </th>
+                                <th>
+                                  <input type="time" class="form-control" id="search-GroupRoleTime" name="search-GroupRoleTime">
+                                </th>
+                                <th>
+                                  <select class="db-status">
+                                    <option value="">Tất Cả</option>
+                                    <option value="true">Kích Hoạt</option>
+                                    <option value="false">Không Kích Hoạt</option>
+                                  </select>
+                                </th>
+                                {% comment %} Search box {% endcomment %}
+                                <th>
+                                  <button type="button" class="btn btn-danger btn-icon-text btn-remove-filter" id="">
+                                    <i class="ti-files btn-icon-prepend"></i>                                                    
+                                    XÓA FILTER
+                                  </button>
+                                  
+                                  <!-- Modal Create Group -->
+                                  <div class="modal fade modal-hidden" id="CreateGroupRoleModal" tabindex="-1" role="dialog" aria-labelledby="CreateGroupRoleModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="CreateGroupRoleModalLabel"><i class="ti-write"></i> TẠO MỚI NHÓM QUYỀN</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="CreateGroupRoleForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                            <div class="form-group">
+                                              <label for="name">Tên Nhóm Quyền <b class="require-form">*</b></label>
+                                              <input type="text" class="form-control" id="input_group_name" name="name" placeholder="Tên Nhóm" required>
+                                            </div> 
+                                            <div class="form-group">
+                                              <label for="name">Menu <b class="require-form">*</b></label>
+                                              <select class="form-select input_status" aria-label="Default select example" id="input_grouprole_menu" name="type" readonly required>
+                                              </select>
+                                            </div>
+                                            <div class="form-group">
+                                              <label for="add">Đường Dẫn <b class="require-form">*</b></label>
+                                              <input type="text" class="form-control" id="input_group_add" name="add" placeholder="Đường Dẫn" required>
+                                            </div>
+                                          </div>                                         
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="create-grouprole-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal Create Group  -->   
+                                  
+                                  <!-- Modal Update Group -->
+                                  <div class="modal fade modal-hidden" id="UpdateGroupRoleModal" tabindex="-1" role="dialog" aria-labelledby="UpdateGroupRoleModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="UpdateGroupRoleModalLabel"><i class="ti-write"></i> CẬP NHẬT NHÓM</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="UpdateGroupRoleForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                            <div class="form-group">
+                                                <label for="name">Mã Nhóm Quyền <b class="require-form">*</b></label>
+                                                <input type="text" class="form-control" id="input_grouprole_id" name="id" readonly required>
+                                              </div>
+                                            <div class="form-group">
+                                              <label for="name">Tên Công Ty <b class="require-form">*</b></label>
+                                              <input type="text" class="form-control" id="input_grouprole_name" name="name" required>
+                                            </div>
+                                            <div class="form-group">
+                                              <label for="name">Menu <b class="require-form">*</b></label>
+                                              <select class="form-select input_status" aria-label="Default select example" id="input_updaterole_menu" name="type" readonly required>
+                                              </select>
+                                            </div>
+                                            <div class="form-group">
+                                              <label for="add">Đường Dẫn <b class="require-form">*</b></label>
+                                              <input type="text" class="form-control" id="input_updaterole_add" name="add" placeholder="Đường Dẫn" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="name">Trạng Thái <b class="require-form">*</b></label>
+                                                <select class="form-select input_status" aria-label="Default select example" id="input_grouprole_status" name="type" readonly required>
+                                                  <option value="true">Kích Hoạt</option>
+                                                  <option value="false">Không Kích Hoạt</option>
+                                                </select>
+                                              </div>                                     
+                                          </div>                                        
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="Update-grouprole-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal Update Group  -->                                   
+                                </th>                                                           
+                              </tr>                               
+                            </thead>                          
+                            <tbody>
+                            </tbody>                          
+                          </table>                    
+                    </div>
+                    <ul class="pagination" id="pagination"></ul>                                    
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+    </div>
+
+{% endblock %}

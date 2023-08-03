@@ -1,0 +1,387 @@
+from django.db import models
+
+class Company(models.Model):
+    CompanyCode = models.CharField(primary_key=True, max_length=5)
+    CompanyName = models.CharField(max_length=255)
+    CompanyAddress = models.CharField(max_length=255)
+    CompanyVAT = models.CharField(max_length=20)
+    CompanyStatus = models.BooleanField()
+
+class Department(models.Model):
+    DepartID = models.CharField(primary_key=True, max_length=5)
+    DepartName = models.CharField(max_length=255)
+    DepartStatus = models.BooleanField()
+
+class Position(models.Model):
+    PositionID = models.CharField(primary_key=True, max_length=5)
+    PositionName = models.CharField(max_length=255)
+    PositionStatus = models.BooleanField()
+
+class UserGroup(models.Model):
+    UserGroupID = models.CharField(primary_key=True, max_length=5)
+    UserGroupName = models.CharField(max_length=255)
+    UserGroupStatus = models.BooleanField()
+
+class UserRole(models.Model):
+    UserRoleID = models.CharField(primary_key=True, max_length=150)
+    UserRoleName = models.CharField(max_length=255)
+    UserRoleStatus = models.BooleanField()
+
+class UserSY(models.Model):
+    UserID = models.AutoField(primary_key=True)
+    Username = models.CharField(max_length=100)
+    Password = models.CharField(max_length=100)
+    FullName = models.CharField(max_length=255)
+    ImageUrl = models.TextField()
+    BirthDay = models.DateField(null=True, blank=True)
+    Email = models.CharField(max_length=255)
+    Gender = models.CharField(max_length=5)
+    Address = models.CharField(max_length=255)
+    DepartID = models.ForeignKey(Department, on_delete=models.CASCADE)
+    PositionID = models.ForeignKey(Position, on_delete=models.CASCADE)
+    CompanyCode = models.ForeignKey(Company, on_delete=models.CASCADE)
+    UserGroupID = models.ForeignKey(UserGroup, on_delete=models.CASCADE)
+    CreateBy = models.CharField(max_length=20)
+    CreateDate = models.DateTimeField()
+    UserRole = models.IntegerField()
+    UserStatus = models.BooleanField()
+
+class Authorize(models.Model):
+    AhthorizeID = models.AutoField(primary_key=True)
+    UserID = models.ForeignKey(UserSY, on_delete=models.CASCADE)
+    UserRoleID = models.ForeignKey(UserRole, on_delete=models.CASCADE)
+    AuthorizeFrom = models.DateField()
+    AuthorizeTo = models.DateField()
+    AuthorizeStatus = models.BooleanField()
+
+class Division(models.Model):
+    DivisionID = models.AutoField(primary_key=True)
+    DivisionName = models.CharField(max_length=255)
+    DivisionStatus = models.BooleanField()
+
+class MaterialUnit(models.Model):
+    MaterialUnitID = models.CharField(primary_key=True, max_length=3)
+    MaterialUnitName = models.CharField(max_length=255)
+    MaterialUnitStatus = models.BooleanField()
+
+class MaterialType(models.Model):
+    MaterialTypeID = models.IntegerField(primary_key=True)
+    MaterialTypeName = models.CharField(max_length=255)
+    MaterialTypeStatus = models.BooleanField()
+
+class Currency(models.Model):
+    CurrencyID = models.CharField(primary_key=True, max_length=3)
+    CurrencyName = models.CharField(max_length=255)
+    CurrencyStatus = models.BooleanField()
+
+class Material(models.Model):
+    MaterialID = models.CharField(primary_key=True, max_length=10)
+    MaterialName = models.CharField(max_length=255)
+    MaterialImage = models.TextField(blank=True, null=True)
+    DivisionID = models.ForeignKey(Division, on_delete=models.CASCADE)
+    MaterialUnitID = models.ForeignKey(MaterialUnit, on_delete=models.CASCADE)
+    MaterialTypeID = models.ForeignKey(MaterialType, on_delete=models.CASCADE)
+    MaterialNote = models.TextField(blank=True, null=True)
+    MaterialUserCreate = models.ForeignKey(UserSY, on_delete=models.CASCADE)
+    MaterialDate = models.DateTimeField()
+    MaterialVAT = models.IntegerField()
+    MaterialStatus = models.BooleanField(default=True)
+
+class MaterialCompany(models.Model):
+    MaterialComID = models.AutoField(primary_key=True)
+    MaterialID = models.ForeignKey(Material, on_delete=models.CASCADE)
+    MaterialName = models.CharField(max_length=255)
+    CompanyCode = models.ForeignKey(Company, on_delete=models.CASCADE)
+    CompanyName = models.CharField(max_length=255)
+    MaterialComFrom = models.DateField()
+    MaterialComTo = models.DateField()
+    MaterialStatus = models.BooleanField(default=True)
+
+class PriceMaterial(models.Model):
+    PriceID = models.AutoField(primary_key=True)
+    PriceAmount = models.BigIntegerField()
+    PriceDiscount = models.BigIntegerField()
+    PriceDiscountType = models.CharField(max_length=50)
+    MaterialID = models.ForeignKey(Material, on_delete=models.CASCADE)
+    CompanyCode = models.ForeignKey(Company, on_delete=models.CASCADE)
+    CurencyID = models.ForeignKey(Currency, on_delete=models.CASCADE)
+    PriceFrom = models.DateField()
+    PriceTo = models.DateField()
+    CreateBy = models.CharField(max_length=20)
+    CreateDate = models.DateTimeField()
+
+class PaymentTerm(models.Model):
+    PaymentID = models.AutoField(primary_key=True)
+    PaymentName = models.CharField(max_length=255)
+    PaymentStatus = models.BooleanField(default=True)
+
+class Channel(models.Model):
+    ChannelID = models.AutoField(primary_key=True)
+    ChannelName = models.CharField(max_length=255)
+    ChannelStatus = models.BooleanField(default=True)
+
+class CustomerType(models.Model):
+    CustomerTypeID = models.AutoField(primary_key=True)
+    CustomerTypeName = models.CharField(max_length=255)
+    CustomerTypeRevenue = models.BigIntegerField()
+    CustomerTypePercent = models.IntegerField()
+    CustomerTypeStatus = models.BooleanField(default=True)
+
+class TableOrder(models.Model):
+    TableOrderID = models.AutoField(primary_key=True)
+    TableOrderName = models.CharField(max_length=255)
+    TableOrderStatus = models.BooleanField(default=True)
+
+class PromotionType(models.Model):
+    PromotionTypeName = models.CharField(max_length=255)
+    PromotionTypeStatus = models.BooleanField()
+
+class PromotionRole(models.Model):
+    PromotionRoleName = models.CharField(max_length=255)
+    PromotionRoleMin = models.BigIntegerField()
+    PromotionRoleChannel = models.BigIntegerField()
+    PromotionRoleStatus = models.BooleanField()
+
+class Promotion(models.Model):
+    PromotionName = models.CharField(max_length=255)
+    PromotionDiscountPer = models.BigIntegerField()
+    PromotionDiscountAmount = models.BigIntegerField()
+    PromotionDiscountMax = models.BigIntegerField()
+    PromotionFrom = models.DateField()
+    PromotionTo = models.DateField()
+    PromotionTypeID = models.ForeignKey(PromotionType, on_delete=models.CASCADE)
+    PromotionRoleID = models.ForeignKey(PromotionRole, on_delete=models.CASCADE)
+    PromotionStatus = models.BooleanField()
+
+class Customer(models.Model):
+    CustomerName = models.CharField(max_length=255)
+    CustomerImage = models.CharField(max_length=255)
+    CustomerBirthday = models.DateField()
+    CustomerAddress = models.CharField(max_length=255)
+    CustomerPhone = models.CharField(max_length=15)
+    CustomerEmail = models.CharField(max_length=255)
+    CustomerVAT = models.CharField(max_length=20)
+    CustomerPoint = models.IntegerField()
+    CustomerRevene = models.BigIntegerField()
+    CustomerTypeID = models.ForeignKey('CustomerType', on_delete=models.CASCADE)
+    CustomerCard = models.CharField(max_length=50)
+    CustomerQRcode = models.CharField(max_length=20)
+    CustomerStatus = models.BooleanField()
+
+class SaleOrderHeader(models.Model):
+    SaleOrderID = models.BigAutoField(primary_key=True)
+    CompanyCode = models.CharField(max_length=5)
+    ChannelID = models.ForeignKey('Channel', on_delete=models.CASCADE)
+    ChannelName = models.CharField(max_length=255)
+    DivisionID = models.ForeignKey('Division', on_delete=models.CASCADE)
+    DivisionName = models.CharField(max_length=255)
+    CustomerID = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    CustomerName = models.CharField(max_length=255)
+    CustomerAddress = models.CharField(max_length=255)
+    CustomerPhone = models.CharField(max_length=15)
+    CustomerEmail = models.CharField(max_length=255)
+    CustomerVAT = models.CharField(max_length=20)
+    TableOrderID = models.ForeignKey('TableOrder', on_delete=models.CASCADE)
+    TableOrderName = models.CharField(max_length=255)
+    PaymentID = models.ForeignKey('PaymentTerm', on_delete=models.CASCADE)
+    PaymentName = models.CharField(max_length=255)
+    UserID = models.ForeignKey('User', on_delete=models.CASCADE)
+    Username = models.CharField(max_length=20)
+    FullName = models.CharField(max_length=255)
+    PromotionID = models.ForeignKey(Promotion, on_delete=models.CASCADE, null=True)
+    PromotionName = models.CharField(max_length=255, null=True)
+    PromotionTypeID = models.ForeignKey(PromotionType, on_delete=models.CASCADE, null=True)
+    PromotionTypeName = models.CharField(max_length=255, null=True)
+    PromotionDiscount = models.BigIntegerField(null=True)
+    SaleCurencyID = models.ForeignKey('Currency', on_delete=models.CASCADE)
+    SaleOrderPriceNet = models.BigIntegerField()
+    SaleOrderPriceTax = models.BigIntegerField()
+    SaleOrderAmount = models.BigIntegerField()
+    SaleHeaderNote = models.TextField()
+    SaleOrderStatus = models.CharField(max_length=255)
+
+class SaleOrderItem(models.Model):
+    SaleID = models.BigAutoField(primary_key=True)
+    SaleOrderID = models.ForeignKey('SaleOrderHeader', on_delete=models.CASCADE)
+    SaleItem = models.IntegerField()
+    MaterialID = models.CharField(max_length=10)
+    MaterialName = models.CharField(max_length=255)
+    DivisionID = models.ForeignKey('Division', on_delete=models.CASCADE)
+    DivisionName = models.CharField(max_length=255)
+    ChannelID = models.ForeignKey('Channel', on_delete=models.CASCADE)
+    ChannelName = models.CharField(max_length=255)
+    SaleQuantity = models.IntegerField()
+    MaterialUnitID = models.CharField(max_length=3)
+    MaterialUnitName = models.CharField(max_length=255)
+    PromotionID = models.ForeignKey('Promotion', on_delete=models.CASCADE)
+    PromotionName = models.CharField(max_length=255)
+    PromotionTypeID = models.IntegerField()
+    PromotionTypeName = models.TextField()
+    SalePriceUnit = models.BigIntegerField()
+    SalePriceDiscount = models.BigIntegerField()
+    SalePriceUnitTax = models.BigIntegerField()
+    SalePrice = models.BigIntegerField()
+    SaleCurencyID = models.CharField(max_length=3)
+    SaleItemNote = models.TextField()
+
+
+class BillHeader(models.Model):
+    BillingID = models.BigIntegerField(primary_key=True)
+    SaleOrderID = models.ForeignKey('SaleOrderHeader', on_delete=models.CASCADE)
+    CompanyCode = models.CharField(max_length=5)
+    DivisionID = models.ForeignKey('Division', on_delete=models.CASCADE)
+    DivisionName = models.CharField(max_length=255)
+    ChannelID = models.ForeignKey('Channel', on_delete=models.CASCADE)
+    ChannelName = models.CharField(max_length=255)
+    CustomerID = models.ForeignKey('Customer', on_delete=models.CASCADE)
+    CustomerName = models.TextField()
+    CustomerAddress = models.TextField()
+    CustomerPhone = models.CharField(max_length=15)
+    CustomerEmail = models.CharField(max_length=255)
+    CustomerVAT = models.CharField(max_length=20)
+    TableOrderID = models.IntegerField()
+    TableOrderName = models.CharField(max_length=255)
+    PaymentID = models.ForeignKey('PaymentTerm', on_delete=models.CASCADE)
+    PaymentName = models.CharField(max_length=255)
+    UserID = models.ForeignKey('UserSY', on_delete=models.CASCADE)
+    Username = models.CharField(max_length=20)
+    FullName = models.CharField(max_length=255)
+    PromotionID = models.ForeignKey('Promotion', on_delete=models.CASCADE)
+    PromotionName = models.CharField(max_length=255)
+    PromotionTypeID = models.IntegerField()
+    PromotionTypeName = models.TextField()
+    PromotionDiscount = models.IntegerField()
+    BillPrice = models.BigIntegerField()
+    BillPriceTax = models.BigIntegerField()
+    BillPriceAmount = models.BigIntegerField()
+    CurrencyID = models.CharField(max_length=3)
+    CurrencyName = models.CharField(max_length=255)
+    BillHeaderNote = models.TextField()
+
+
+class BillItem(models.Model):
+    BillID = models.BigAutoField(primary_key=True)
+    BillingID = models.ForeignKey('BillHeader', on_delete=models.CASCADE)
+    BillItem = models.IntegerField()
+    MaterialID = models.CharField(max_length=10)
+    MaterialName = models.CharField(max_length=255)
+    DivisionID = models.ForeignKey('Division', on_delete=models.CASCADE)
+    DivisionName = models.CharField(max_length=255)
+    ChannelID = models.ForeignKey('Channel', on_delete=models.CASCADE)
+    ChannelName = models.CharField(max_length=255)
+    SaleQuantity = models.IntegerField()
+    MaterialUnitID = models.CharField(max_length=3)
+    MaterialUnitName = models.CharField(max_length=255)
+    PromotionID = models.ForeignKey('Promotion', on_delete=models.CASCADE)
+    PromotionName = models.CharField(max_length=255)
+    PromotionTypeID = models.IntegerField()
+    PromotionTypeName = models.TextField()
+    BillPriceUnit = models.BigIntegerField()
+    BillPriceDiscount = models.BigIntegerField()
+    BillPriceUnitTax = models.BigIntegerField()
+    BillPrice = models.BigIntegerField()
+    BillCurencyID = models.CharField(max_length=3)
+    BillItemNote = models.TextField()
+    
+    class Meta:
+        db_table = 'BILL_ITEM'
+        
+    def __str__(self):
+        return f'{self.MaterialName} ({self.MaterialID})'
+
+
+Trigger ghi log
+CREATE TRIGGER tr_log_changes
+ON DATABASE
+FOR DDL_TABLE_EVENTS, DDL_TRIGGER_EVENTS, DDL_VIEW_EVENTS
+AS
+BEGIN
+    DECLARE @data XML
+    SET @data = EVENTDATA()
+
+    DECLARE @objectName NVARCHAR(100)
+    SET @objectName = @data.value('(/EVENT_INSTANCE/ObjectName)[1]', 'NVARCHAR(100)')
+
+    DECLARE @eventType NVARCHAR(100)
+    SET @eventType = @data.value('(/EVENT_INSTANCE/EventType)[1]', 'NVARCHAR(100)')
+
+    DECLARE @sqlCommand NVARCHAR(MAX)
+    SET @sqlCommand = @data.value('(/EVENT_INSTANCE/TSQLCommand)[1]', 'NVARCHAR(MAX)')
+
+    DECLARE @userName NVARCHAR(255)
+    SET @userName = SYSTEM_USER
+
+    IF @eventType = 'CREATE_TABLE' OR @eventType = 'ALTER_TABLE' OR @eventType = 'DROP_TABLE'
+    BEGIN
+        INSERT INTO CHANGE_LOG (TableName, ColumnName, RecordID, OldValue, NewValue, ChangeDate, UserName)
+        SELECT @objectName, NULL, NULL, NULL, @sqlCommand, GETDATE(), @userName
+    END
+    ELSE IF @eventType = 'CREATE_TRIGGER' OR @eventType = 'ALTER_TRIGGER' OR @eventType = 'DROP_TRIGGER'
+    BEGIN
+        INSERT INTO CHANGE_LOG (TableName, ColumnName, RecordID, OldValue, NewValue, ChangeDate, UserName)
+        SELECT @objectName, NULL, NULL, NULL, @sqlCommand, GETDATE(), @userName
+    END
+    ELSE IF @eventType = 'CREATE_VIEW' OR @eventType = 'ALTER_VIEW' OR @eventType = 'DROP_VIEW'
+    BEGIN
+        INSERT INTO CHANGE_LOG (TableName, ColumnName, RecordID, OldValue, NewValue, ChangeDate, UserName)
+        SELECT @objectName, NULL, NULL, NULL, @sqlCommand, GETDATE(), @userName
+    END
+END
+
+
+
+
+CREATE TRIGGER tr_log_company_changes
+ON COMPANY
+FOR INSERT, UPDATE, DELETE
+AS
+BEGIN
+DECLARE @data XML
+SET @data = EVENTDATA()
+
+DECLARE @eventType NVARCHAR(100)
+SET @eventType = @data.value('(/EVENT_INSTANCE/EventType)[1]', 'NVARCHAR(100)')
+
+DECLARE @userName NVARCHAR(255)
+SET @userName = SYSTEM_USER
+
+IF @eventType = 'INSERT'
+BEGIN
+    INSERT INTO CHANGE_LOG (TableName, ColumnName, RecordID, OldValue, NewValue, ChangeDate, UserName)
+    SELECT 'COMPANY', NULL, i.CompanyCode, NULL, CONCAT('CompanyCode: ', i.CompanyCode, ', CompanyName: ', i.CompanyName, ', CompanyAddress: ', i.CompanyAddress, ', CompanyVAT: ', i.CompanyVAT, ', CompanyStatus: ', CAST(i.CompanyStatus AS NVARCHAR)), GETDATE(), @userName
+    FROM inserted i
+END
+ELSE IF @eventType = 'UPDATE'
+BEGIN
+    INSERT INTO CHANGE_LOG (TableName, ColumnName, RecordID, OldValue, NewValue, ChangeDate, UserName)
+    SELECT 'COMPANY', c.ColumnName, u.CompanyCode, CONCAT(c.ColumnName, ': ', d.ColumnNameValue), CONCAT(c.ColumnName, ': ', u.ColumnNameValue), GETDATE(), @userName
+    FROM (
+        SELECT 'CompanyCode' AS ColumnName, CompanyCode AS ColumnNameValue FROM deleted
+        UNION ALL SELECT 'CompanyName' AS ColumnName, CompanyName AS ColumnNameValue FROM deleted
+        UNION ALL SELECT 'CompanyAddress' AS ColumnName, CompanyAddress AS ColumnNameValue FROM deleted
+        UNION ALL SELECT 'CompanyVAT' AS ColumnName, CompanyVAT AS ColumnNameValue FROM deleted
+        UNION ALL SELECT 'CompanyStatus' AS ColumnName, CAST(CompanyStatus AS NVARCHAR) AS ColumnNameValue FROM deleted
+    ) d
+    JOIN (
+        SELECT 'CompanyCode' AS ColumnName, CompanyCode AS ColumnNameValue FROM inserted
+        UNION ALL SELECT 'CompanyName' AS ColumnName, CompanyName AS ColumnNameValue FROM inserted
+        UNION ALL SELECT 'CompanyAddress' AS ColumnName, CompanyAddress AS ColumnNameValue FROM inserted
+        UNION ALL SELECT 'CompanyVAT' AS ColumnName, CompanyVAT AS ColumnNameValue FROM inserted
+        UNION ALL SELECT 'CompanyStatus' AS ColumnName, CAST(CompanyStatus AS NVARCHAR) AS ColumnNameValue FROM inserted
+    ) u ON d.ColumnName = u.ColumnName
+    JOIN (
+        SELECT 'CompanyCode' AS ColumnName UNION ALL SELECT 'CompanyName' AS ColumnName UNION ALL SELECT 'CompanyAddress' AS ColumnName
+        UNION ALL SELECT 'CompanyVAT' AS ColumnName UNION ALL SELECT 'CompanyStatus' AS ColumnName
+    ) c ON d.ColumnName = c.ColumnName
+    WHERE EXISTS (SELECT * FROM inserted i WHERE i.CompanyCode = d.ColumnNameValue)
+END
+ELSE IF @eventType = 'DELETE'
+BEGIN
+    INSERT INTO CHANGE_LOG (TableName, ColumnName, RecordID, OldValue, NewValue, ChangeDate, UserName)
+    SELECT 'COMPANY', NULL, d.CompanyCode, CONCAT('CompanyCode: ', d.CompanyCode, ', CompanyName: ', d.CompanyName, ', CompanyAddress: ', d.CompanyAddress, ', CompanyVAT: ', d.CompanyVAT, ', CompanyStatus: ', CAST(d.CompanyStatus AS NVARCHAR)), NULL, GETDATE(), @userName
+    FROM deleted d
+END
+END
+GO
+
+

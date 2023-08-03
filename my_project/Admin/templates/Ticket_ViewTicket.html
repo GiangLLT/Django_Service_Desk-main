@@ -1,0 +1,264 @@
+{% extends 'Admin_Helpdesk.html' %}
+
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Trang Chủ</a></li>
+        <li class="breadcrumb-item"><a href="/danh-sach-yeu-cau/">Danh Sách Yêu Cầu</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>{{ Title }}</span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper ">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="top-title">  
+                <div class="row col-lg-12 col-md-12 col-sm-12">
+                  <div class="top-title-left col-lg-9 col-md-9 col-sm-12 ">
+                    <button type="button" data-status="{{ticket.Ticket_Status}}" class="btn btn-icon-text status_view {% if ticket.Ticket_Status == 0 %}btn-success{% elif ticket.Ticket_Status == 1 %}btn-primary{% elif ticket.Ticket_Status == 2 %}btn-warning{% elif ticket.Ticket_Status == 3 %}btn-danger{% endif %}">{% if ticket.Ticket_Status == 0 %}Hoàn Thành{% elif ticket.Ticket_Status == 1 %}Đang Làm{% elif ticket.Ticket_Status == 2 %}Đang Treo{% elif ticket.Ticket_Status == 3 %}Hủy{% endif %}</button> <h4 class="card-title card-title-edit">{{ ticket.Ticket_Title }}</h4>
+                  </div>  
+                  <div class="top-title-right col-lg-3 col-md-3 col-sm-12">
+                    <div class="top-title-right-ava">
+                      {% if user.Avata %}
+                      <img class="img-xs-view rounded-circle" src="{{ user.Avata }}" alt="Profile image">
+                      {% else %}
+                        <div class="avatar-container">
+                          <div class="avatar-title-view">{{ user.FullName | first }}{{ user.displayName | first }}</div>         
+                        </div>
+                      {% endif %}
+                    </div>
+                    <div class="top-title-right-info">
+                      <p>{{user.FullName}}</p>
+                      {% comment %} <p class="{{ company.Company_Name.length > 27 ? font-company : '' }}">{{company.Company_Name}}</p> {% endcomment %}
+                      <p class="{% if company.Company_Name|length > 27 %}font-company{% endif %}">{{ company.Company_Name }}</p>
+                      <p>{{ ticket.Ticket_Date|date:"d/m/Y" }} - {{ ticket.Ticket_Time|time:"H:i" }}</p>
+                    </div>          
+                  </div>  
+                </div>            
+                
+              </div>
+            
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <div class="col-lg-12 col-md-12 col-sm-12 inform-ticket">
+                        <div class="row">                          
+                            <div class="col-lg-12 col-md-12 col-sm-12 assign-ticket">
+                              <div class="row col-lg-12 col-md-12 col-sm-12">
+                                <p class="col-lg-2 col-md-12 col-sm-12 assign-ticket-id"><b>ID Yêu Cầu:</b><br/> {{ticket.Ticket_ID}}</p>
+                                <p class="col-lg-2 col-md-12 col-sm-12"><b>ID Hỗ Trợ:</b><br/> {{assign.ID_user}}</p>
+                                <p class="col-lg-3 col-md-12 col-sm-12"><b>Họ Tên:</b><br/> {{assign.FullName}}</p>
+                                <p class="col-lg-3 col-md-12 col-sm-12"><b>Mail:</b><br/> {{assign.Mail}}</p>
+                                <p class="col-lg-2 col-md-12 col-sm-12"><b>Điện Thoại:</b><br/>{% if assign.Phone %} 0{{assign.Phone}} {% else %} No Data {% endif %}</p>
+                              </div>
+                            </div> 
+                        </div>                        
+                    </div>
+                    <div class="col-lg-12 col-md-12 col-sm-12 content-ticket">
+                      <div class="content-ticket-title">
+                        <p class="content-ticket-p">NỘI DUNG</p> 
+                        <div class="content-ticket-func">
+                          <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon quote-comment_top" name="Update[]" value="{{ticket.Ticket_ID}}" data-user="{{ticket.Ticket_User_Name}}"><i class="ti-quote-left text-danger"></i></button>
+                          {% if request.session.UserInfo.ID_user ==  user.ID_user or request.session.UserInfo.Acc_type < 2 %}
+                          <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket-detail" name="Update[]" value="{{ticket.Ticket_ID}}"><i class="ti-pencil-alt text-danger"></i></button>                          
+                          <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket-cancel" name="Update[]" value="{{ticket.Ticket_ID}}"><i class="ti-close text-danger"></i></button>
+                          {% endif %}
+                          {% if request.session.UserInfo.Acc_type < 2 %}
+                          <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket-complete" name="Update[]" value="{{ticket.Ticket_ID}}"><i class="ti-lock text-danger"></i></button>
+                          <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket-status" name="Update[]" value="{{ticket.Ticket_ID}}"><i class="ti-list text-danger"></i></button>
+                          {% endif %}
+                        </div>
+                      
+                      </div>                   
+                        <hr class="hr-content"/>
+                        <div id="image-gallery">
+                          {{ ticket.Ticket_Desc | safe }}
+                        </div>
+
+                        <div id="image-attach">
+                          <p class="content-ticket-p">DANH SÁCH FILES ĐÍNH KÈM</p> 
+                          <hr class="hr-content"/>
+                          <div class="form-group">
+                            <div class="" id="list-files">
+                              {% comment %} <label for="name">Danh Sách Files Đính Kèm:</label> {% endcomment %}
+                              {% for attach in attachs %}
+                              <div class="attachs-file">
+                                <div class="attachs-file-item"><a class="attachment-download" href="/static/Asset/Attachment-Upload/{{attach.Attachment_Url}}" download>{{attach.Attachment_Url}}</a></div>
+                              </div>
+                              {% endfor %}
+                              {% if attachs %}
+                                <button type="button" class="btn btn-outline-primary btn-fw btn-MD" id="down-files-button"><i class="ti-cloud-down btn-icon-prepen"></i> LƯU TẤT CẢ FILE</button>
+                              {% endif %}
+                            </div>
+
+                            {% comment %} <label for="name">File Đính Kèm</label> {% endcomment %}
+                            {% if request.session.UserInfo.ID_user ==  user.ID_user or request.session.UserInfo.Acc_type < 2 %}
+                              <div class="file-upload">
+                                <label  class='attach-file' for="file-input">Chọn tệp tin</label>
+                                <input id="file-input" type="file" multiple>
+                                <div id="file-display-info"></div>
+                                <p id="file-size-info"></p>
+                                <button type="button" class="btn btn-outline-primary btn-fw btn-MD" id="upload-file-button" hidden><i class="ti-cloud-down btn-icon-prepen"></i> UPLOAD FILES</button>
+                              </div>
+                            {% endif %}
+                           </div>
+                        </div>
+                    </div>  
+                    <div class="col-lg-12 col-md-12 col-sm-12 footer-ticket">
+                      {% if  comments %}
+                        <p class="content-ticket-p" id="comment-title">BÌNH LUẬN</p>
+                        <hr class="hr-content" id="comment-title"/>
+                      {% else %}
+                        <p class="content-ticket-p comment-title-hidden" id="comment-title">BÌNH LUẬN</p>
+                        <hr class="hr-content comment-title-hidden" id="comment-title"/>
+                      {% endif %}
+                        <div class="footer-ticket-comment">
+                          {% for comment in  comments %}
+                          <div class="container-comment" data-commentID={{comment.Comment_ID}}>
+                            <div class="container-comment-info">
+                              <div class="container-comment-info-ava">
+                                {% if comment.ID_user.Avatar %}
+                                <img class="img-xs-view rounded-circle" src="{{ comment.ID_user.Avatar }}" alt="Profile image">
+                                {% else %}
+                                  <div class="avatar-container">
+                                    <div class="avatar-title-comment">{{ comment.ID_user.FullName | first }}{{ comment.ID_user.displayName | first }}</div>         
+                                  </div>
+                                  {% comment %} <img class="img-xs-view rounded-circle" src="{{ comment.ID_user.Avatar }}" alt="Profile image"> {% endcomment %}
+                                {% endif %}
+                              </div>
+                              <div class="container-comment-info-user">
+                                <p>{{comment.ID_user.FullName}}</p>
+                                <p>{{ comment.Comment_Date|date:"d/m/Y" }} - {{ comment.Comment_Time|time:"H:i" }}</p>
+                              </div>
+                              
+                            </div>
+                            <div class="container-comment-content">
+                              <p class="comment-ID">#{{comment.Comment_ID}}</p>
+                              <hr class="hr-comment"/>
+                              <div class="comment-desc"><p>{{comment.Comment_Desc | safe}}</p> </div>          
+                            </div>             
+                            <hr class="hr-comment"/>           
+                            <div class="container-comment-footer">
+                              <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon quote-comment" name="Update[]" value={{comment.Comment_ID}} data-user="{{comment.Comment_User_Name}}"><i class="ti-quote-left text-danger"></i></button>
+                              {% if request.session.UserInfo.ID_user == comment.ID_user.ID_user or request.session.UserInfo.Acc_type < 2 %}
+                                <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-comment" name="Update[]" value={{comment.Comment_ID}}><i class="ti-pencil text-danger"></i></button>
+                                <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-comment" name="delete[]" value={{comment.Comment_ID}}><i class="ti-trash text-danger"></i></button>
+                              {% endif %}
+                            </div>                         
+                          </div>                        
+                          {% endfor %}
+                      </div>
+                      <div id="pagination-container"></div>
+                      {% comment %} {% endif %} {% endcomment %}
+                        <textarea id='tinyMce-comment' class="editor-detail" placeholder="Nhập nội dung ..."></textarea>
+                        <button type="button" data-ticketID = {{ticket.Ticket_ID}} class="btn btn-outline-danger btn-fw btn-MD" id="create-comment-button"><i class="ti-comments btn-icon-prepen"></i> BÌNH LUẬN</button>
+                    </div>                               
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        <!-- Modal update Comment -->
+        <div class="modal fade modal-hidden" id="UpdateCommentModal" tabindex="-1" role="dialog" aria-labelledby="UpdateCommentModallabel" aria-hidden="true" style="display: none;">
+          <div class="modal-dialog modal-dialog-create-ticket" role="document">
+            <div class="modal-content">
+              <div class="modal-header header-modal">
+                <h5 class="modal-title title-modal" id="UpdateCommentModalLabel"><i class="ti-write"></i> CẬP NHẬT BÌNH LUẬN</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <i class="ti-close"></i>
+                </button>
+              </div>
+              <form id="UpdateCommentForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body modal-body-custom">
+                   <!-- Nội dung -->
+                   <div class="form-group">
+                    <p class="modal-commentID" hidden></p>
+                  </div>
+                   <!-- Nội dung -->
+                  <!-- Nội dung -->
+                  <div class="form-group">
+                    <label for="name">Nội Dung Chi Tiết <b class="require-form">*</b></label>
+                    <textarea id='tinyMce-Update' class="editor-detail" placeholder="Nhập nội dung ..."></textarea>
+                  </div>
+                   <!-- Nội dung -->
+                </div>
+                <div class="modal-footer modal-footer-custom">                                         
+                  <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="update-comment-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <!-- Modal update Comment  -->  
+
+        <!-- Modal update Comment Ticket -->
+        <div class="modal fade modal-hidden" id="UpdateCommentTicketModal" tabindex="-1" role="dialog" aria-labelledby="UpdateCommentTicketModallabel" aria-hidden="true" style="display: none;">
+          <div class="modal-dialog modal-dialog-create-ticket" role="document">
+            <div class="modal-content">
+              <div class="modal-header header-modal">
+                <h5 class="modal-title title-modal" id="UpdateCommentTicketModalLabel"><i class="ti-write"></i> CẬP NHẬT BÀI VIẾT</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <i class="ti-close"></i>
+                </button>
+              </div>
+              <form id="UpdateCommentTicketForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body modal-body-custom">
+                  <!-- Nội dung -->
+                  <div class="form-group">
+                    <label for="name">Nội Dung Chi Tiết <b class="require-form">*</b></label>
+                    <textarea id='tinyMce-Update-Ticket' class="editor-ticket-detail" placeholder="Nhập nội dung ..."></textarea>
+                  </div>
+                   <!-- Nội dung -->
+                </div>
+                <div class="modal-footer modal-footer-custom">                                         
+                  <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="update-ticket-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <!-- Modal update Comment Ticket -->  
+
+         <!-- Modal Update status -->
+         <div class="modal fade" id="StatusCommentModal" tabindex="-1" role="dialog" aria-labelledby="StatusCommentModallabel" aria-hidden="true" style="display: none;">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header header-modal">
+                <h5 class="modal-title title-modal" id="StatusCommentModalLabel"><i class="ti-pencil-alt"></i> CẬP NHẬT TRẠNG THÁI TICKET</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <i class="ti-close"></i>
+                </button>
+              </div>
+              <form id="StatusCommentForm">
+                {% csrf_token %}
+                <div class="modal-body modal-body-custom">
+                  <p Class="ticket-ID"></p>
+                  <div class="form-group">
+                    <label for="category">Trạng Thái</label>
+                    {% comment %} <input type="text" class="form-control" id="category" name="category" required> {% endcomment %}
+                    <select class="form-select input_Category" aria-label="Default select example" id="input_model_status" name="status" required>
+                      <option value="0" >Hoàn Thành</option>
+                      <option value="1">Đang Làm</option>
+                      <option value="2">Đang Treo</option>
+                      <option value="3">Hủy</option>
+                    </select>
+                  </div>
+                <div class="modal-footer modal-footer-custom">
+
+                  <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="status-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      <!-- Modal Update Assign -->
+    </div>
+
+{% endblock %}

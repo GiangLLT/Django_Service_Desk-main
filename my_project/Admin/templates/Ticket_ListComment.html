@@ -1,0 +1,133 @@
+{% extends 'Admin_Helpdesk.html' %}
+
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Trang Chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Danh Sách Bình Luận </span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper ">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="top-title">
+                <h4 class="card-title card-title-edit">DANH SÁCH BÌNH LUẬN</h4>
+                {% comment %} <button type="button" class="btn btn-danger btn-icon-text addCompany" id="addCompany">
+                  <i class="ti-files btn-icon-prepend"></i>                                                    
+                  TẠO BÌNH LUẬN
+                </button> {% endcomment %}
+              </div>
+            
+
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <div class="table-responsive">
+
+                        <table id="product-table" class="table table-hover">
+                            <thead>
+                              <tr class="tr-table">
+                                <th>#</th>
+                                <th>MÃ YÊU CẦU</th>                                                                                                                                             
+                                <th>NỘI DUNG <button id="desc-toggle"><i class="ti-control-forward btn-icon-prepen"></i></button></th>
+                                <th>MÃ NGƯỜI TẠO</th>
+                                <th>TÊN NGƯỜI TẠO</th>                              
+                                <th>NGÀY TẠO</th>
+                                <th>GIỜ TẠO</th>
+                                <th>TÌNH TRẠNG</th>
+                                <th>CHỨC NĂNG</th>
+                              </tr>
+                              <tr>
+                                {% comment %} Search box {% endcomment %}
+                                <th>
+                                  <input type="text" class="form-control" id="search-CommentID" name="search-CommentID" placeholder="#">
+                                </th>
+                                <th>
+                                    <input type="text" class="form-control" id="search-TicketID" name="search-TicketID" placeholder="Mã Yêu Cầu">
+                                </th>
+                                <th>
+                                    <input type="text" class="form-control" id="search-CommentDesc" name="search-CommentDesc" placeholder="Nội Dung">
+                                </th> 
+                                <th>
+                                    <input type="text" class="form-control" id="search-UserID" name="search-UserID" placeholder="Mã Người Tạo">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-Username" name="search-Username"  placeholder="Tên Người Tạo">
+                                </th>                              
+                                <th>
+                                  <input type="date" class="form-control" id="search-CommentDate" name="search-CommentDate" >
+                                </th>
+                                <th>
+                                  <input type="time" class="form-control" id="search-CommentTime" name="search-CommentTime">
+                                </th>
+                                <th>
+                                  <select class="db-status">
+                                    <option value="">Tất Cả</option>
+                                    <option value="true">Kích Hoạt</option>
+                                    <option value="false">Không Kích Hoạt</option>
+                                  </select>
+                                </th>
+                                {% comment %} Search box {% endcomment %}
+                                <th>
+                                  <button type="button" class="btn btn-danger btn-icon-text btn-remove-filter" id="">
+                                    <i class="ti-files btn-icon-prepend"></i>                                                    
+                                    XÓA FILTER
+                                  </button>
+                                  
+                                  
+                                  
+                                  <!-- Modal update Comment -->
+                                  <div class="modal fade modal-hidden" id="UpdateCommentModal" tabindex="-1" role="dialog" aria-labelledby="UpdateCommentModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog modal-dialog-create-ticket" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="UpdateCommentModalLabel"><i class="ti-write"></i> CẬP NHẬT BÌNH LUẬN</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="UpdateCommentForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                            <!-- Nội dung -->
+                                            <div class="form-group">
+                                              <p class="modal-commentID" hidden></p>
+                                            </div>
+                                            <!-- Nội dung -->
+                                            <!-- Nội dung -->
+                                            <div class="form-group">
+                                              <label for="name">Nội Dung Chi Tiết <b class="require-form">*</b></label>
+                                              <textarea id='tinyMce-Update' class="editor-detail" placeholder="Nhập nội dung ..."></textarea>
+                                            </div>
+                                            <!-- Nội dung -->
+                                          </div>
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="update-comment-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal update Comment  -->                               
+                                </th>                                                           
+                              </tr>                               
+                            </thead>                          
+                            <tbody>
+                            </tbody>                          
+                          </table>                    
+                    </div>
+                    <ul class="pagination" id="pagination"></ul>                                    
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+    </div>
+
+{% endblock %}

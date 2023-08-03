@@ -1,0 +1,187 @@
+{% extends 'Admin_Helpdesk.html' %}
+
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Trang Chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Danh Sách Phân Công </span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper ">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="top-title">
+                <h4 class="card-title card-title-edit">DANH SÁCH PHÂN CÔNG</h4>
+                <div>
+                  <button type="button" class="btn btn-danger btn-icon-text showUser" id="showall">
+                    <i class="ti-shift-right btn-icon-prepend"></i>                                                    
+                    HIỂN THỊ CỘT
+                  </button>
+                  <button type="button" class="btn btn-danger btn-icon-text addAssign" id="addAssign">
+                    <i class="ti-files btn-icon-prepend"></i>                                                    
+                    TẠO PHÂN CÔNG
+                  </button>
+                </div>
+              
+              </div>
+              
+              {% comment %} <p class="card-description">A basic data list T001</p> {% endcomment %}
+              {% comment %} <div id="js-grid" class="pt-3"></div> {% endcomment %}
+
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    {% comment %} <h4 class="card-title">Hoverable Table</h4>
+                    <p class="card-description">
+                      Add class <code>.table-hover</code>
+                    </p> {% endcomment %}
+                    <div class="table-responsive">
+
+                        <table id="product-table" class="table table-hover">
+                            <thead>
+                              <tr class="tr-table">
+                                <th>#</th>
+                                <th>MÃ NGƯỜI DÙNG</th>                                                       
+                                <th>TÊN NGƯỜI DÙNG</th>                                                       
+                                <th>TÊN NHÓM</th>                                                       
+                                <th>NGƯỜI TẠO</th>
+                                <th id="toggle-column" class="hidden-column">NGÀY TẠO</th>
+                                <th id="toggle-column" class="hidden-column">GIỜ TẠO</th>
+                                <th>TÌNH TRẠNG</th>
+                                <th>CHỨC NĂNG</th>
+                              </tr>
+                              <tr>
+                                {% comment %} Search box {% endcomment %}
+                                <th>
+                                  <input type="text" class="form-control" id="search-Assign_ID" name="search-Assign_ID" placeholder="#">
+                                </th>
+                                <th>
+                                    <input type="text" class="form-control" id="search-ID_user" name="search-ID_user" placeholder="#">
+                                </th>
+                                <th>
+                                    <input type="text" class="form-control" id="search-username" name="search-username" placeholder="Tên Người dùng">
+                                </th>
+                                <th>
+                                    <input type="text" class="form-control" id="search-TGroup_ID" name="search-TGroup_ID" placeholder="Tên Nhóm">
+                                  </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-Assign_User_Name" name="search-Assign_User_Name"  placeholder="Người Tạo">
+                                </th>                               
+                                <th id="toggle-column" class="hidden-column">
+                                  <input type="date" class="form-control" id="search-Assign_User_Date" name="search-Assign_User_Date" >
+                                </th>
+                                <th id="toggle-column" class="hidden-column">
+                                  <input type="time" class="form-control" id="search-Assign_User_Time" name="search-Assign_User_Time">
+                                </th>
+                                <th>
+                                  <select class="db-status">
+                                    <option value="">Tất Cả</option>
+                                    <option value="true">Kích Hoạt</option>
+                                    <option value="false">Không Kích Hoạt</option>
+                                  </select>
+                                </th>
+                                {% comment %} Search box {% endcomment %}
+                                <th>
+                                  <button type="button" class="btn btn-danger btn-icon-text btn-remove-filter" id="">
+                                    <i class="ti-files btn-icon-prepend"></i>                                                    
+                                    XÓA FILTER
+                                  </button>
+                                  
+                                  <!-- Modal Create Ticket -->
+                                  <div class="modal fade modal-hidden" id="CreateAssignModal" tabindex="-1" role="dialog" aria-labelledby="CreateAssignModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog" role="document">
+                                      <div class="modal-content modal-content-custom">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="CreateAssignModalLabel"><i class="ti-write"></i> TẠO MỚI PHÂN CÔNG</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="CreateAssignForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                            <div class="form-group">
+                                                <label for="name">Tên Nhóm <b class="require-form">*</b></label>
+                                                <select class="form-select db-group" aria-label="Default select example" id="input_assign_group" name="group" readonly required>
+                                                  <option value="">Chọn Nhóm</option>
+                                                </select>
+                                            </div>                                     
+                                            <div class="form-group form-group-custom">
+                                              <label for="name">Tên Người Dùng<b class="require-form">*</b></label>
+                                              <div class="container-item">
+                                                <div id="selectedItemsContainer"></div>
+                                                {% comment %} <textarea class="form-control" id="input_assign_name" name="input_assign_name" placeholder="Tên Người Dùng" required></textarea> {% endcomment %}                                                           
+                                                <input type="textarea" class="form-control" id="input_assign_name" name="name" required>
+                                              </div>
+                                            </div> 
+                                            <div id="suggestions"></div>                                       
+                                          </div>                                         
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="create-assign-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal Create Ticket  -->   
+                                  
+                                  <!-- Modal Update Ticket -->
+                                  <div class="modal fade modal-hidden" id="UpdateAssignModal" tabindex="-1" role="dialog" aria-labelledby="UpdateAssignModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="UpdateAssignModalLabel"><i class="ti-write"></i> CẬP NHẬT PHÂN CÔNG</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="UpdateAssignForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                            <div class="form-group">
+                                                <label for="name">Mã Công Ty <b class="require-form">*</b></label>
+                                                <input type="text" class="form-control" id="input_company_id" name="id" readonly required>
+                                              </div>
+                                            <div class="form-group">
+                                              <label for="name">Tên Công Ty <b class="require-form">*</b></label>
+                                              <input type="text" class="form-control" id="input_company_name" name="name" required>
+                                            </div>   
+                                            <div class="form-group">
+                                                <label for="name">Trạng Thái <b class="require-form">*</b></label>
+                                                <select class="form-select input_status" aria-label="Default select example" id="input_company_status" name="type" readonly required>
+                                                  <option value="true">Kích Hoạt</option>
+                                                  <option value="false">Không Kích Hoạt</option>
+                                                </select>
+                                              </div>                                     
+                                          </div>                                        
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="Update-company-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal Update Ticket  -->                                   
+                                </th>                                                           
+                              </tr>                               
+                            </thead>                          
+                            <tbody>
+                            </tbody>                          
+                          </table>                    
+                    </div>
+                    <ul class="pagination" id="pagination"></ul>                                    
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+    </div>
+    
+
+{% endblock %}

@@ -56,6 +56,8 @@ INSTALLED_APPS = [
     'oauth2_provider', #authen office 365
     'corsheaders',
     'sslserver',
+
+    'django.contrib.sites',
 ]
 
 #JWT export token API
@@ -211,7 +213,7 @@ WSGI_APPLICATION = 'my_project.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "mssql",
-        "NAME": "FoodApp",
+        "NAME": "BCG_HelDesk",
         "USER": "sa",
         "PASSWORD": "Abc@123",
         "HOST": "localhost\SQLEXPRESS",
@@ -269,3 +271,11 @@ STATICFILES_DIRS = [
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # LOGIN_REDIRECT_URL = reverse_lazy('Home')
+
+#SEND MAIL
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.office365.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'GIANG.LLT@BAMBOOCAP.COM.VN'
+EMAIL_HOST_PASSWORD = 'Gllt@1622'

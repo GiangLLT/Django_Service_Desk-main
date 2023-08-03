@@ -1,0 +1,432 @@
+{% extends 'Admin_Helpdesk.html' %}
+
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Trang Chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Danh Sách Người Dùng </span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper ">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="top-title">
+                <h4 class="card-title card-title-edit">DANH SÁCH NGƯỜI DÙNG</h4>
+                <div>
+                  <select class="db-rows" id="db-rows">
+                    <option value="10">10 Dòng</option>
+                    <option value="22">22 Dòng</option>
+                    <option value="50">50 Dòng</option>
+                    <option value="100">100 Dòng</option>
+                    <option value="500">500 Dòng</option>
+                  </select>
+                  <button type="button" class="btn btn-danger btn-icon-text showUser" id="showall">
+                    <i class="ti-shift-right btn-icon-prepend"></i>                                                    
+                    HIỂN THỊ CỘT
+                  </button>                
+                  <button type="button" class="btn btn-danger btn-icon-text addUser" id="addUser">
+                    <i class="ti-files btn-icon-prepend"></i>                                                    
+                    TẠO NGƯỜI DÙNG
+                  </button>
+                </div>
+              </div>
+              
+
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <div class="table-responsive">
+
+                        <table id="product-table" class="table table-hover">
+                            <thead>
+                              <tr class="tr-table">
+                                <th>HÌNH</th>
+                                <th>#</th>
+                                <th>EMAIL</th>                                                       
+                                <th>TÊN NGƯỜI DÙNG</th>
+                                <th>QUYỀN</th>
+                                <th id="toggle-column" class="hidden-column">LOẠI TÀI KHOẢN</th>
+                                <th id="toggle-column" class="hidden-column">CHỨC VỤ</th>
+                                <th id="toggle-column" class="hidden-column">NGÀY SINH</th>
+                                <th id="toggle-column" class="hidden-column">ĐỊA CHỈ</th>                                                       
+                                <th id="toggle-column" class="hidden-column">ĐIỆN THOẠI</th>
+                                <th id="toggle-column" class="hidden-column">MÃ NGƯỜI TẠO</th>
+                                <th id="toggle-column" class="hidden-column">TÊN NGƯỜI TẠO</th>
+                                <th id="toggle-column" class="hidden-column">NGÀY TẠO</th>
+                                <th id="toggle-column" class="hidden-column">GIỜ TẠO</th>
+                                <th>TÌNH TRẠNG</th>
+                                <th>CHỨC NĂNG</th>
+                              </tr>
+                              <tr>
+                                {% comment %} Search box {% endcomment %}
+                                <th>
+                                    {% comment %} AVATAR NO SEARCH {% endcomment %}
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-ID_User" name="search-ID_User" placeholder="#">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-Mail" name="search-Mail"  placeholder="Địa Chỉ Email">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-FullName" name="search-FullName"  placeholder="Tên Người Dùng">
+                                </th>                               
+                                <th>
+                                    <select class="db-User_Type">
+                                        <option value="">Tất Cả</option>
+                                        <option value="0">Administrator</option>
+                                        <option value="1">Mod</option>
+                                        <option value="2">User Member</option>
+                                      </select>
+                                </th>
+                                <th id="toggle-column" class="hidden-column">
+                                  <input type="text" class="form-control" id="search-Acc_Type" name="search-Acc_Type" placeholder="Loại Tài Khoản">
+                                </th>
+                                <th id="toggle-column" class="hidden-column">
+                                    <input type="text" class="form-control" id="search-Jobtitle" name="search-Jobtitle" placeholder="Chức Vụ">
+                                </th>
+                                <th id="toggle-column" class="hidden-column">
+                                  <input type="date" class="form-control" id="search-Birthday" name="search-Birthday">
+                                </th>
+                                <th id="toggle-column" class="hidden-column">
+                                  <input type="text" class="form-control" id="search-Address" name="search-Address"  placeholder="Địa Chỉ">
+                                </th>                               
+                                <th id="toggle-column" class="hidden-column">
+                                  <input type="text" class="form-control" id="search-Phone" name="search-Phone" placeholder="Số Điện Thoại">
+                                </th>
+                                <th id="toggle-column" class="hidden-column">
+                                  <input type="text" class="form-control" id="search-ID_Create" name="search-ID_Create" placeholder="Mã Người Tạo">
+                                </th>
+                                <th id="toggle-column" class="hidden-column">
+                                    <input type="text" class="form-control" id="search-Name_Create" name="search-Name_Create" placeholder="Tên Người Tạo">
+                                </th>                             
+                                <th id="toggle-column" class="hidden-column">
+                                  <input type="date" class="form-control" id="search-Date_Create" name="search-Date_Create" >
+                                </th>
+                                <th id="toggle-column" class="hidden-column">
+                                  <input type="time" class="form-control" id="search-Time_Create" name="search-Time_Create">
+                                </th>
+                                <th>
+                                  <select class="db-status">
+                                    <option value="">Tất Cả</option>
+                                    <option value="true">Kích Hoạt</option>
+                                    <option value="false">Không Kích Hoạt</option>
+                                  </select>
+                                </th>
+                                {% comment %} Search box {% endcomment %}
+                                <th>
+                                  <button type="button" class="btn btn-danger btn-icon-text btn-remove-filter" id="">
+                                    <i class="ti-files btn-icon-prepend"></i>                                                    
+                                    XÓA FILTER
+                                  </button>
+                                  
+                                  <!-- Modal Create Ticket -->
+                                  <div class="modal fade modal-hidden" id="CreateUserModal" tabindex="-1" role="dialog" aria-labelledby="CreateUserModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog modal-dialog-create-user" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="CreateUserModalLabel"><i class="ti-write"></i> TẠO MỚI NGƯỜI DÙNG</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="CreateUserForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                            <!-- Người dùng - line 1 -->
+                                                  <div class="col-lg-12 col-md-12 col-sm-12">
+                                                    <div class="row">
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Email <b class="require-form">*</b></label>
+                                                                <input type="email" class="form-control" id="input_email" name="email" placeholder="Nhập Email" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Mật Khẩu <b class="require-form">*</b></label>
+                                                                <input type="password" minlength="6" class="form-control" id="input_pass" name="password" placeholder="Nhập Tên Người Dùng" required>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                  </div>
+                                            <!-- Người dùng - line 1  -->
+                                            
+                                            <!-- Người dùng - line 2 -->
+                                                <div class="col-lg-12 col-md-12 col-sm-12">
+                                                    <div class="row">
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Tên Người Dùng <b class="require-form">*</b></label>
+                                                                <input type="text" class="form-control" id="input_name" name="name" placeholder="Nhập Tên Người Dùng" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Điện Thoại</label>
+                                                                <input type="text" inputmode="numeric" maxlength="10" class="form-control" id="input_phone" name="phone" placeholder="Nhập Số Điện Thoại" required>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <!-- Người dùng - line 2  -->
+
+                                            <!-- Người dùng - line 3 -->
+                                            <div class="col-lg-12 col-md-12 col-sm-12">
+                                              <div class="row">
+                                                  <div class="col-lg-12 col-md-12 col-sm-12">
+                                                      <div class="form-group">
+                                                          <label for="name">Địa Chỉ</label>
+                                                          <input type="text" class="form-control" id="input_address" name="address" required>
+                                                      </div>
+                                                  </div>                                              
+                                              </div>
+                                            </div>
+                                        <!-- Người dùng - line 3 -->
+
+                                            <!-- Người dùng - line 4 -->
+                                                <div class="col-lg-12 col-md-12 col-sm-12">
+                                                    <div class="row">
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Ngày Sinh</label>
+                                                                <input type="date" pattern="\d{2}/\d{2}/\d{4}" class="form-control" id="input_birthday" name="birthday" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Chức Vụ</label>
+                                                                <input type="text" class="form-control" id="input_jobtitle" name="jobtitle" placeholder="Nhập Chức Vụ" required>
+                                                            </div>
+                                                        </div>                                                   
+                                                    </div>
+                                                </div>
+                                            <!-- Người dùng - line 4 -->
+                                          
+                                            <!-- Người dùng - line 5 -->
+                                                <div class="col-lg-12 col-md-12 col-sm-12">
+                                                  <div class="row">
+                                                    <div class="col-lg-6 col-md-6 col-sm-12">
+                                                      <div class="form-group">
+                                                        <label for="name">Quyền <b class="require-form">*</b></label>
+                                                        <select class="form-select input_support db-support-ticket" aria-label="Default select example" id="input_role" name="role" required>
+                                                          <option value="2">Member</option>
+                                                          <option value="1">Moderator</option>
+                                                          <option value="0" class="hide-option opt-admin">Administrator</option>
+                                                        </select>
+                                                      </div>
+                                                    </div>
+                                                    <div class="col-lg-6 col-md-6 col-sm-12">
+                                                      <div class="form-group">
+                                                        <label for="name">Tình Trạng <b class="require-form">*</b></label>
+                                                        <select class="form-select input_support" aria-label="Default select example" id="input_status" name="status" required>
+                                                          <option value="True">Kích Hoạt</option>
+                                                          <option value="False">Không Kích Hoạt</option>
+                                                        </select>
+                                                      </div>
+                                                    </div>                                             
+                                                  </div>
+                                                </div>
+                                          <!-- Người dùng - line 5 -->
+                                                                              
+                                          </div>                                         
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="create-user-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal Create Ticket  -->   
+                                  
+                                  <!-- Modal Update Ticket -->
+                                  <div class="modal fade modal-hidden" id="UpdateUserModal" tabindex="-1" role="dialog" aria-labelledby="UpdateUserModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog modal-dialog-create-user" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="UpdateUserModalLabel"><i class="ti-write"></i> CẬP NHẬT CÔNG TY</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="UpdateUserForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                            <!-- Người dùng - line 1 -->
+                                                  <div class="col-lg-12 col-md-12 col-sm-12">
+                                                    <div class="row">
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                          <div class="form-group">
+                                                              <label for="name">Mã Người Dùng <b class="require-form">*</b></label>
+                                                              <input type="text" class="form-control" id="input_userid" name="id" readonly required>
+                                                          </div>
+                                                      </div>
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Email <b class="require-form">*</b></label>
+                                                                <input type="email" class="form-control" id="input_email" name="email" readonly required>
+                                                            </div>
+                                                        </div>                                                       
+                                                    </div>
+                                                  </div>
+                                            <!-- Người dùng - line 1  -->
+                                            
+                                            <!-- Người dùng - line 2 -->
+                                                <div class="col-lg-12 col-md-12 col-sm-12">
+                                                    <div class="row">
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Tên Người Dùng <b class="require-form">*</b></label>
+                                                                <input type="text" class="form-control" id="input_name" name="name" placeholder="Nhập Tên Người Dùng" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Điện Thoại</label>
+                                                                <input type="text" inputmode="numeric" maxlength="10" class="form-control" id="input_phone" name="phone" placeholder="Nhập Số Điện Thoại" required>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <!-- Người dùng - line 2  -->
+
+                                            <!-- Người dùng - line 3 -->
+                                            <div class="col-lg-12 col-md-12 col-sm-12">
+                                              <div class="row">
+                                                  <div class="col-lg-12 col-md-12 col-sm-12">
+                                                      <div class="form-group">
+                                                          <label for="name">Địa Chỉ</label>
+                                                          <input type="text" class="form-control" id="input_address" name="address" required>
+                                                      </div>
+                                                  </div>                                              
+                                              </div>
+                                            </div>
+                                        <!-- Người dùng - line 3 -->
+
+                                            <!-- Người dùng - line 4 -->
+                                                <div class="col-lg-12 col-md-12 col-sm-12">
+                                                    <div class="row">
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Ngày Sinh</label>
+                                                                <input type="date" pattern="\d{2}/\d{2}/\d{4}" class="form-control" id="input_birthday" name="birthday" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Chức Vụ</label>
+                                                                <input type="text" class="form-control" id="input_jobtitle" name="jobtitle" placeholder="Nhập Chức Vụ" required>
+                                                            </div>
+                                                        </div>                                                   
+                                                    </div>
+                                                </div>
+                                            <!-- Người dùng - line 4 -->
+                                          
+                                            <!-- Người dùng - line 5 -->
+                                                <div class="col-lg-12 col-md-12 col-sm-12">
+                                                  <div class="row">
+                                                    <div class="col-lg-6 col-md-6 col-sm-12">
+                                                      <div class="form-group">
+                                                        <label for="name">Quyền <b class="require-form">*</b></label>
+                                                        <select class="form-select input_support db-support-ticket" aria-label="Default select example" id="input_role" name="role" required>
+                                                          <option value="2">Member</option>
+                                                          <option value="1">Moderator</option>
+                                                          <option value="0" class="hide-option opt-admin">Administrator</option>
+                                                        </select>
+                                                      </div>
+                                                    </div>
+                                                    <div class="col-lg-6 col-md-6 col-sm-12">
+                                                      <div class="form-group">
+                                                        <label for="name">Tình Trạng <b class="require-form">*</b></label>
+                                                        <select class="form-select input_support" aria-label="Default select example" id="input_status" name="status" required>
+                                                          <option value="True">Kích Hoạt</option>
+                                                          <option value="False">Không Kích Hoạt</option>
+                                                        </select>
+                                                      </div>
+                                                    </div>                                             
+                                                  </div>
+                                                </div>
+                                          <!-- Người dùng - line 5 -->         
+                                                                                                     
+                                          </div>                                        
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="Update-user-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal Update Ticket  -->      
+                                  
+                                  <!-- Modal Update Role User -->
+                                  <div class="modal fade modal-hidden" id="UpdateRoleModal" tabindex="-1" role="dialog" aria-labelledby="UpdateRoleModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="UpdateRoleModalLabel"><i class="ti-write"></i> CẬP NHẬT QUYỀN</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="UpdateRoleForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                            <div class="form-group">
+                                                <input type="text"  class="form-control" id="input_Role_id" name="id" hidden required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="name">Quyền <b class="require-form">*</b></label>
+                                                <select class="form-select input_role" aria-label="Default select example" id="input_user_role" name="type" readonly required>
+                                                  <option value="2">User Member</option>
+                                                  <option value="1">Moderator</option>
+                                                  <option value="0">Administrator</option>
+                                                </select>
+                                              </div>                                     
+                                          </div>                                        
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="Update-role-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!--Modal Update Role User  -->
+                                </th>                                                           
+                              </tr>                               
+                            </thead>                          
+                            <tbody>
+                            </tbody>                          
+                          </table>                    
+                    </div>
+                    <ul class="pagination" id="pagination"></ul>                                    
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+    </div>
+    {% comment %} <script src="https://cdn.tiny.cloud/1/z25cg6a4w4qz1dd1lxrsft0b1yo8z5z33z6v7uhfnhnu6ekm/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script type="text/javascript" src="{% static 'js/jszip.min.js' %}"></script>
+  <script>
+    tinymce.init({
+      selector: 'textarea',
+      plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount checklist mediaembed casechange export formatpainter pageembed linkchecker a11ychecker tinymcespellchecker permanentpen powerpaste advtable advcode editimage tinycomments tableofcontents footnotes mergetags autocorrect typography inlinecss',
+      toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+      tinycomments_mode: 'embedded',
+      tinycomments_author: 'Author name',
+      mergetags_list: [
+        { value: 'First.Name', title: 'First Name' },
+        { value: 'Email', title: 'Email' },
+      ]
+    });
+  </script> {% endcomment %}
+    {% comment %} <script type="text/javascript" src="{% static 'js/tinymce.min.js' %}"></script>  
+ <script type="text/javascript" src="{% static 'js/editor.js' %}"></script>   {% endcomment %}
+
+{% endblock %}

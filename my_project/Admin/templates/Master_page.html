@@ -1,18 +1,18 @@
 {%load static %}
 {% load humanize %}
-<!DOCTYPE html>
+{% comment %} <!DOCTYPE html> {% endcomment %}
 <html lang="en">
 
 <head>
   <!-- Required meta tags -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>Star Admin2 </title>
+  <title>Service Desk Managerment </title>
   <!-- plugins:css -->
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
   <link rel="stylesheet" href="{% static 'css/_buttons.scss' %}">
   <link rel="stylesheet" href="{% static 'css/_reboot.scss' %}">
-  <link rel="stylesheet" href="{% static 'Sweetalert2/Css/sweetalert2.min.css"' %}">
+  <link rel="stylesheet" href="{% static 'Sweetalert2/Css/sweetalert2.min.css' %}">
   <link rel="stylesheet" href="{% static 'star_admin/vendors/feather/feather.css' %}">
   <link rel="stylesheet" href="{% static 'star_admin/vendors/mdi/css/materialdesignicons.min.css' %}">
   <link rel="stylesheet" href="{% static 'star_admin/vendors/ti-icons/css/themify-icons.css' %}">
@@ -32,6 +32,7 @@
   <!-- endinject -->
   <link rel="shortcut icon" href="{% static 'star_admin/images/favicon.png' %}" />
 </head>
+{% comment %} <body class="sidebar-icon-only"> {% endcomment %}
 <body>
   <div class="container-scroller">
     <div class="row p-0 m-0 proBanner" id="proBanner">
@@ -73,10 +74,11 @@
         <ul class="navbar-nav">
           <li class="nav-item font-weight-semibold d-none d-lg-block ms-0">
             {% if request.session.UserInfo %}            
-            <h1 class="welcome-text">Good Morning, <span class="text-black fw-bold">{{ request.session.UserInfo.FullName }}</span></h1>
+            <h1 class="welcome-text">Xin Chào, <span class="text-black fw-bold">{{ request.session.UserInfo.FullName }}</span></h1>
             {% endif %}
+            <p>test</p>
             
-            <h3 class="welcome-sub-text">Your performance summary this week </h3>
+            {% comment %} <h3 class="welcome-sub-text">Your performance summary this week </h3> {% endcomment %}
           </li>
         </ul>
         <ul class="navbar-nav ms-auto">
@@ -178,7 +180,7 @@
               <div class="dropdown-divider"></div>
               <a class="dropdown-item preview-item">
                 <div class="preview-thumbnail">
-                  <img src="images/faces/face10.jpg" alt="image" class="img-sm profile-pic">
+                  <img src="{% static 'Asset/img/ava.png' %}" alt="image" class="img-sm profile-pic">
                 </div>
                 <div class="preview-item-content flex-grow py-2">
                   <p class="preview-subject ellipsis font-weight-medium text-dark">Marian Garner </p>
@@ -187,7 +189,7 @@
               </a>
               <a class="dropdown-item preview-item">
                 <div class="preview-thumbnail">
-                  <img src="images/faces/face12.jpg" alt="image" class="img-sm profile-pic">
+                  <img src="{% static 'Asset/img/ava.png' %}" alt="image" class="img-sm profile-pic">
                 </div>
                 <div class="preview-item-content flex-grow py-2">
                   <p class="preview-subject ellipsis font-weight-medium text-dark">David Grey </p>
@@ -196,7 +198,7 @@
               </a>
               <a class="dropdown-item preview-item">
                 <div class="preview-thumbnail">
-                  <img src="images/faces/face1.jpg" alt="image" class="img-sm profile-pic">
+                  <img src="{% static 'Asset/img/ava.png' %}" alt="image" class="img-sm profile-pic">
                 </div>
                 <div class="preview-item-content flex-grow py-2">
                   <p class="preview-subject ellipsis font-weight-medium text-dark">Travis Jenkins </p>
@@ -254,7 +256,7 @@
     <!-- partial -->
     <div class="container-fluid page-body-wrapper">
       <!-- partial:partials/_settings-panel.html -->
-      <div class="theme-setting-wrapper">
+      {% comment %} <div class="theme-setting-wrapper">
         <div id="settings-trigger"><i class="ti-settings"></i></div>
         <div id="theme-settings" class="settings-panel">
           <i class="settings-close ti-close"></i>
@@ -271,7 +273,7 @@
             <div class="tiles default"></div>
           </div>
         </div>
-      </div>
+      </div> {% endcomment %}
       <div id="right-sidebar" class="settings-panel">
         <i class="settings-close ti-close"></i>
         <ul class="nav nav-tabs border-top" id="setting-panel" role="tablist">
@@ -367,7 +369,7 @@
             </div>
             <ul class="chat-list">
               <li class="list active">
-                <div class="profile"><img src="images/faces/face1.jpg" alt="image"><span class="online"></span></div>
+                <div class="profile"><img src="{% static 'Asset/img/ava.png' %}" alt="image"><span class="online"></span></div>
                 <div class="info">
                   <p>Thomas Douglas</p>
                   <p>Available</p>
@@ -375,7 +377,7 @@
                 <small class="text-muted my-auto">19 min</small>
               </li>
               <li class="list">
-                <div class="profile"><img src="images/faces/face2.jpg" alt="image"><span class="offline"></span></div>
+                <div class="profile"><img src="{% static 'Asset/img/ava.png' %}" alt="image"><span class="offline"></span></div>
                 <div class="info">
                   <div class="wrapper d-flex">
                     <p>Catherine</p>
@@ -386,7 +388,7 @@
                 <small class="text-muted my-auto">23 min</small>
               </li>
               <li class="list">
-                <div class="profile"><img src="images/faces/face3.jpg" alt="image"><span class="online"></span></div>
+                <div class="profile"><img src="{% static 'Asset/img/ava.png' %}" alt="image"><span class="online"></span></div>
                 <div class="info">
                   <p>Daniel Russell</p>
                   <p>Available</p>
@@ -394,7 +396,7 @@
                 <small class="text-muted my-auto">14 min</small>
               </li>
               <li class="list">
-                <div class="profile"><img src="images/faces/face4.jpg" alt="image"><span class="offline"></span></div>
+                <div class="profile"><img src="{% static 'Asset/img/ava.png' %}" alt="image"><span class="offline"></span></div>
                 <div class="info">
                   <p>James Richardson</p>
                   <p>Away</p>
@@ -402,7 +404,7 @@
                 <small class="text-muted my-auto">2 min</small>
               </li>
               <li class="list">
-                <div class="profile"><img src="images/faces/face5.jpg" alt="image"><span class="online"></span></div>
+                <div class="profile"><img src="{% static 'Asset/img/ava.png' %}" alt="image"><span class="online"></span></div>
                 <div class="info">
                   <p>Madeline Kennedy</p>
                   <p>Available</p>
@@ -410,7 +412,7 @@
                 <small class="text-muted my-auto">5 min</small>
               </li>
               <li class="list">
-                <div class="profile"><img src="images/faces/face6.jpg" alt="image"><span class="online"></span></div>
+                <div class="profile"><img src="{% static 'Asset/img/ava.png' %}" alt="image"><span class="online"></span></div>
                 <div class="info">
                   <p>Sarah Graves</p>
                   <p>Available</p>
@@ -432,6 +434,22 @@
               <span class="menu-title">Dashboard</span>
             </a>
           </li>
+          <li class="nav-item nav-category">Danh Sách Quản Lý</li>
+          <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="collapse" href="#ui-basic" aria-expanded="false" aria-controls="ui-basic">
+              <i class="menu-icon mdi mdi-floor-plan"></i>
+              <span class="menu-title">Danh Sách</span>
+              <i class="menu-arrow"></i> 
+            </a>
+            <div class="collapse" id="ui-basic">
+              <ul class="nav flex-column sub-menu">
+                <li class="nav-item"> <a class="nav-link" href="/danh-sach-yeu-cau/">Danh Sách Yêu Cầu</a></li>
+                <li class="nav-item"> <a class="nav-link" href="pages/ui-features/dropdowns.html">Danh Sách Công Ty</a></li>
+                <li class="nav-item"> <a class="nav-link" href="pages/ui-features/typography.html">Danh Sách Nhóm</a></li>
+              </ul>
+            </div>
+          </li>
+          <li class="nav-item nav-category">Danh Mục</li>
           <li class="nav-item nav-category">UI Elements</li>
           <li class="nav-item">
             <a class="nav-link" data-bs-toggle="collapse" href="#ui-basic" aria-expanded="false" aria-controls="ui-basic">
@@ -520,7 +538,7 @@
       </nav>
       <!-- partial -->
       <div class="main-panel">
-        <div class="content-wrapper">
+        <div class="content-wrapper content-wrapper-custom">
             {% block content %}
             {% endblock %}
         </div>
@@ -528,7 +546,7 @@
         <!-- partial:partials/_footer.html -->
         <footer class="footer">
           <div class="d-sm-flex justify-content-center justify-content-sm-between">
-            <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Premium <a href="https://www.bootstrapdash.com/" target="_blank">Bootstrap admin template</a> from BootstrapDash.</span>
+            {% comment %} <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">Premium <a href="https://www.bootstrapdash.com/" target="_blank">Bootstrap admin template</a> from BootstrapDash.</span> {% endcomment %}
             <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">Copyright © 2021. All rights reserved.</span>
           </div>
         </footer>
@@ -543,6 +561,8 @@
   <script type="text/javascript" src="{% static 'js/jquery-3.6.4.min.js' %}"></script>
   <script type="text/javascript" src="{% static 'js/ajax.js' %}"></script>
   <script type="text/javascript" src="{% static 'js/jquery.twbsPagination.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'js/jszip.min.js' %}"></script>
+  
 
   <!-- sweetalert2 -->
   <script src="{% static 'Sweetalert2/Js/sweetalert2.all.min.js' %}"></script>

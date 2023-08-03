@@ -1,0 +1,636 @@
+{% extends 'Admin_Helpdesk.html' %}
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+<div class="row">
+    <div class="col-sm-12">
+      <div class="home-tab">
+        {% comment %} <div class="d-sm-flex align-items-center justify-content-between border-bottom">
+          <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item">
+              <a class="nav-link active ps-0" id="home-tab" data-bs-toggle="tab" href="#overview" role="tab" aria-controls="overview" aria-selected="true">Earnings</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="profile-tab" data-bs-toggle="tab" href="#audiences" role="tab" aria-selected="false">Refunds</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="contact-tab" data-bs-toggle="tab" href="#demographics" role="tab" aria-selected="false">Decline</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link border-0" id="more-tab" data-bs-toggle="tab" href="#more" role="tab" aria-selected="false">Payouts</a>
+            </li>
+          </ul>
+          <div>
+            <div class="btn-wrapper">
+              <a href="#" class="btn btn-otline-dark align-items-center">Manage</a>
+              <a href="#" class="btn btn-primary text-white me-0"><i class="icon-plus"></i> Add Customer</a>
+            </div>
+          </div>
+        </div> {% endcomment %}
+        <div class="tab-content tab-content-basic">
+          <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview">           
+            <div class="row lex-grow">
+              <div class="col-sm-12 col-lg-3 col-md-3 grid-margin stretch-card">
+                <div class="card card-rounded card-custom-primary">
+                  <div class="card-body line-chart-wrapper-height">
+                    <div>
+                      <p class="analytic-title title_year">Total All</p> 
+                      <div class="content_year-custom">
+                        <i class="ti-receipt"></i><h3 class="rate-analytic total_year">{{Total_year}} </h3><sub class="rate-analytic"> Ticket</sub>             
+                      </div>
+                    </div>
+                    <div class="mt-4 analytic-line-chart"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                      <canvas id="realTimeUserAnalytic" style="display: block; height: 90px; width: 180px;" width="225" height="112" class="chartjs-render-monitor"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-12 col-lg-3 col-md-3 grid-margin stretch-card">
+                <div class="card card-rounded card-custom-success">
+                  <div class="card-body line-chart-wrapper-height">
+                    <div>
+                      <p class="analytic-title title_month">Total Month</p>
+                      {% comment %} <div class="title_year-custom">
+                        <p class="analytic-title title_month">Total Month</p>
+                        <p class=" icon-custom-up"><i class="mdi mdi-margin"></i> 10%</p>                        
+                      </div> {% endcomment %}
+                      <div class="content_year-custom content-year-icon">
+                        <i class="ti-receipt"></i>
+                        <h3 class="rate-analytic total_month">{{Total_month}}</h3>
+                        <sub class="rate-analytic"> Ticket</sub>     
+                        {% comment %} <i id="icon_ti-stats"></i>         {% endcomment %}
+                    </div>   
+                    </div>
+                    <div class="mt-4 analytic-line-chart"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                      <canvas id="totalEarningsAnalytic" width="225" height="112" style="display: block; height: 90px; width: 180px;" class="chartjs-render-monitor"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-12 col-lg-3 col-md-3 grid-margin stretch-card">
+                <div class="card card-rounded card-custom-info">
+                  <div class="card-body line-chart-wrapper-height">
+                    <div> 
+                      <p class="analytic-title title_week">Total Week</p>
+                      {% comment %} <div class="title_year-custom">
+                        <p class="analytic-title title_week">Total Week</p>
+                        <p class=" icon-custom-down"><i class="mdi mdi-margin"></i> 10%</p>                        
+                     </div> {% endcomment %}
+                     <div class="content_year-custom content-month-icon">
+                        <i class="ti-receipt"></i>
+                        <h3 class="rate-analytic total_week">{{Total_week}}</h3>
+                        <sub class="rate-analytic"> Ticket</sub>             
+                     </div>
+                    </div>
+                    <div class="mt-4 analytic-line-chart"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                      <canvas id="impressionAnalytic" width="225" height="112" style="display: block; height: 90px; width: 180px;" class="chartjs-render-monitor"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-12 col-lg-3 col-md-3 grid-margin stretch-card">
+                <div class="card card-rounded card-custom-warning">
+                  <div class="card-body line-chart-wrapper-height">
+                    <div>
+                      <p class="analytic-title title_day">Total Day</p>
+                      <div class="content_year-custom">
+                        <i class="ti-receipt"></i><h3 class="rate-analytic total_day">{{Total_day}}</h3>    <sub class="rate-analytic"> Ticket</sub>             
+                       </div>       
+                    </div>
+                    <div class="mt-4 analytic-line-chart"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                      <canvas id="siteIncomeAnalytic" width="225" height="112" style="display: block; height: 90px; width: 180px;" class="chartjs-render-monitor"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div> 
+             {% comment %} Ticket Chart {% endcomment %}
+            <div class="row">
+              <div class="col-lg-6 d-flex flex-column colum-chart-month">
+                <div class="row flex-grow">
+                  <div class="col-12 col-lg-4 col-lg-12 grid-margin stretch-card">
+                    <div class="card card-rounded">
+                      <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                          <div>
+                           <h4 class="card-title card-title-dash">Monthly Data - Thống Kê Yêu Cầu Theo Tháng</h4>
+                          </div>
+                        </div>
+                        <div class="chartjs-wrapper mt-4">
+                         <div class="d-lg-flex justify-content-start">
+                          <div><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                            {% comment %} <canvas class="my-auto chartjs-render-monitor" id="doughnutChartAnalytic" height="212" width="375" style="display: block; height: 170px; width: 300px;"></canvas> {% endcomment %}
+                            <div id="chart_div"></div>
+                          </div>
+                          {% comment %} <div id="doughnut-chart-legend-Analytic" class="text-center"><div class="chartjs-legend"><ul>50%<li><span style="background-color:#1F3BB3"></span>Admin dashboard</li>20%<li><span style="background-color:#00CDFF"></span>Website design</li>30%<li><span style="background-color:#F95F53"></span>Mobile app design</li></ul></div></div> {% endcomment %}
+                         </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6 d-flex flex-column colum-chart-month">
+                <div class="row flex-grow">
+                  <div class="col-12 col-lg-4 col-lg-12 grid-margin stretch-card">
+                    <div class="card card-rounded">
+                      <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                          <div>
+                           <h4 class="card-title card-title-dash">Weekly Data - Thống Kê Yêu Cầu Theo Tuần</h4>
+                          </div>
+                        </div>
+                        <div class="chartjs-wrapper mt-4 chart-height-dash"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                          {% comment %} <canvas id="realtimestatisticsAnalytic" width="676" height="250" style="display: block; height: 200px; width: 541px;" class="chartjs-render-monitor"></canvas> {% endcomment %}
+                          <div id="chart_pie_status"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-12 d-flex flex-column colum-chart-status">
+                <div class="row flex-grow">
+                  <div class="col-12 col-lg-4 col-lg-12 grid-margin stretch-card">
+                    <div class="card card-rounded">
+                      <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                          <div>
+                           <h4 class="card-title card-title-dash">Status Monthly Data - Thống Kê Trạng Thái Theo Tháng</h4>
+                          </div>
+                        </div>
+                        <div class="chartjs-wrapper mt-4">
+                         <div class="d-lg-flex justify-content-start">
+                          <div><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                            {% comment %} <canvas class="my-auto chartjs-render-monitor" id="doughnutChartAnalytic" height="212" width="375" style="display: block; height: 170px; width: 300px;"></canvas> {% endcomment %}
+                            <div id="chart_div_month_stautus"></div>
+                          </div>
+                          {% comment %} <div id="doughnut-chart-legend-Analytic" class="text-center"><div class="chartjs-legend"><ul>50%<li><span style="background-color:#1F3BB3"></span>Admin dashboard</li>20%<li><span style="background-color:#00CDFF"></span>Website design</li>30%<li><span style="background-color:#F95F53"></span>Mobile app design</li></ul></div></div> {% endcomment %}
+                         </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% comment %} Ticket Chart {% endcomment %}
+
+            {% comment %} {% if request.session.UserInfo.Acc_type < 2 %} {% endcomment %}
+
+            {% comment %} User Chart {% endcomment %}
+            <div class="row lex-grow disable-report" id="report-user-number">
+              <div class="col-sm-12 col-lg-3 col-md-3 grid-margin stretch-card">
+                <div class="card card-rounded card-custom-primary">
+                  <div class="card-body line-chart-wrapper-height">
+                    <div>
+                      <p class="analytic-title title_year">Total All</p>
+                      <div class="content_year-custom">
+                        <i class="ti-user"></i><h3 class="rate-analytic total_users_year">{{Total_year}}</h3><sub class="rate-analytic"> Users</sub>             
+                      </div>
+                    </div>
+                    <div class="mt-4 analytic-line-chart"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                      <canvas id="realTimeUserAnalytic" style="display: block; height: 90px; width: 180px;" width="225" height="112" class="chartjs-render-monitor"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-12 col-lg-3 col-md-3 grid-margin stretch-card">
+                <div class="card card-rounded card-custom-success">
+                  <div class="card-body line-chart-wrapper-height">
+                    <div>
+                      <p class="analytic-title title_month">Total Month</p>
+                      <div class="content_year-custom content-year-user-icon">
+                        <i class="ti-user"></i>
+                        <h3 class="rate-analytic total_users_month">{{Total_month}}</h3>
+                        <sub class="rate-analytic"> Users</sub>             
+                      </div>                    
+                    </div>
+                    <div class="mt-4 analytic-line-chart"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                      <canvas id="totalEarningsAnalytic" width="225" height="112" style="display: block; height: 90px; width: 180px;" class="chartjs-render-monitor"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-12 col-lg-3 col-md-3 grid-margin stretch-card">
+                <div class="card card-rounded card-custom-info">
+                  <div class="card-body line-chart-wrapper-height">
+                    <div>
+                      <p class="analytic-title title_week">Total Week</p>
+                      <div class="content_year-custom content-month-user-icon">
+                        <i class="ti-user"></i>
+                        <h3 class="rate-analytic total_users_week">{{Total_week}}</h3>
+                        <sub class="rate-analytic"> Users</sub>             
+                      </div>
+                    </div>
+                    <div class="mt-4 analytic-line-chart"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                      <canvas id="impressionAnalytic" width="225" height="112" style="display: block; height: 90px; width: 180px;" class="chartjs-render-monitor"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-12 col-lg-3 col-md-3 grid-margin stretch-card">
+                <div class="card card-rounded card-custom-warning">
+                  <div class="card-body line-chart-wrapper-height">
+                    <div>
+                      <p class="analytic-title title_day">Total Day</p>
+                      <div class="content_year-custom">
+                        <i class="ti-user"></i><h3 class="rate-analytic total_users_day">{{Total_day}}</h3><sub class="rate-analytic"> Users</sub>             
+                      </div>                
+                    </div>
+                    <div class="mt-4 analytic-line-chart"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                      <canvas id="siteIncomeAnalytic" width="225" height="112" style="display: block; height: 90px; width: 180px;" class="chartjs-render-monitor"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div> 
+             <div class="row disable-report" id="report-user-data">
+              <div class="col-lg-6 d-flex flex-column colum-chart-month">
+                <div class="row flex-grow">
+                  <div class="col-12 col-lg-4 col-lg-12 grid-margin stretch-card">
+                    <div class="card card-rounded">
+                      <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                          <div>
+                           <h4 class="card-title card-title-dash">User Data By User Role - Thống Kê Người Dùng Theo Role</h4>
+                          </div>
+                        </div>
+                        <div class="chartjs-wrapper mt-4">
+                         <div class="d-lg-flex justify-content-start">
+                          <div><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                            <div id="chart_pie_role"></div>
+                          </div>
+                         </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6 d-flex flex-column colum-chart-month">
+                <div class="row flex-grow">
+                  <div class="col-12 col-lg-4 col-lg-12 grid-margin stretch-card">
+                    <div class="card card-rounded">
+                      <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                          <div>
+                           <h4 class="card-title card-title-dash">User Data By User Type - Thống Kê Người Dùng Theo Loại</h4>
+                          </div>
+                        </div>
+                        <div class="chartjs-wrapper mt-4 chart-height-dash"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                          {% comment %} <canvas id="realtimestatisticsAnalytic" width="676" height="250" style="display: block; height: 200px; width: 541px;" class="chartjs-render-monitor"></canvas> {% endcomment %}
+                          <div id="chart_pie_acc"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-12 d-flex flex-column colum-chart-status">
+                <div class="row flex-grow">
+                  <div class="col-12 col-lg-4 col-lg-12 grid-margin stretch-card">
+                    <div class="card card-rounded">
+                      <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                          <div>
+                           <h4 class="card-title card-title-dash">Monthly User Status Data - Thống Kê Trạng Thái Người Dùng Theo Tháng</h4>
+                          </div>
+                        </div>
+                        <div class="chartjs-wrapper mt-4">
+                         <div class="d-lg-flex justify-content-start">
+                          <div><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                            {% comment %} <canvas class="my-auto chartjs-render-monitor" id="doughnutChartAnalytic" height="212" width="375" style="display: block; height: 170px; width: 300px;"></canvas> {% endcomment %}
+                            <div id="chart_user_month_stautus"></div>
+                          </div>
+                          {% comment %} <div id="doughnut-chart-legend-Analytic" class="text-center"><div class="chartjs-legend"><ul>50%<li><span style="background-color:#1F3BB3"></span>Admin dashboard</li>20%<li><span style="background-color:#00CDFF"></span>Website design</li>30%<li><span style="background-color:#F95F53"></span>Mobile app design</li></ul></div></div> {% endcomment %}
+                         </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% comment %} User Chart {% endcomment %}
+            
+            {% comment %} Performance {% endcomment %}
+            <div class="row disable-report" id="report-per-data">
+              <div class="col-lg-7 d-flex flex-column">
+                <div class="row flex-grow">
+                  <div class="col-12 grid-margin stretch-card">
+                    <div class="card card-rounded">
+                      <div class="card-body">
+                        <div class="d-sm-flex justify-content-between align-items-start">
+                          <div>
+                            <h4 class="card-title card-title-dash">User Performance - Hiệu Suất Theo Users</h4>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-sm-6" id="year_user_per">
+                            <h5 class="card-sbuheading mt-3 mb-4">Year Analytic - Thống Kê Năm </h5>
+                            {% comment %} <div class="row mb-20">
+                              <div class="col-sm-2">
+                                <img class="img-sm rounded-4" src="../../../../images/faces/face1.jpg" alt="profile">
+                              </div>
+                              <div class="col-sm-8">
+                                <div class="d-flex justify-content-between">
+                                  <h6>Finance</h6>
+                                  <p class="font-weight-500 text-muted">78%</p>
+                                </div>
+                                <div>
+                                  <div class="progress progress-sm">
+                                    <div class="progress-bar bg-danger" role="progressbar" aria-valuenow="78" style="width: 78%" aria-valuemin="0" aria-valuemax="100"></div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div> {% endcomment %}
+                          </div>
+                          <div class="col-sm-6" id="month_user_per">
+                            <h5 class="card-sbuheading mt-3 mb-4">Month Analytic - Thống Kê Tháng </h5>
+                            {% comment %} <div class="row mb-20">
+                              <div class="col-sm-2">
+                                <img class="img-sm rounded-4" src="../../../../images/faces/face5.jpg" alt="profile">
+                              </div>
+                              <div class="col-sm-8">
+                                <div class="d-flex justify-content-between">
+                                  <h6>Designing</h6>
+                                  <p class="font-weight-500 text-muted">80%</p>
+                                </div>
+                                <div>
+                                  <div class="progress progress-sm">
+                                    <div class="progress-bar bg-success" role="progressbar" aria-valuenow="80" style="width: 80%" aria-valuemin="0" aria-valuemax="100"></div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div> {% endcomment %}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-5 d-flex flex-column">
+                <div class="row flex-grow">
+                  <div class="col-12 grid-margin stretch-card">
+                    <div class="card card-rounded">
+                      <div class="card-body">
+                        <div class="row">
+                          <div class="col-lg-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                              <div>
+                                <h4 class="card-title card-title-dash">Group Ticket By Year - Thống Kê Nhóm Yêu Câu Theo Năm</h4>
+                              </div>
+                            </div>
+                            <div class="mt-3">
+                              <div class="d-flex justify-content-between">
+                                <div id="chart_div_status"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {% comment %} <div class="col-12 grid-margin stretch-card">
+                    <div class="card card-rounded">
+                      <div class="card-body">
+                        <div class="row">
+                          <div class="col-lg-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                              <div>
+                                <h4 class="card-title card-title-dash">Website Audience</h4>
+                              </div>
+                            </div>
+                            <div class="mt-3">
+                              <div class="d-flex justify-content-between">
+                                <div class="web-audience-data">
+                                  <span class="webaudience-icon bg-primary">
+                                    <i class="mdi mdi-chart-line"></i>
+                                  </span>
+                                  <h4>Bounce rate</h4>
+                                  <h2>26.80%</h2>
+                                </div>
+                                <div class="web-audience-data">
+                                  <span class="webaudience-icon bg-danger">
+                                    <i class="mdi mdi-border-all"></i>
+                                  </span>
+                                  <h4>Sessions</h4>
+                                  <h2>9,065</h2>
+                                </div>
+                                <div class="web-audience-data">
+                                  <span class="webaudience-icon bg-info">
+                                    <i class="mdi mdi-eye"></i>
+                                  </span>
+                                  <h4>Page Views</h4>
+                                  <h2>83,123</h2>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12 grid-margin stretch-card">
+                    <div class="card card-rounded">
+                      <div class="card-body">
+                        <div class="row">
+                          <div class="col-lg-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                              <div>
+                                <h4 class="card-title card-title-dash">Store Visits</h4>
+                              </div>
+                            </div>
+                            <div class="mt-3">
+                              <div class="row">
+                                <div class="col-sm-6">
+                                  <div class="d-flex justify-content-between align-items-center mb-2 mb-sm-0 circle-progress-analytic">
+                                    <div class="circle-progress-width-analytic">
+                                      <div id="totalVisitorsanalytic" class="progressbar-js-circle pr-2"><svg viewBox="0 0 100 100" style="display: block; width: 100%;"><path d="M 50,50 m 0,-42.5 a 42.5,42.5 0 1 1 0,85 a 42.5,42.5 0 1 1 0,-85" stroke="#eee" stroke-width="15" fill-opacity="0"></path><path d="M 50,50 m 0,-42.5 a 42.5,42.5 0 1 1 0,85 a 42.5,42.5 0 1 1 0,-85" stroke="rgb(0,205,255)" stroke-width="15" fill-opacity="0" style="stroke-dasharray: 267.132, 267.132; stroke-dashoffset: 96.1674;"></path></svg><div class="progressbar-text" style="position: absolute; left: 50%; top: 50%; padding: 0px; margin: 0px; transform: translate(-50%, -50%); color: rgb(255, 255, 255); font-size: 0rem;">64</div></div>
+                                    </div>
+                                    <div>
+                                      <h4 class="mb-2 fw-bold">26.80%</h4>
+                                      <p class="mb-2">Total Visitors</p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div class="col-sm-6">
+                                  <div class="d-flex justify-content-between align-items-center circle-progress-analytic">
+                                    <div class="circle-progress-width-analytic">
+                                      <div id="visitperdayAnalytic" class="progressbar-js-circle pr-2"><svg viewBox="0 0 100 100" style="display: block; width: 100%;"><path d="M 50,50 m 0,-42.5 a 42.5,42.5 0 1 1 0,85 a 42.5,42.5 0 1 1 0,-85" stroke="#eee" stroke-width="15" fill-opacity="0"></path><path d="M 50,50 m 0,-42.5 a 42.5,42.5 0 1 1 0,85 a 42.5,42.5 0 1 1 0,-85" stroke="rgb(30,59,179)" stroke-width="15" fill-opacity="0" style="stroke-dasharray: 267.132, 267.132; stroke-dashoffset: 176.307;"></path></svg><div class="progressbar-text" style="position: absolute; left: 50%; top: 50%; padding: 0px; margin: 0px; transform: translate(-50%, -50%); color: rgb(255, 255, 255); font-size: 0rem;">34</div></div>
+                                    </div>
+                                    <div>
+                                      <h4 class="mb-2 fw-bold">9065</h4>
+                                      <p class="mb-2">Visits per day</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div> {% endcomment %}
+                </div>
+              </div>
+            </div>
+            {% comment %} Performance {% endcomment %}
+
+            <div class="row">
+              <div class="col-lg-4 d-flex flex-column">
+                <div class="row flex-grow">
+                  <div class="col-12 col-lg-4 col-lg-12 grid-margin stretch-card">
+                    <div class="card card-rounded">
+                      <div class="card-body analytic-user-profile">
+                        <div class="text-center">
+                          <img class="img-md" src="../../../../images/faces/face10.jpg" alt="profile">
+                          <h3 class="mt-3">Ben David</h3>
+                          <p>Marketing Manager | ABC Tech</p>
+                          <a href="#" class="btn btn-primary btn-lg text-white">Contact</a>
+                        </div>
+                          <h4 class="card-title card-title-dash">Performance</h4>
+                        <div class="chartjs-wrapper mt-4">
+                         <div class="d-lg-flex justify-content-between">
+                          <div><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
+                            <canvas class="my-auto chartjs-render-monitor" id="performanceAnalytic" height="212" width="375" style="display: block; height: 170px; width: 300px;"></canvas>
+                          </div>
+                         </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-8 d-flex flex-column">
+                <div class="row flex-grow">
+                  <div class="col-12 col-lg-4 col-lg-12 grid-margin stretch-card">
+                    <div class="card card-rounded">
+                      <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                          <div>
+                           <h4 class="card-title card-title-dash">Employee Status</h4>
+                          </div>
+                          <div class="dropdown">
+                            <button class="btn btn-outline-light border dropdown-toggle toggle-dark btn-lg mb-0 me-0" type="button" id="dropdownMenuButton3" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">All</button>
+                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton3">
+                              <h6 class="dropdown-header">week Wise</h6>
+                              <a class="dropdown-item" href="#">Year Wise</a>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="table-responsive  mt-1">
+                          <table class="table table-analytic">
+                            <thead>
+                              <tr>
+                                <th><p class="dark-text">Employee Name</p></th>
+                                <th><p class="dark-text">Email Address</p></th>
+                                <th><p class="dark-text">Home Office</p></th>
+                                <th><p class="dark-text">Status</p></th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td>
+                                  <div class="wrapper d-flex align-items-center justify-content-between py-2">
+                                    <div class="d-flex">
+                                      <img class="img-sm rounded" src="../../../../images/faces/face1.jpg" alt="profile">
+                                      <div class="wrapper ms-3">
+                                        <p class="ms-1 mb-1 analytic-table-username">Alex George</p>
+                                        <small class="analytic-table-designation mb-0">HR Manager</small>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td><p class="dark-text text-medium">alex@gmail.com</p></td>
+                                <td><div class="badge badge-outline-info rounded-4">Active</div></td>
+                                <td><p class="dark-text"><span class="analytic-table-status bg-success"></span>Online</p> </td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <div class="wrapper d-flex align-items-center justify-content-between py-2">
+                                    <div class="d-flex">
+                                      <img class="img-sm rounded" src="../../../../images/faces/face2.jpg" alt="profile">
+                                      <div class="wrapper ms-3">
+                                        <p class="ms-1 mb-1 analytic-table-username">Ebin Sunny</p>
+                                        <small class="analytic-table-designation mb-0">UI Designer</small>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td><p class="dark-text text-medium">ebin@gmail.com</p></td>
+                                <td><div class="badge badge-outline-light rounded-4">In-Active</div></td>
+                                <td><p class="dark-text"><span class="analytic-table-status bg-danger"></span>Offline</p> </td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <div class="wrapper d-flex align-items-center justify-content-between py-2">
+                                    <div class="d-flex">
+                                      <img class="img-sm rounded" src="../../../../images/faces/face3.jpg" alt="profile">
+                                      <div class="wrapper ms-3">
+                                        <p class="ms-1 mb-1 analytic-table-username">Suzi Kott</p>
+                                        <small class="analytic-table-designation mb-0">Software Developer</small>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td><p class="dark-text text-medium">suzi@gmail.com</p></td>
+                                <td><div class="badge badge-outline-info rounded-4">Active</div></td>
+                                <td><p class="dark-text"><span class="analytic-table-status bg-success"></span>Online</p> </td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <div class="wrapper d-flex align-items-center justify-content-between py-2">
+                                    <div class="d-flex">
+                                      <img class="img-sm rounded" src="../../../../images/faces/face4.jpg" alt="profile">
+                                      <div class="wrapper ms-3">
+                                        <p class="ms-1 mb-1 analytic-table-username">Jasmine Walter</p>
+                                        <small class="analytic-table-designation mb-0">Data Scientist</small>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td><p class="dark-text text-medium">jasmine@gmail.com</p></td>
+                                <td><div class="badge badge-outline-info rounded-4">Active</div></td>
+                                <td><p class="dark-text"><span class="analytic-table-status bg-success"></span>Online</p> </td>
+                              </tr>
+                              <tr>
+                                <td>
+                                  <div class="wrapper d-flex align-items-center justify-content-between py-2">
+                                    <div class="d-flex">
+                                      <img class="img-sm rounded" src="../../../../images/faces/face5.jpg" alt="profile">
+                                      <div class="wrapper ms-3">
+                                        <p class="ms-1 mb-1 analytic-table-username">Kevin Robi</p>
+                                        <small class="analytic-table-designation mb-0">Marketing Manager</small>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td><p class="dark-text text-medium">kevin@gmail.com</p></td>
+                                <td><div class="badge badge-outline-light rounded-4">In-Active</div></td>
+                                <td><p class="dark-text"><span class="analytic-table-status bg-danger"></span>Offline</p> </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% comment %} {% endif %} {% endcomment %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% comment %} ChartJS {% endcomment %}
+  {% comment %} <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> {% endcomment %}
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  {% comment %} ChartJS {% endcomment %}
+{% endblock %}

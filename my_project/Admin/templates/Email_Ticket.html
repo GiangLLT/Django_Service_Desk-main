@@ -1,0 +1,41 @@
+{% autoescape off %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Content</title>
+</head>
+<body>
+    <h2 style="font-weight: 100;">Hi, {{ AssignName }}!</h1>
+    <div class="table-container" style="display: block;width: 500px;">
+        <div class="row" style="display: flex;justify-content: start;border-top: 1px dashed #dddddd;padding: 2px 0;">
+          <div class="label" style="font-weight: bold; font-size: 15px;">ID:</div>
+          <div class="value" style="flex-grow: 1;margin-left:63px;font-size: 15px;">#{{ TicketID }}</div>
+        </div>
+        <div class="row" style="display: flex;justify-content: start;padding: 2px 0;">
+          <div class="label" style="font-weight: bold;font-size: 15px;">Tiêu Đề:</div>
+          <div class="value" style="flex-grow: 1;margin-left:26px;font-size: 15px;">{{ Title }}</div>
+        </div>
+        <div class="row" style="display: flex;justify-content: start;padding: 2px 0;">
+          <div class="label" style="font-weight: bold;font-size: 15px;">Người Tạo:</div>
+          <div class="value" style="flex-grow: 1;margin-left:10px;font-size: 15px;">{{ CreateName }}</div>
+        </div>
+        <div class="row" style="display: flex;justify-content: start;padding: 2px 0;">
+            <div class="label" style="font-weight: bold;font-size: 15px;">Ngày Tạo:</div>
+            <div class="value" style="flex-grow: 1;margin-left:14px;font-size: 15px;">{{ CreateDate }}</div>
+        </div>
+        <div class="row" style="display: flex;justify-content: start;border-bottom: 1px dashed #dddddd;padding: 2px 0;">
+            <div class="label" style="font-weight: bold;font-size: 15px;">Link:</div>
+            <div class="value" style="flex-grow: 1;margin-left:50px;font-size: 15px;"><a href={{ Link }}>Link Ticket</a></div>
+        </div>
+    </div>
+    {% comment %} <p>If you have any questions or need assistance, please don't hesitate to contact us.</p> {% endcomment %}
+    <p style="font-weight: 100;font-size: 15px;">Best regards,</p>
+</body>
+</html>
+{% endautoescape %}
+
+
+
+

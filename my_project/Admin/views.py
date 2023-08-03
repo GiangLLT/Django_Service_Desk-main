@@ -8,7 +8,7 @@ from oauth2_provider.views.generic import ProtectedResourceView
 
 from django.core.paginator import Paginator
 from django.db.models import Count
-from .models import T001, Product, Category, Users
+from .models import Product, Category, Users, Ticket, Company, TGroup, Comment, Attachment, TImage, Assign_User, Role_Group, Role_Single, Authorization_User, Menu
 
 from django.shortcuts import render, redirect
 from django.conf import settings
@@ -21,17 +21,4607 @@ from django.contrib.auth import login
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
+from django.db.models import Q
+from django.db.models import Prefetch
+from datetime import datetime, timedelta
+from time import strptime
+import time
+
 import datetime
 import json
 import adal
 import requests
 import msal
+import os
+import re
+from django.utils.text import slugify
 
+from django.core.files.storage import FileSystemStorage
+from django.db.models import F
+from django.db.models.functions import Extract
+from django.db.models import Sum, F, FloatField
+from django.db.models.functions import Cast
+
+from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 
 # Create your views here.
+############################################ PAGE TICKET HELPDESK - START ############################################################
+
+
+################################################### Login O365, system #####################  
+def Login_function(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    if(cookie_microsoft_data):
+        response_data = json.loads(cookie_microsoft_data)
+        # Lưu dữ liệu vào session
+        # a = request.session.get('User_Info').get('UserID')
+        # if 'UserInfo' in request.session:
+        if 'UserInfo' not in request.session or request.session['UserInfo']['ID_user'] != response_data.get('ID_user'):
+            request.session['UserInfo'] = {
+                'ID_user': response_data.get('ID_user'),
+                'Mail': response_data.get('Mail'),
+                'FullName': response_data.get('FullName'),
+                'displayName': response_data.get('displayName'),
+                'Avatar': response_data.get('Avatar'),
+                'Photo': response_data.get('displayName')[0] + response_data.get('FullName')[0],
+        }
+        return redirect('/dashboard/')
+    elif(cookie_system_data):
+        response_data = json.loads(cookie_system_data)
+        # if 'UserInfo' in request.session:
+        if 'UserInfo' not in request.session or request.session['UserInfo']['ID_user'] != response_data.get('ID_user'):
+            request.session['UserInfo'] = {
+                'ID_user': response_data.get('ID_user'),
+                'Mail': response_data.get('Mail'),
+                'FullName': response_data.get('FullName'),
+                'displayName': response_data.get('displayName'),
+                'Avatar': response_data.get('Avatar'),
+                'Photo': response_data.get('displayName')[0] + response_data.get('FullName')[0],
+        }
+        return redirect('/dashboard/')
+    else:
+        template =  loader.get_template('Login.html')
+        return HttpResponse(template.render())
+    
+    # return redirect('/')
+
+#lOGIN SYSTEM
+@csrf_exempt
+def login_system(request):
+    try:
+        if request.method == 'POST':
+            email = request.POST.get('email')
+            password = request.POST.get('pass')
+            remember = request.POST.get('checkbox')
+            user = Users.objects.filter(Q(User_Type__lt= 3), Mail = email, Password = password, User_Status = True,).first() # 0 - administrator , 1 - Mod
+            # user = Users.objects.filter(Mail = email, Password = password, User_Status = True,).first() # 0 - administrator , 1 - Mod
+            if(user):
+                 # Lưu dữ liệu vào session
+                #  for user in user:
+                request.session['UserInfo'] = {
+                    'ID_user': user.ID_user,
+                    'Mail': user.Mail,
+                    'FullName': user.FullName,
+                    'displayName': user.displayName,
+                    'Avatar': user.Avatar,
+                    'Photo': user.displayName[0] +user.FullName[0],
+                    'Acc_type': user.User_Type,
+                }
+                session_data = json.dumps(request.session['UserInfo'])
+
+                # Lưu chuỗi JSON vào cookie
+                # Lưu access_token vào cookie (lưu ý: cần kiểm tra tính bảo mật của cookie)
+                if(remember == 'true'):
+                    url_redirect = '/danh-sach-yeu-cau/'
+                    response = HttpResponse('cookie success')
+                    response = SetCookie(response , 'cookie_system_data', session_data, url_redirect)
+                    response = DeleteCookie(response , 'cookie_microsoft_data')
+                    response = DeleteCookie(response , 'cookie_google_data')
+                    response = DeleteCookie(response , 'cookie_facebook_data')
+                    return response    
+                # return HttpResponseRedirect('/danh-sach-yeu-cau/')  
+                return redirect('/danh-sach-yeu-cau/')                       
+                # return JsonResponse({
+                # 'success': True,
+                # 'message': 'Login Successed',}) 
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Login Failed',})
+    except Users.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'User does not exist',
+        })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Login Failed: {str(ex)}',
+        })
+#lOGIN SYSTEM
+
+# Page Login account office 365
+def microsoft_login_token(request):
+    code = request.GET.get('code')
+
+    if code is None:
+        # Redirect to the Microsoft login page
+        url = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
+        params = {
+            'client_id': '5c17ff26-50a1-4003-bc31-f0545709c2f7',
+            'response_type': 'code',
+            'redirect_uri': 'https://localhost:8000/login/callback/',
+            'scope': 'https://graph.microsoft.com/.default',
+        }
+        auth_url = url + '?' + urlencode(params)
+        return redirect(auth_url)
+
+    # Exchange the authorization code for an access token and a refresh token
+    token_url = 'https://login.microsoftonline.com/common/oauth2/v2.0/token'
+    data = {
+        'grant_type': 'authorization_code',
+        'code': code,
+        'redirect_uri': 'https://localhost:8000/login/callback/',
+        'client_id': '5c17ff26-50a1-4003-bc31-f0545709c2f7',
+        'client_secret': 'EeJ8Q~ip-6TA~p1C7Y9t24l81qig0lFv1t5CPdwO',
+    }
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    }
+    response = requests.post(token_url, data=data, headers=headers)
+    response_data = response.json()
+
+    # Save the access token and refresh token in the session
+    access_token = response_data['access_token']
+    request.session['access_token'] = access_token
+    if 'refresh_token' in response_data:
+        refresh_token = response_data['refresh_token']
+        request.session['refresh_token'] = refresh_token
+    else:
+        refresh_token = None  # or handle the error in some other way
+
+
+    # Use the access token to get the user's profile
+    user_url = 'https://graph.microsoft.com/v1.0/me'
+    headers = {
+        'Authorization': 'Bearer ' + access_token,
+        'Accept': 'application/json',
+    }
+    response = requests.get(user_url, headers=headers)
+    response_data = response.json()
+    #get avatar
+    photo_data = response_data.get('photo', {})
+    photo_url = ''
+    if 'small' in   photo_data:
+        photo_url = photo_data['small']
+    elif 'large' in photo_data:
+            photo_url = photo_data['large']
+
+    #check user exit
+    email = response_data.get('mail')
+    exit_IDuser = Users.objects.filter(Mail = email)
+    if(exit_IDuser):
+        for user in exit_IDuser:
+            # Cậẻp nhật các thuộc tính của User
+            user.Mail = email
+            user.FullName = response_data.get('surname') + " " + response_data.get('givenName')
+            user.displayName = response_data.get('displayName')
+            if(response_data.get('jobTitle')):
+                user.Jobtitle = response_data.get('jobTitle')
+            if(response_data.get('mobilePhone')):
+                user.Phone = response_data.get('mobilePhone')
+            user.Avatar = photo_url
+
+            user.save()
+    else:
+        #check data ID User -get new ID
+        UserID = Check_IDUser()
+        # Insert dữ liệu vào cơ sở dữ liệu
+        user = Users(
+            ID_user     =UserID,
+            Mail        =email,
+            Password    ='',
+            FullName    =response_data.get('surname') + " " + response_data.get('givenName'),
+            displayName =response_data.get('displayName'),
+            Birthday    = response_data.get('birthday') if response_data.get('birthday') else datetime.date(1990, 1, 1),  # Chưa có thông tin về ngày sinh trong Microsoft Graph API
+            Acc_Type    ='Microsoft',
+            Address     ='',
+            Jobtitle    =response_data.get('jobTitle') if response_data.get('jobTitle') else "",
+            Phone       =response_data.get('mobilePhone') if response_data.get('jobTitle') else 0,
+            Avatar      =photo_url,
+            User_Type   = 2, # 2 - EndUser
+            Date_Create   = datetime.datetime.now().date(),
+            Time_Create   = datetime.datetime.now().time(),
+            User_Status =True  #User_Status là True khi mới đăng ký        
+        )
+        user.save()
+
+
+    # Lưu dữ liệu vào session
+    request.session['UserInfo'] = {
+        'ID_user': user.ID_user,
+        'Mail': user.Mail,
+        'FullName': user.FullName,
+        'displayName': user.displayName,
+        'Avatar': user.Avatar,
+        'Photo': user.displayName[0] +user.FullName[0],
+        'Acc_type': user.User_Type,
+    }
+
+    # Save the user's profile in a cookie
+   # Chuyển đổi session data thành chuỗi JSON
+    session_data = json.dumps(request.session['UserInfo'])
+
+    # Lưu chuỗi JSON vào cookie
+     # Lưu access_token vào cookie (lưu ý: cần kiểm tra tính bảo mật của cookie)
+    url_redirect = '/dashboard/'
+    response = SetCookie(response , 'cookie_microsoft_data', session_data, url_redirect)
+    response = DeleteCookie(response , 'cookie_google_data')
+    response = DeleteCookie(response , 'cookie_facebook_data')  
+    response = DeleteCookie(response , 'cookie_system_data')  
+    return response
+# Page Login account office 365
+
+#LOGOUT 
+@csrf_exempt
+def logout(request):
+    # Kiểm tra xem cookie 'cookie_microsoft_data' có tồn tại không trước khi xóa nó
+    if 'cookie_microsoft_data' in request.COOKIES:
+        response = HttpResponseRedirect('/')  # Chuyển hướng đến trang home (thay đổi tên view tương ứng)
+        response.delete_cookie('cookie_microsoft_data')  # Xóa cookie 'cookie_microsoft_data'
+        request.session.flush()  # Xóa tất cả dữ liệu trong session
+        return response
+    else:
+        return HttpResponse("Không tìm thấy cookie để xóa.")
+#LOGOUT 
+
+################################################### Login O365, system #####################  
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+
+################################################### FUNCTION , CHECK DATA, OTHER ########### 
+#CHECK AND GET DATA USERID
+def Check_IDUser():
+     User_data =  Users.objects.using('default').all()
+     if(User_data):
+         count = User_data.count()
+         if count > 0:
+             last_user = User_data[count - 1]
+             id = last_user.ID_user
+             UserID = 'U' + str(int(id[1:]) + 1).zfill(9)
+         else:
+             UserID = "U000000001"
+     else:
+            UserID = "U000000001"
+     return UserID
+#CHECK AND GET DATA USERID
+
+#CHECK USER EXIT
+def check_User_exit(email):
+    exit_IDuser = Users.objects.filter(Mail = email)
+    if(exit_IDuser):
+        return exit_IDuser
+    else:
+        return None
+#CHECK USER EXIT
+
+#FUCNTION SET SESTION USER
+def set_session_user(request, data_user):
+    request.session['UserInfo'] = {
+         'ID_user': data_user['ID_user'],
+         'Mail': data_user['Mail'],
+         'FullName': data_user['FullName'],
+         'displayName': data_user['displayName'],
+         'Avatar': data_user['Avatar'],
+         'Photo': data_user['displayName'][0] + data_user['FullName'][0],
+    }
+#FUCNTION SET SESTION USER
+
+#FUNCTION SET , GET , DELETE COOKIES
+def SetCookie(response , name_data, cookie_data, url_redirect):
+    age =  90 * 24 * 60 * 60 #90 day, cookie lifes
+    response = HttpResponseRedirect(url_redirect)
+    response.set_cookie(name_data,cookie_data,age)
+    return response
+
+def GetCookie(request, name_data):
+    response = request.COOKIES.get(name_data)
+    return response
+
+def DeleteCookie(response, name_data):
+    response.delete_cookie(name_data)
+    return response
+#FUNCTION SET , GET , DELETE COOKIES
+
+def date_handler(obj):
+    if isinstance(obj, datetime.date):
+        return obj.strftime('%Y-%m-%d')
+    return None
+
+################################################### FUNCTION , CHECK DATA, OTHER ########### 
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+################################################### AUTHORIZE MENU MASTER PAGE ###########
+#LOAD DATA ROLE MENU
+@csrf_exempt
+def role_menu(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            IDuser = userinfo['ID_user']
+            AccType = userinfo['Acc_type']
+            list_group_data = []
+            list_menu_data = []
+            if AccType  == 0:
+                menus =  Menu.objects.filter(Menu_Status = True).order_by('Menu_Level')
+                for menu in menus:
+                    menu_data = {
+                        'Menu_ID' : menu.Menu_ID,
+                        'Menu_Name' : menu.Menu_Name,
+                        'Menu_Icon' : menu.Menu_Icon,
+                        'Menu_Adress' : menu.Menu_Adress,
+                    }
+                    list_menu_data.append(menu_data)
+
+                list_group = Role_Group.objects.filter(Role_Group_Status = True).order_by('Role_Group_ID','Menu_ID')
+                for gr in list_group:
+                    group_data = {
+                        'Menu_ID' : gr.Menu_ID.Menu_ID,
+                        'Role_Group_ID' : gr.Role_Group_ID,
+                        'Role_Group_Name' : gr.Role_Group_Name,
+                        'Role_Group_Address' : gr.Role_Group_Address,
+                    }
+                    list_group_data.append(group_data)
+            else:
+                current = datetime.datetime.now().date()
+                auth = Authorization_User.objects.filter(
+                    ID_user = IDuser,
+                    Authorization_From__lte=current,
+                    Authorization_To__gte=current,
+                    Authorization_Status =  True
+                )
+                distinct_auth = auth.values_list('Role_ID', flat=True).distinct()
+                group = Role_Single.objects.filter(Role_ID__in = distinct_auth).values('Role_Group_ID')
+                distinct_group = group.values_list('Role_Group_ID', flat=True).distinct()
+                list_group = Role_Group.objects.filter(Role_Group_ID__in =  distinct_group).order_by('Role_Group_ID','Menu_ID')
+                for gr in list_group:
+                    group_data = {
+                        'Menu_ID' : gr.Menu_ID.Menu_ID,
+                        'Role_Group_ID' : gr.Role_Group_ID,
+                        'Role_Group_Name' : gr.Role_Group_Name,
+                        'Role_Group_Address' : gr.Role_Group_Address,
+                    }
+                    list_group_data.append(group_data)
+
+                menus = Menu.objects.filter(Menu_Status = True).order_by('Menu_Level')
+                for menu in menus:
+                    menu_data = {
+                        'Menu_ID' : menu.Menu_ID,
+                        'Menu_Name' : menu.Menu_Name,
+                        'Menu_Icon' : menu.Menu_Icon,
+                        'Menu_Adress' : menu.Menu_Adress,
+                    }
+                    list_menu_data.append(menu_data)
+
+            context = {
+                    'success' : True,
+                    'Group_Roles'  : list_group_data,
+                    'Menus'  : list_menu_data,
+                }    
+            return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+
+#LOAD DATA ROLE MENU
+################################################### AUTHORIZE MENU MASTER PAGE ###########
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+################################################### PAGE DASHBOARD ########### 
+def load_dashboard_Json(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        current_date = datetime.datetime.now()
+        #AUTHORIZATION DASHBOARD
+        Dash_Role_Data = [
+            {'TCode': 'ZDB_Ticket','Role': 'Ticket','Status': 'False'},
+            {'TCode': 'ZDB_User','Role': 'User','Status': 'False'},
+            {'TCode': 'ZDB_Per','Role': 'Performance','Status': 'False'},
+        ]
+        Sing_Role = Role_Single.objects.filter(Role_Group_ID = 1, Role_Status = True)
+        for s in Sing_Role:
+            auth = Authorization_User.objects.filter(
+                ID_user =  userinfo['ID_user'], 
+                Role_ID = s.Role_ID,
+                Authorization_From__lte=current_date,
+                Authorization_To__gte=current_date, 
+                Authorization_Status = True).order_by('-Authorization_To').first() 
+            if auth:
+                for item_role in Dash_Role_Data:
+                    tcode = item_role['TCode']
+                    # if int(item_role['ID']) ==  auth.Role_ID.Role_ID:
+                    #     item_role['Status'] = 'True'
+                    if tcode in auth.Role_ID.Role_Name:
+                         item_role['Status'] = 'True'
+
+        #Dashboard for Admn
+        Role_view_Data_Tickets = Dash_Role_Data[0]['Status']
+        if int(userinfo['Acc_type']) < 2:
+            IsAdmin = True
+        else:
+            IsAdmin = False
+
+        if IsAdmin == True or Role_view_Data_Tickets == 'True':
+            Role_view_Data_Users = Dash_Role_Data[1]['Status']
+            Role_view_Data_Performance = Dash_Role_Data[2]['Status']
+
+            ########################### TICKET ON YEAR DATA###########################    
+            # total_tickets_in_year = Ticket.objects.filter(Ticket_Date__year=current_date.year).count()
+            total_tickets_in_year = Ticket.objects.all().count()
+            ########################### TICKET ON MONTH DATA###########################
+            total_tickets_in_month = Ticket.objects.filter(Ticket_Date__month=current_date.now().month).count()
+            total_tickets_in_last_month = Ticket.objects.filter(Ticket_Date__month=(current_date.now().month - 1)).count()
+            ########################### TICKET ON WEEK DATA###########################
+            total_tickets_in_week = Ticket.objects.filter(Ticket_Date__week=current_date.now().isocalendar()[1]).count()
+            last_week = current_date.now().isocalendar()[1] - 1  
+            total_tickets_in_last_week = Ticket.objects.filter(Ticket_Date__week=last_week).count()   
+            ########################### TICKET ON DAY DATA###########################
+            total_tickets_in_day = Ticket.objects.filter(Ticket_Date=current_date).count()
+
+            ########################### TICKET BY MONTH ########################### 
+            current_year = current_date.year
+            month_names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+            #TICKET BY MONTH
+            ticket_count_by_month = Ticket.objects.filter(Ticket_Date__year=current_year) \
+                                                .annotate(month=Extract('Ticket_Date', 'month')) \
+                                                .values('month') \
+                                                .annotate(count=Count('Ticket_ID')) \
+                                                .values('month', 'count') \
+                                                .order_by('month')
+            ticket_counts_month = [{'month': month_names[month['month']-1] , 'count':month['count']} for month in ticket_count_by_month]
+           
+            #TICKET BY MONTH AND STATUS
+            ticket_counts_by_month_status = Ticket.objects.filter(Ticket_Date__year=current_year) \
+                                       .annotate(month=Extract('Ticket_Date', 'month')) \
+                                       .values('month', 'Ticket_Status') \
+                                       .annotate(count=Count('Ticket_ID')) \
+                                       .order_by('month', 'Ticket_Status')      
+            ticket_counts_month_status =[ 
+                {'month': 'January','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'February','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'March','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'April','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'May','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'June','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'July','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'August','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'September','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'October','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'November','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'December','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+            ]
+            for row in ticket_counts_by_month_status:
+                month = row['month']
+                month_name = month_names[month - 1]
+                status = row['Ticket_Status']
+                count = row['count']
+                
+                for item in ticket_counts_month_status:
+                    if item['month'] == month_name:
+                        if status == 0:
+                            item['Done'] += count
+                            break
+                        elif status == 1:
+                            item['Inprogress'] += count
+                            break
+                        elif status == 2:
+                            item['Pendding'] += count
+                            break
+                        elif status == 3:
+                            item['Cancel'] += count
+                            break
+            #TICKET BY WEEK AND STATUS
+            ticket_counts_by_week_status = Ticket.objects.filter(Ticket_Date__week=current_date.now().isocalendar()[1]) \
+                                       .values('Ticket_Status') \
+                                       .annotate(count=Count('Ticket_ID')) \
+                                       .order_by('Ticket_Status')
+            Ticket_by_week = []
+            for week in ticket_counts_by_week_status:
+                status = week['Ticket_Status']
+                count = week['count']
+                if status == 0:
+                    Ticket_by_week.append({'Status': 'Hoàn Thành', 'count': count})
+                elif status == 1:
+                    Ticket_by_week.append({'Status': 'Đang Làm', 'count': count})
+                elif status == 2:
+                    Ticket_by_week.append({'Status': 'Đang Treo', 'count': count})
+                elif status == 3:
+                    Ticket_by_week.append({'Status': 'Hủy', 'count': count})
+
+            #View Data User
+            if Role_view_Data_Users == 'True' or IsAdmin == True:
+                ########################### USERS ON YEAR DATA###########################    
+                # total_users_in_year = Users.objects.filter(Date_Create__year=current_date.year).count()
+                total_users_in_year = Users.objects.all().count()
+                ########################### USERS ON MONTH DATA###########################
+                total_users_in_month = Users.objects.filter(Date_Create__month=current_date.now().month).count()
+                total_users_in_last_month = Users.objects.filter(Date_Create__month=(current_date.now().month) -1 ).count()
+                ########################### USERS ON WEEK DATA###########################
+                total_users_in_week = Users.objects.filter(Date_Create__week=current_date.now().isocalendar()[1]).count()  
+                user_last_month =  current_date.now().isocalendar()[1] - 1    
+                total_users_in_last_week = Users.objects.filter(Date_Create__week=user_last_month).count()       
+                ########################### USERS ON DAY DATA###########################
+                total_users_in_day = Users.objects.filter(Date_Create=current_date).count()
+                #USERS BY MONTH AND STATUS
+                user_counts_by_month_status = Users.objects.filter(Date_Create__year=current_year) \
+                                        .annotate(month=Extract('Date_Create', 'month')) \
+                                        .values('month') \
+                                        .annotate(count=Count('ID_user')) \
+                                        .values('month','User_Status','count') \
+                                        .order_by('month','User_Status')
+                user_counts_month_status =[ 
+                    {'month': 'January','Active': 0, 'Unactive': 0}   , 
+                    {'month': 'February','Active': 0, 'Unactive': 0}  , 
+                    {'month': 'March','Active': 0, 'Unactive': 0}     , 
+                    {'month': 'April','Active': 0, 'Unactive': 0}     , 
+                    {'month': 'May','Active': 0, 'Unactive': 0}       , 
+                    {'month': 'June','Active': 0, 'Unactive': 0}      ,    
+                    {'month': 'July','Active': 0, 'Unactive': 0}      ,     
+                    {'month': 'August','Active': 0, 'Unactive': 0}    ,     
+                    {'month': 'September','Active': 0, 'Unactive':0}  ,     
+                    {'month': 'October','Active': 0, 'Unactive': 0}   ,     
+                    {'month': 'November','Active': 0, 'Unactive': 0}  ,     
+                    {'month': 'December','Active': 0, 'Unactive': 0}  ,     
+                ]
+                for row in user_counts_by_month_status:
+                    month = row['month']
+                    month_name = month_names[month - 1]
+                    type = row['User_Status']
+                    count = row['count']
+                    
+                    for item in user_counts_month_status:
+                        if item['month'] == month_name:
+                            if type == True:
+                                item['Active'] += count
+                                break
+                            elif type == False:
+                                item['Unactive'] += count
+                                break
+                #USERS BY ROLE
+                user_counts_by_type = Users.objects.all() \
+                                        .annotate(count=Count('ID_user')) \
+                                        .values('User_Type','count') \
+                                        .order_by('User_Type')
+                user_counts_acc_type =[ 
+                    {'type': 'Administrator','count': 0}  , 
+                    {'type': 'Mod',          'count': 0}  , 
+                    {'type': 'User Member',  'count': 0}  ,     
+                ]
+                for row in user_counts_by_type:
+                    type = row['User_Type']
+                    count = row['count']
+                    
+                    for item in user_counts_acc_type:
+                        if type == 0:
+                            if item['type'] == 'Administrator':
+                                item['count'] += count
+                                break
+                        elif type == 1:
+                            if item['type'] == 'Mod':
+                                item['count'] += count
+                                break
+                        elif type == 2:
+                            if item['type'] == 'User Member':
+                                item['count'] += count
+                                break
+                #USERS BY TYPE
+                user_counts_by_acc = Users.objects.all() \
+                                        .values('Acc_Type') \
+                                        .annotate(count=Count('ID_user')) \
+                                        .values('Acc_Type','count') \
+                                        .order_by('Acc_Type')
+                user_counts_acc = [{'Acc': acc['Acc_Type'] , 'count': acc['count']} for acc in user_counts_by_acc]
+            else:
+                total_users_in_year = ""
+                total_users_in_month  = ""
+                total_users_in_last_month  = ""
+                total_users_in_week  = ""
+                total_users_in_last_week = ""
+                total_users_in_day = ""
+                user_counts_month_status = ""
+                user_counts_acc_type = ""
+                user_counts_acc = ""
+            
+
+            #View Data Performance
+            if Role_view_Data_Performance == 'True' or IsAdmin == True:
+            #USERS PERCENT BY YEAR
+                users = Users.objects.filter(User_Type__lt=2, User_Status =  True).values('ID_user','Avatar','FullName','displayName')
+                ticket_counts_by_user_year = Ticket.objects.filter(Ticket_Date__year=current_year, Ticket_User_Asign__in= users.values('ID_user'), Ticket_Status = 0) \
+                    .values('Ticket_User_Asign','Ticket_Name_Asign') \
+                    .annotate(count=Count('Ticket_ID')) \
+                    .order_by('Ticket_User_Asign')
+                total_tickets_year = ticket_counts_by_user_year.aggregate(total=Sum('count'))['total']
+                ticket_counts_by_user_year = ticket_counts_by_user_year.annotate(
+                    percentage=Cast(F('count') * 100.0 / total_tickets_year, output_field=FloatField())
+                )
+                ticket_per_by_user_year = []
+                for item in ticket_counts_by_user_year:
+                    user = users.filter(ID_user=item['Ticket_User_Asign']).first()
+                    ticket_per_by_user_year.append({
+                        'name': item['Ticket_Name_Asign'],
+                        'avatar': user['Avatar'],
+                        'fullname': user['FullName'],
+                        'displayname': user['displayName'],
+                        'count': item['count'],
+                        'per': item['percentage'],
+                    })
+                ticket_per_by_user_year = sorted(ticket_per_by_user_year, key=lambda x: x['per'], reverse=True)
+                #USERS PERCENT BY MONTH
+                ticket_counts_by_user_month = Ticket.objects.filter(Ticket_Date__month=current_date.month, Ticket_User_Asign__in= users.values('ID_user'),Ticket_Status = 0) \
+                    .values('Ticket_User_Asign','Ticket_Name_Asign') \
+                    .annotate(count=Count('Ticket_ID')) \
+                    .order_by('Ticket_User_Asign')
+                total_tickets_month = ticket_counts_by_user_month.aggregate(total=Sum('count'))['total']
+                ticket_counts_by_user_month = ticket_counts_by_user_month.annotate(
+                    percentage=Cast(F('count') * 100.0 / total_tickets_month, output_field=FloatField())
+                )
+                ticket_per_by_user_month = []
+                for item in ticket_counts_by_user_month:
+                    user = users.filter(ID_user=item['Ticket_User_Asign']).first()
+                    ticket_per_by_user_month.append({
+                        'name': item['Ticket_Name_Asign'],
+                        'avatar': user['Avatar'],
+                        'fullname': user['FullName'],
+                        'displayname': user['displayName'],
+                        'count': item['count'],
+                        'per': item['percentage'],
+                    })
+                ticket_per_by_user_month = sorted(ticket_per_by_user_month, key=lambda x: x['per'], reverse=True)
+                #USERS BY TYPE
+                group_counts_by_ticket = Ticket.objects.filter(Ticket_Date__year=current_year) \
+                                        .values('TGroup_ID__TGroup_Name') \
+                                        .annotate(count=Count('Ticket_ID')) \
+                                        .values('TGroup_ID__TGroup_Name','count') \
+                                        .order_by('TGroup_ID')
+                group_counts_ticket = [{'Groups': acc['TGroup_ID__TGroup_Name'] , 'count': acc['count']} for acc in group_counts_by_ticket]
+            else:
+                ticket_per_by_user_year  = ""
+                ticket_per_by_user_month = "" 
+                group_counts_ticket      = ""
+
+            context = { 
+            # 'IsAdmin'                 : True,   
+            'IsAdmin'                 : IsAdmin,   
+            'Total_year'              : total_tickets_in_year,
+            'Total_month'             : total_tickets_in_month,
+            'Total_last_month'        : total_tickets_in_last_month,
+            'Total_week'              : total_tickets_in_week,
+            'Total_last_week'         : total_tickets_in_last_week,
+            'Total_day'               : total_tickets_in_day,
+            'Ticket_by_month'         : ticket_counts_month,
+            'Ticket_by_status'        : ticket_counts_month_status,
+            'Ticket_by_week'          : Ticket_by_week,
+            'Total_users_year'        : total_users_in_year,
+            'Total_users_month'       : total_users_in_month,
+            'Total_users_last_month'  : total_users_in_last_month,
+            'Total_users_week'        : total_users_in_week,
+            'Total_users_last_week'   : total_users_in_last_week,
+            'Total_users_day'         : total_users_in_day,
+            'User_by_month'           : user_counts_month_status,
+            'User_by_type'            : user_counts_acc_type,
+            'User_by_acc'             : user_counts_acc,
+            'User_by_year_per'        : ticket_per_by_user_year,
+            'User_by_month_per'       : ticket_per_by_user_month,
+            'Dash_Role_Data'          : Dash_Role_Data,
+            'Group_Ticket_Data'       : group_counts_ticket
+            }               
+        
+
+         #Dashboard for User           
+        else:
+            userID = userinfo['ID_user']
+            ########################### TICKET ON YEAR DATA###########################    
+            total_tickets_in_year = Ticket.objects.filter(Ticket_Date__year=current_date.year, ID_User = userID).count()
+            ########################### TICKET ON MONTH DATA###########################
+            total_tickets_in_month = Ticket.objects.filter(Ticket_Date__month=current_date.now().month, ID_User = userID).count()
+            total_tickets_in_last_month = Ticket.objects.filter(Ticket_Date__month=(current_date.now().month -1 ), ID_User = userID).count()
+            ########################### TICKET ON WEEK DATA###########################
+            total_tickets_in_week = Ticket.objects.filter(Ticket_Date__week=current_date.now().isocalendar()[1], ID_User = userID).count()   
+            ticket_last_week =  current_date.now().isocalendar()[1] - 1    
+            total_tickets_in_last_week = Ticket.objects.filter(Ticket_Date__week=ticket_last_week, ID_User = userID).count()       
+            ########################### TICKET ON DAY DATA###########################
+            total_tickets_in_day = Ticket.objects.filter(Ticket_Date=current_date, ID_User = userID).count()
+
+             ########################### TICKET BY MONTH ########################### 
+            current_year = current_date.year
+            month_names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+            #TICKET BY MONTH
+            ticket_count_by_month = Ticket.objects.filter(Ticket_Date__year=current_year, ID_User = userID) \
+                                                .annotate(month=Extract('Ticket_Date', 'month')) \
+                                                .values('month') \
+                                                .annotate(count=Count('Ticket_ID')) \
+                                                .values('month', 'count') \
+                                                .order_by('month')
+            ticket_counts_month = [{'month': month_names[month['month']-1] , 'count':month['count']} for month in ticket_count_by_month]
+           
+            #TICKET BY MONTH AND STATUS
+            ticket_counts_by_month_status = Ticket.objects.filter(Ticket_Date__year=current_year,ID_User = userID) \
+                                       .annotate(month=Extract('Ticket_Date', 'month')) \
+                                       .values('month', 'Ticket_Status') \
+                                       .annotate(count=Count('Ticket_ID')) \
+                                       .order_by('month', 'Ticket_Status')      
+            ticket_counts_month_status =[ 
+                {'month': 'January','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'February','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'March','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'April','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'May','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'June','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'July','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'August','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'September','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'October','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'November','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+                {'month': 'December','Done': 0, 'Inprogress': 0, 'Pendding': 0, 'Cancel': 0},
+            ]
+            for row in ticket_counts_by_month_status:
+                month = row['month']
+                month_name = month_names[month - 1]
+                status = row['Ticket_Status']
+                count = row['count']
+                
+                for item in ticket_counts_month_status:
+                    if item['month'] == month_name:
+                        if status == 0:
+                            item['Done'] += count
+                            break
+                        elif status == 1:
+                            item['Inprogress'] += count
+                            break
+                        elif status == 2:
+                            item['Pendding'] += count
+                            break
+                        elif status == 3:
+                            item['Cancel'] += count
+                            break
+            #TICKET BY WEEK AND STATUS
+            ticket_counts_by_week_status = Ticket.objects.filter(Ticket_Date__week=current_date.now().isocalendar()[1], ID_User = userID) \
+                                       .values('Ticket_Status') \
+                                       .annotate(count=Count('Ticket_ID')) \
+                                       .order_by('Ticket_Status')
+            Ticket_by_week = []
+            for week in ticket_counts_by_week_status:
+                status = week['Ticket_Status']
+                count = week['count']
+                if status == 0:
+                    Ticket_by_week.append({'Status': 'Hoàn Thành', 'count': count})
+                elif status == 1:
+                    Ticket_by_week.append({'Status': 'Đang Làm', 'count': count})
+                elif status == 2:
+                    Ticket_by_week.append({'Status': 'Đang Treo', 'count': count})
+                elif status == 3:
+                    Ticket_by_week.append({'Status': 'Hủy', 'count': count})
+
+            
+
+            context = { 
+                'Total_year'        : total_tickets_in_year,
+                'Total_month'       : total_tickets_in_month,
+                'Total_last_month'  : total_tickets_in_last_month,
+                'Total_week'        : total_tickets_in_week,
+                'Total_last_week'   : total_tickets_in_last_week,
+                'Total_day'         : total_tickets_in_day,
+                'Ticket_by_month'   : ticket_counts_month,
+                'Ticket_by_status'  : ticket_counts_month_status,
+                'Ticket_by_week'    : Ticket_by_week,
+                'Dash_Role_Data'    : Dash_Role_Data
+            }
+
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    else:
+        return redirect('')
+
+def Dashboard(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+        return render(request, 'Ticket_Dashboard.html')
+    else:
+        return redirect('/')
+    # template =  loader.get_template('Ticket_Dashboard.html')
+    # return HttpResponse(template.render())
+################################################### PAGE DASHBOARD ########### 
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+################################################### PAGE TICKET DATA #######################  
+#FUNCTION LOAD AND PROCESS DATA TICKET
+@csrf_exempt
+def load_Ticket_Json(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        ########################### TICKET DATA###########################   
+        isAdmin = request.POST.get('isAdmin') 
+        if(isAdmin == 'true'):
+            tickets = Ticket.objects.all().order_by('-Ticket_ID')
+        else:
+            tickets = Ticket.objects.filter(ID_User = userinfo['ID_user']).order_by('-Ticket_ID')
+
+        list_ticket = []
+        for ticket in tickets:
+            slug_title =  convert_title_to_slug(ticket.Ticket_Title)
+            ticket_data = {
+                'Ticket_ID': ticket.Ticket_ID,
+                'Ticket_Title': ticket.Ticket_Title,
+                'Ticket_Title_Slug': slug_title,
+                'Ticket_Desc': ticket.Ticket_Desc,
+                'Ticket_Type': ticket.Ticket_Type,
+                'Company_ID': ticket.Company_ID.Company_ID,
+                'Company_Name': ticket.Company_ID.Company_Name,
+                'Group_ID': ticket.TGroup_ID.TGroup_ID,
+                'Group_Name': ticket.TGroup_ID.TGroup_Name,
+                'ID_user': ticket.ID_User.ID_user,
+                'Ticket_User_Name': ticket.Ticket_User_Name,
+                # 'Ticket_Date': ticket.Ticket_Date.strftime('%Y-%m-%d'),
+                'Ticket_Date': ticket.Ticket_Date.strftime('%d/%m/%Y'),
+                'Ticket_Time': ticket.Ticket_Time.strftime('%H:%M'),
+                'Ticket_User_Asign': ticket.Ticket_User_Asign,
+                'Ticket_Name_Asign': ticket.Ticket_Name_Asign,
+                'Ticket_Status': ticket.Ticket_Status,
+            }
+            list_ticket.append(ticket_data)       
+        # data = json.dumps(list_ticket, default=date_handler, ensure_ascii=False)
+        ########################### COMPANY DATA###########################
+        companys = Company.objects.filter(Company_Status = True)
+        list_companys = [{'Company_ID': company.Company_ID, 'Company_Name': company.Company_Name} for company in companys]
+        ########################### TGROUP DATA###########################
+        tgroups = TGroup.objects.filter(TGroup_Status = True)
+        list_tgroups = [{'TGroup_ID': tgroup.TGroup_ID, 'TGroup_Name': tgroup.TGroup_Name} for tgroup in tgroups]
+         ########################### SUPPORT DATA###########################
+        users = Users.objects.filter(User_Status = True, User_Type__lt = 2)
+        list_users = [{'ID_user': user.ID_user, 'FullName': user.FullName} for user in users]
+
+
+        context = { 
+            'data': list_ticket,
+            'companys': list_companys,
+            'tgroups': list_tgroups,
+            'users': list_users,}
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+        # return HttpResponse(data, content_type='application/json')
+    else:
+        return redirect('')
+
+def load_Ticket(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    # cookie_facebook_data   = GetCookie(request, 'cookie_facebook_data')
+    # cookie_google_data     = GetCookie(request, 'cookie_google_data')
+    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+        return render(request, 'Ticket_ListTicket.html')
+    else:
+        return redirect('/')
+#FUNCTION LOAD AND PROCESS DATA TICKET
+
+#FUNCTION TRANSFER TITLE
+def convert_title_to_slug(title):
+    # Chuyển đổi tiêu đề sang dạng không dấu
+    slug = slugify(title)
+    # Thay thế khoảng trắng bằng dấu "-"
+    slug = re.sub(r'\s+', '-', slug)
+    return slug
+#FUNCTION TRANSFER TITLE
+
+#FUNCTION UPDATE STATUS TICKET 
+@csrf_exempt
+def Ticket_Status_Update(request):
+    if request.method == 'POST':
+        ticket_id = request.POST.get('ticketid')
+        new_status = request.POST.get('new_status')
+        try:
+            ticket =  Ticket.objects.get(Ticket_ID = ticket_id)
+            if(ticket):
+                ticket.Ticket_Status = new_status
+                ticket.save()
+                return JsonResponse({'success': True, 'message': 'Cập nhật status thành công!',}) 
+            else:
+                return JsonResponse({'success': False, 'message': 'ID ' + ticket_id +' không tồn tại'})
+        except Ticket.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'ID ' + ticket_id +' không tồn tại',}) 
+    else:
+        return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+#FUNCTION UPDATE STATUS TICKET 
+
+#FUNCTION UPDATE ASSIGN TICKET 
+@csrf_exempt
+def Ticket_Assign_Update(request):
+    try:
+        if request.method == 'POST':
+            ticket_id = request.POST.get('ticketid')
+            new_assign = request.POST.get('new_assign')
+            try:
+                ticket =  Ticket.objects.get(Ticket_ID = ticket_id)
+                if(ticket):
+                    user = Users.objects.get(ID_user = new_assign)
+                    if user:
+                        ticket.Ticket_User_Asign = user.ID_user
+                        ticket.Ticket_Name_Asign = user.FullName
+                        ticket.save()
+                        return JsonResponse({'success': True, 'message': 'Cập nhật status thành công!','FullName': user.FullName}) 
+                    else:
+                        return JsonResponse({'success': False, 'message': 'User Không Tồn Tại!',}) 
+                else:
+                    return JsonResponse({'success': False, 'message': 'ID ' + ticket_id +' không tồn tại'})
+            except Ticket.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'ID ' + ticket_id +' không tồn tại',}) 
+        else:
+            return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE ASSIGN TICKET 
+
+#FUNCTION DELETE TICKET 
+@csrf_exempt
+def delete_ticket(request):
+    try:
+        if request.method == 'POST':
+            ticketid = request.POST.get('ticketid')
+            try:
+                ticket = Ticket.objects.get(Ticket_ID = ticketid)
+                if(ticket):
+                    # comment = Comment.objects.filter(Ticket_ID=ticketid).first()
+                    # if comment:
+                    #     comment.delete()
+                    # attach =  Attachment.objects.filter(Ticket_ID=ticketid).first()
+                    # if attach:
+                    #     attach.delete()
+                    # timage = TImage.objects.filter(Ticket_ID=ticketid).first()
+                    # if timage:
+                    #     timage.delete()
+                    ticket.delete()
+                    return JsonResponse({'success': True,'message': 'Xóa yêu cầu thành công!',})
+                else:
+                    return JsonResponse({'success': False, 'message': 'ID ' + ticketid +' Không tôn tại'})
+            except Exception as ex:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Lỗi: {str(ex)}',
+                })
+            except Ticket.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'ID ' + ticketid +' Không tôn tại'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION DELETE TICKET 
+
+#FUNCTION CREATE TICKET 
+@csrf_exempt
+def Create_Ticket(request):
+    try:
+        if request.method == 'POST':
+            title = request.POST.get('title')
+            detail = request.POST.get('detail')  
+            type = request.POST.get('type')
+            companyID = int(request.POST.get('company'))
+            groupID = int(request.POST.get('group'))
+            support = request.POST.get('support')
+            supportName = request.POST.get('supportName')       
+            userID =  request.session['UserInfo']['ID_user']
+            userName =  request.session['UserInfo']['FullName']
+
+            if support:
+                assign_User = support
+                assign_Name = supportName
+            else:    
+                suggest_data = suggest_ticket(request,title, groupID)
+                assign_User = suggest_data['ticket_assigned_user_id']
+                assign_Name = suggest_data['ticket_assigned_username']
+            
+            company = Company.objects.get( Company_ID = companyID)
+            group = TGroup.objects.get( TGroup_ID = groupID)
+            user = Users.objects.get( ID_user = userID)
+
+            slug_title =  convert_title_to_slug(title)
+
+            ticket = Ticket.objects.create(
+                Ticket_Title = title, 
+                Ticket_Desc  = detail, 
+                Ticket_Type  = type, 
+                Company_ID   = company,
+                TGroup_ID    = group, 
+                ID_User      = user,
+                Ticket_User_Name = userName,
+                Ticket_Date  = datetime.datetime.now().date(),
+                Ticket_Time  = datetime.datetime.now().time(),
+                Ticket_User_Asign = assign_User,
+                Ticket_Name_Asign = assign_Name,
+                Ticket_Status = 1,
+            )
+            ticket.save()
+            TicketID = ticket.Ticket_ID
+            email_assign = Users.objects.get(ID_user = assign_User)
+            
+            send_email(email_assign.Mail,TicketID,ticket.Ticket_Title,slug_title,ticket.Ticket_User_Name,ticket.Ticket_Date.strftime('%d/%m/%Y'),ticket.Ticket_Time.strftime('%H:%M'), ticket.Ticket_Name_Asign,request)
+            # if TicketID:
+                
+            #     attach_file = Attachment.objects.create(
+
+            #     )
+            # return JsonResponse(response, status=201)
+            return JsonResponse({
+                    'success': True,
+                    'message': 'Yêu Cầu Được Gửi Thành Công!',
+                    'Ticket_ID': TicketID,
+                    'Ticket_Title': ticket.Ticket_Title,
+                    'Ticket_Title_Slug': slug_title,
+                    'Ticket_Desc': ticket.Ticket_Desc,
+                    'Ticket_Type': ticket.Ticket_Type,
+                    'Company_Name': company.Company_Name,
+                    'Group_Name': group.TGroup_Name,
+                    'Email'     : email_assign.Mail,
+                    'Ticket_User_Name': ticket.Ticket_User_Name,
+                    'Ticket_Date': ticket.Ticket_Date.strftime('%d/%m/%Y'),
+                    'Ticket_Time': ticket.Ticket_Time.strftime('%H:%M'),
+                    'Ticket_Name_Asign': ticket.Ticket_Name_Asign,
+                    'Ticket_Status': ticket.Ticket_Status,
+                })
+        else:
+            response = {'success': False, 'message': 'Invalid request method'}
+            # return JsonResponse(response, status=405)
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CREATE TICKET 
+
+#FUNCTION UPDATE DATA TICKET 
+@csrf_exempt
+def Data_Update_Ticket(request):
+       try:
+        if request.method == 'POST':
+            id_ticket = request.POST.get('id_ticket')
+            ticket = Ticket.objects.filter(Ticket_ID = id_ticket)
+            list_ticket = [{'Ticket_ID': p.Ticket_ID, 
+                     'Ticket_Title': p.Ticket_Title, 
+                     'Ticket_Desc': p.Ticket_Desc, 
+                     'Company_ID': p.Company_ID.Company_ID, 
+                     'TGroup_ID': p.TGroup_ID.TGroup_ID, 
+                     'ID_User': p.ID_User.ID_user, 
+                     'Ticket_Type': p.Ticket_Type,
+                     'Ticket_Status': p.Ticket_Status,} for p in ticket]
+            attachs = Attachment.objects.filter(Ticket_ID = id_ticket, Attachment_Status =  True)
+            list_attachs = [{'Attachment': attach.Attachment_Url} for attach in attachs]
+            context = { 
+                'success': True,
+                'message': 'Lấy Data Thành Công',
+                'Tickets': list_ticket,
+                'Attachs': list_attachs}
+            data = json.dumps(context, ensure_ascii=False)
+            return HttpResponse(data, content_type='application/json')
+        else:
+           return JsonResponse({'success': False,'message': 'Ticket ID Không Tồn Tại.'}) 
+       except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE DATA TICKET 
+
+#FUNCTION UPDATE TICKET 
+@csrf_exempt
+def Update_Ticket(request):
+    try:
+        if request.method == 'POST':
+            ticketID = request.POST.get('ticketID')       
+            status = int(request.POST.get('status'))
+            title = request.POST.get('title')
+            detail = request.POST.get('detail')  
+            type = request.POST.get('type')
+            companyID = int(request.POST.get('company'))
+            groupID = int(request.POST.get('group'))
+            support = request.POST.get('support')
+            supportName = request.POST.get('supportName')       
+            # userID =  request.session['UserInfo']['ID_user']
+            # userName =  request.session['UserInfo']['FullName']
+            
+            company = Company.objects.get( Company_ID = companyID)
+            group = TGroup.objects.get( TGroup_ID = groupID)
+            # user = Users.objects.get( ID_user = userID)
+
+            # Cập nhật đối tượng Product trong CSDL
+            tickets = Ticket.objects.get(Ticket_ID = ticketID)
+            if tickets:
+                tickets.Ticket_Title = title
+                tickets.Ticket_Desc  = detail
+                tickets.Ticket_Type  = type
+                tickets.Company_ID   = company
+                tickets.TGroup_ID    = group
+                # tickets.Ticket_User_Name = userName,
+                tickets.Ticket_User_Asign = support
+                tickets.Ticket_Name_Asign = supportName
+                tickets.Ticket_Status = status
+                tickets.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Yêu Cầu Thành Công!',
+                    'Ticket_ID':        ticketID,
+                    'Ticket_Title':     tickets.Ticket_Title,
+                    'Ticket_Desc':      tickets.Ticket_Desc,
+                    'Ticket_Type':      tickets.Ticket_Type,
+                    'Company_ID':       company.Company_ID,
+                    'Company_Name':     company.Company_Name,
+                    'Group_ID':         group.TGroup_ID, 
+                    'Group_Name':       group.TGroup_Name, 
+                    'Ticket_User_Name': tickets.Ticket_User_Name,
+                    'Ticket_Name_Asign': tickets.Ticket_Name_Asign,
+                    'Ticket_Status':    tickets.Ticket_Status,
+                })
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Mã Yêu Cầu Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE TICKET 
+
+#FUNCTION UPDATE ATTACHMENT TICKET
+@csrf_exempt
+def upload_files(request):
+    try:
+        # if request.method == 'POST':
+        if request.method == 'POST' and request.FILES:
+            files = request.FILES.getlist('files')
+            ticketID = request.POST.get('ticketID')
+            if files:
+                fs = FileSystemStorage(location='my_project/static/Asset/Attachment-Upload/')
+                userID =  request.session['UserInfo']['ID_user']
+                userName =  request.session['UserInfo']['FullName']
+                user = Users.objects.get(ID_user = userID)
+                ticket_data = Ticket.objects.get(Ticket_ID = ticketID)
+                for file in files:
+                    date = datetime.datetime.now().date()
+                    time = datetime.datetime.now().time()
+                    file_name = ticketID + '_' + date.strftime('%d%m%Y') + '_' + time.strftime('%H%M') + '_' + file.name
+                    fs.save(file_name, file)
+
+                    attach = Attachment.objects.create(
+                        Ticket_ID = ticket_data,
+                        ID_user   = user,
+                        Attachment_Url = file_name,
+                        Attachment_User_Name = userName,
+                        Attachment_Date = date,
+                        Attachment_Time = time,
+                        Attachment_Status = 1,
+                    )
+                    attach.save()
+                return JsonResponse({'success': True,'message': 'Yêu Cầu Thành Công!'})
+            else:
+                return JsonResponse({'success': False,'message': 'Upload file lỗi'})
+        else:
+            return JsonResponse({'success': False,'message': 'Không tìm thấy file'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE ATTACHMENT TICKET
+
+#FUNCTION SUGGEST TICKET
+def suggest_ticket(request,Title_ticket, Group_ticket):
+    user = Assign_User.objects.filter(TGroup_ID = Group_ticket, Assign_User_Status = True).values('ID_user')
+    if user: 
+        user_assign  = Users.objects.filter(User_Type__lt = 2, User_Status = True, ID_user__in = user.values('ID_user') ).values('ID_user','FullName')
+    else:
+        user_assign  = Users.objects.filter(User_Type__lt = 2, User_Status = True ).values('ID_user','FullName')
+        
+    words = Title_ticket.split()  # Tách chuỗi thành các từ riêng lẻ, 
+    query = Q()  # Tạo một truy vấn rỗng
+    for word in words:
+        query |= Q(Ticket_Title__icontains=word)  # Sử dụng Q objects để tạo điều kiện tìm kiếm
+
+    titles = (Ticket.objects
+        .filter(Ticket_Status__lt = 2, Ticket_User_Asign__in = user_assign.values('ID_user'), TGroup_ID = Group_ticket)
+        .filter(query)  # Áp dụng điều kiện tìm kiếm vào truy vấn
+        .values_list('Ticket_Title','Ticket_User_Asign','Ticket_Name_Asign'))
+        # .values_list('Ticket_Title','Ticket_User_Asign','Ticket_Name_Asign', flat=True))
+
+    if titles:
+        closest_data = find_closest_title(Title_ticket, titles)
+        if closest_data['closest_User_ID']:            
+            suggest_data = {
+                'ticket_assigned_user_id': closest_data['closest_User_ID'],
+                'ticket_assigned_username': closest_data['closest_User_Name']
+            }
+            return suggest_data
+        else:
+            data_user =[]
+            for item in user_assign.values('ID_user'):
+                a = item['ID_user']
+                count_ticket = (Ticket.objects
+                .filter(Ticket_Status = 1 , Ticket_User_Asign = item['ID_user'], TGroup_ID = Group_ticket)
+                .values('Ticket_User_Asign', 'Ticket_Name_Asign')
+                .annotate(total_assigned=Count('Ticket_ID'))
+                .order_by('total_assigned')
+                .first())
+                if count_ticket:
+                    data = {'ID': count_ticket['Ticket_User_Asign'],'Name': count_ticket['Ticket_Name_Asign'],'total_assigned':count_ticket['total_assigned']}
+                    data_user.append(data)
+                else:
+                    name_user = Users.objects.filter(ID_user = item['ID_user']).values('ID_user','FullName').first()
+                    data = {'ID': name_user['ID_user'] ,'Name': name_user['FullName'],'total_assigned': 0 }
+                    data_user.append(data)
+            data_user_sorted = sorted(data_user, key=lambda x: x['total_assigned'])
+            first_row = data_user_sorted[0] if data_user_sorted else None
+            suggest_data = {
+                'ticket_assigned_user_id': first_row['ID'],
+                'ticket_assigned_username': first_row['Name']
+            }
+            return suggest_data
+        
+            # count_ticket = (Ticket.objects
+            #     .filter(Ticket_Status__lt = 2 , Ticket_User_Asign__in = user_assign.values('ID_user'), TGroup_ID = Group_ticket)
+            #     .values('Ticket_User_Asign', 'Ticket_Name_Asign')
+            #     .annotate(total_assigned=Count('Ticket_ID'))
+            #     .order_by('total_assigned')
+            #     .first())         
+            # suggest_data = {
+            #     'ticket_assigned_user_id': count_ticket['Ticket_User_Asign'],
+            #     'ticket_assigned_username': count_ticket['Ticket_Name_Asign']
+            # }
+            # return suggest_data
+             
+    else:
+        data_user =[]
+        for item in user_assign.values('ID_user'):
+            a = item['ID_user']
+            count_ticket = (Ticket.objects
+            .filter(Ticket_Status = 1 , Ticket_User_Asign = item['ID_user'], TGroup_ID = Group_ticket)
+            .values('Ticket_User_Asign', 'Ticket_Name_Asign')
+            .annotate(total_assigned=Count('Ticket_ID'))
+            .order_by('total_assigned')
+            .first())
+            if count_ticket:
+                data = {'ID': count_ticket['Ticket_User_Asign'],'Name': count_ticket['Ticket_Name_Asign'],'total_assigned':count_ticket['total_assigned']}
+                data_user.append(data)
+            else:
+                name_user = Users.objects.filter(ID_user = item['ID_user']).values('ID_user','FullName').first()
+                data = {'ID': name_user['ID_user'] ,'Name': name_user['FullName'],'total_assigned': 0 }
+                data_user.append(data)
+        data_user_sorted = sorted(data_user, key=lambda x: x['total_assigned'])
+        first_row = data_user_sorted[0] if data_user_sorted else None
+        suggest_data = {
+            'ticket_assigned_user_id': first_row['ID'],
+            'ticket_assigned_username': first_row['Name']
+        }
+        return suggest_data
+
+        # count_ticket = (Ticket.objects
+        #         .filter(Ticket_Status__lt = 2 , Ticket_User_Asign__in = user_assign.values('ID_user'), TGroup_ID = Group_ticket)
+        #         .values('Ticket_User_Asign', 'Ticket_Name_Asign')
+        #         .annotate(total_assigned=Count('Ticket_ID'))
+        #         .order_by('total_assigned')
+        #         .first()) 
+        # if  count_ticket:         
+        #     suggest_data = {
+        #             'ticket_assigned_user_id': count_ticket['Ticket_User_Asign'],
+        #             'ticket_assigned_username': count_ticket['Ticket_Name_Asign']
+        #         }
+        #     return suggest_data
+        # else:
+        #     count_ticket = (Ticket.objects
+        #         .filter(Ticket_Status__lt = 2 , Ticket_User_Asign__in = user_assign.values('ID_user'))
+        #         .values('Ticket_User_Asign', 'Ticket_Name_Asign')
+        #         .annotate(total_assigned=Count('Ticket_ID'))
+        #         .order_by('total_assigned')
+        #         .first())
+        #     suggest_data = {
+        #             'ticket_assigned_user_id': count_ticket['Ticket_User_Asign'],
+        #             'ticket_assigned_username': count_ticket['Ticket_Name_Asign']
+        #         }
+        #     return suggest_data
+
+def find_closest_title(input_str, titles):
+    closest_title = None
+    closest_distance = float('inf')
+    closest_User_ID = ''
+    closest_User_Name = ''
+    
+    if titles:
+        for title in titles:
+            distance = compute_similarity(input_str, title[0])
+            if distance < 0.3:
+                if distance < closest_distance:
+                    closest_distance = distance
+                    closest_title = title[0]
+                    closest_User_ID = title[1]
+                    closest_User_Name = title[2]
+            if distance < 0.1:
+                closest_distance = distance
+                closest_title = title[0]
+                closest_User_ID = title[1]
+                closest_User_Name = title[2]
+                closest_data = {
+                    'closest_title': closest_title,
+                    'closest_User_ID': closest_User_ID,
+                    'closest_User_Name': closest_User_Name,
+                }
+                return closest_data
+    else:
+        # Xử lý trường hợp danh sách titles rỗng
+        closest_title = ''
+    
+    closest_data = {
+        'closest_title': closest_title,
+        'closest_User_ID': closest_User_ID,
+        'closest_User_Name': closest_User_Name,
+    }
+    return closest_data
+
+def compute_similarity(input_str, title):
+    similarity_ratio = similar(input_str, title)
+    
+    return 1 - similarity_ratio
+
+def similar(a, b):
+    from difflib import SequenceMatcher
+    return SequenceMatcher(None, a, b).ratio()
+
+#FUNCTION SUGGEST TICKET
+
+#FUNCTION SEND EMAIL
+def send_email(Email,TicketID,Ticket_Title,slug_title,Ticket_User_Name,Ticket_Date,Ticket_Time,Ticket_Name_Asign, request):
+    try:
+        # full_host = request.get_full_host()   
+        full_host = request.build_absolute_uri('/')   
+        subject = str(TicketID) + ' - ' + Ticket_Title
+        data = {
+        'TicketID': TicketID,
+        'AssignName': Ticket_Name_Asign,
+        'Title': Ticket_Title,
+        'CreateDate': Ticket_Date + ' ' + Ticket_Time,
+        'CreateName': Ticket_User_Name,
+        'Link': full_host+'chi-tiet-yeu-cau/'+str(TicketID)+'/'+slug_title+'/',
+        }
+        message = render_to_string('Email_Ticket.html', context=data)
+        
+        # message = 'This is a test email.'
+        from_email = 'giang.llt@bamboocap.com.vn'
+        recipient_list = [Email]
+        # cc_list = ['cc@example.com']
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=from_email,
+            recipient_list=recipient_list,
+            # cc=cc_list,
+            fail_silently=False,  # Thông báo lỗi nếu có vấn đề khi gửi email
+            html_message=message,  # Sử dụng nội dung HTML
+        )
+        # return HttpResponse('Email sent successfully')
+        return True
+    except Exception as ex:
+        return False
+#FUNCTION SEND EMAIL
+
+################################################### PAGE TICKET DATA #######################  
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+
+################################################### PAGE COMPANY DATA #######################
+#FUNCTION LOAD AND PROCESS DATA COMPANY
+def load_Company_Json(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        ########################### COMPANY DATA###########################    
+        companys = Company.objects.all().order_by('-Company_ID')
+        list_company = []
+        for company in companys:
+            company_data = {
+                'Company_ID':           company.Company_ID,
+                'Company_Name':         company.Company_Name,
+                'Company_User_Name':    company.Company_User_Name,
+                'Company_Date':         company.Company_Date.strftime('%d/%m/%Y'),
+                'Company_Time':          company.Company_Time.strftime('%H:%M'),
+                'Company_Status':       company.Company_Status,
+            }
+            list_company.append(company_data)       
+        ########################### USERS DATA###########################
+        users = Users.objects.filter(User_Status = True, User_Type__lt = 2)
+        list_users = [{'ID_user': user.ID_user, 'FullName': user.FullName} for user in users]
+
+
+        context = { 
+            'data': list_company,
+            'users': list_users,}
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    else:
+        return redirect('')
+
+def load_company(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+        return render(request, 'Ticket_ListCompany.html')
+    else:
+        return redirect('/')
+#FUNCTION LOAD AND PROCESS DATA COMPANY
+
+#FUNCTION CREATE TICKET 
+@csrf_exempt
+def Create_Company(request):
+    try:
+        if request.method == 'POST':
+            Company_Name = request.POST.get('Company_Name')
+
+            userID =  request.session['UserInfo']['ID_user']
+            user = Users.objects.get(ID_user = userID)
+               
+            company = Company.objects.create(
+                Company_Name = Company_Name, 
+                ID_user  = user, 
+                Company_User_Name  = user.FullName, 
+                Company_Date  = datetime.datetime.now().date(),
+                Company_Time  = datetime.datetime.now().time(),
+                Company_Status = 1,
+            )
+            company.save()
+            companyID = company.Company_ID
+            return JsonResponse({
+                    'success': True,
+                    'message': 'Công Ty Tạo Thành Công!',
+                    'Company_ID':           companyID,
+                    'Company_Name':         company.Company_Name,
+                    'ID_user':              user.ID_user,
+                    'Company_User_Name':    user.FullName,
+                    'Company_Date':         company.Company_Date.strftime('%d/%m/%Y'),
+                    'Company_Time':         company.Company_Time.strftime('%H:%M'),
+                    'Company_Status':       company.Company_Status,
+                })
+        else:
+            response = {'success': False, 'message': 'Invalid request method'}
+            # return JsonResponse(response, status=405)
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CREATE TICKET 
+
+#FUNCTION DELETE TICKET 
+@csrf_exempt
+def Delete_Company(request):
+    try:
+        if request.method == 'POST':
+            CompanyID = request.POST.get('CompanyID')
+            try:
+                company = Company.objects.get(Company_ID = CompanyID)
+                if(company):
+                    company.delete()
+                    return JsonResponse({'success': True,'message': 'Xóa yêu cầu thành công!',})
+                else:
+                    return JsonResponse({'success': False, 'message': 'Company ID ' + CompanyID +' Không tôn tại'})
+            except Exception as ex:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Lỗi: {str(ex)}',
+                })
+            except Ticket.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'ID ' + CompanyID +' Không tôn tại'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION DELETE TICKET 
+
+#FUNCTION UPDATE TICKET 
+@csrf_exempt
+def Update_Company(request):
+    try:
+        if request.method == 'POST':
+            status = request.POST.get('status')       
+            companyID = request.POST.get('CompanyID')       
+            CompanyName = request.POST.get('CompanyName')       
+            company = Company.objects.get(Company_ID = companyID)
+            if company:
+                if CompanyName:
+                    company.Company_Name = CompanyName
+                    company.Company_Status = status
+                    company.save()
+                else:
+                    company.Company_Name = company.Company_Name
+                    company.Company_Status = status
+                    company.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Yêu Cầu Thành Công!',
+                    'Company_ID':        company.Company_ID,
+                    'Company_Name':      company.Company_Name,                   
+                    'Company_Status':    company.Company_Status,
+                })
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Mã Công Ty Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE TICKET 
+
+#FUNCTION UPDATE DATA COMPANY 
+@csrf_exempt
+def Data_Update_Company(request):
+       try:
+        if request.method == 'POST':
+            companyID = request.POST.get('companyID')
+            company = Company.objects.filter(Company_ID = companyID)
+            list_company = [{
+                     'Company_ID':     p.Company_ID, 
+                     'Company_Name':   p.Company_Name, 
+                     'Company_Status': p.Company_Status,} for p in company]
+            context = { 
+                'success': True,
+                'message': 'Lấy Data Thành Công',
+                'Companys': list_company,}
+            data = json.dumps(context, ensure_ascii=False)
+            return HttpResponse(data, content_type='application/json')
+        else:
+           return JsonResponse({'success': False,'message': 'Company ID Không Tồn Tại.'}) 
+       except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE DATA COMPANY 
+
+################################################### PAGE COMPANY DATA #######################  
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+
+################################################### PAGE GROUP DATA #########################
+#FUNCTION LOAD AND PROCESS DATA GROUP
+def load_Group_Json(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        ########################### COMPANY DATA###########################    
+        groups = TGroup.objects.all().order_by('-TGroup_ID')
+        list_group = []
+        for group in groups:
+            group_data = {
+                'TGroup_ID':           group.TGroup_ID,
+                'TGroup_Name':         group.TGroup_Name,
+                'TGroup_User_Name':    group.TGroup_User_Name,
+                'TGroup_Date':         group.TGroup_Date.strftime('%d/%m/%Y'),
+                'TGroup_Time':         group.TGroup_Time.strftime('%H:%M'),
+                'TGroup_Status':       group.TGroup_Status,
+            }
+            list_group.append(group_data)       
+        ########################### USERS DATA###########################
+        users = Users.objects.filter(User_Status = True, User_Type__lt = 2)
+        list_users = [{'ID_user': user.ID_user, 'FullName': user.FullName} for user in users]
+
+
+        context = { 
+            'data': list_group,
+            'users': list_users,}
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    else:
+        return redirect('')
+
+def load_group(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+        return render(request, 'Ticket_ListGroup.html')
+    else:
+        return redirect('/')
+#FUNCTION LOAD AND PROCESS DATA GROUP
+
+#FUNCTION CREATE GROUP 
+@csrf_exempt
+def Create_Group(request):
+    try:
+        if request.method == 'POST':
+            Group_Name = request.POST.get('Group_Name')
+
+            userID =  request.session['UserInfo']['ID_user']
+            user = Users.objects.get(ID_user = userID)
+               
+            group = TGroup.objects.create(
+                TGroup_Name = Group_Name, 
+                ID_user  = user, 
+                TGroup_User_Name  = user.FullName, 
+                TGroup_Date  = datetime.datetime.now().date(),
+                TGroup_Time  = datetime.datetime.now().time(),
+                TGroup_Status = 1,
+            )
+            group.save()
+            GroupID = group.TGroup_ID
+            return JsonResponse({
+                    'success': True,
+                    'message': 'Công Ty Tạo Thành Công!',
+                    'TGroup_ID':           GroupID,
+                    'TGroup_Name':         group.TGroup_Name,
+                    'ID_user':              user.ID_user,
+                    'TGroup_User_Name':    user.FullName,
+                    'TGroup_Date':         group.TGroup_Date.strftime('%d/%m/%Y'),
+                    'TGroup_Time':         group.TGroup_Time.strftime('%H:%M'),
+                    'TGroup_Status':       group.TGroup_Status,
+                })
+        else:
+            response = {'success': False, 'message': 'Invalid request method'}
+            # return JsonResponse(response, status=405)
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CREATE GROUP 
+
+#FUNCTION DELETE GROUP 
+@csrf_exempt
+def Delete_Group(request):
+    try:
+        if request.method == 'POST':
+            GroupID = request.POST.get('GroupID')
+            try:
+                group = TGroup.objects.get(TGroup_ID = GroupID)
+                if(group):
+                    group.delete()
+                    return JsonResponse({'success': True,'message': 'Xóa yêu cầu thành công!',})
+                else:
+                    return JsonResponse({'success': False, 'message': 'Group ID ' + GroupID +' Không tôn tại'})
+            except Exception as ex:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Lỗi: {str(ex)}',
+                })
+            except Ticket.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'ID ' + GroupID +' Không tôn tại'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION DELETE GROUP 
+
+#FUNCTION UPDATE GROUP 
+@csrf_exempt
+def Update_Group(request):
+    try:
+        if request.method == 'POST':
+            status = request.POST.get('status')       
+            GroupID = request.POST.get('GroupID')       
+            groupName = request.POST.get('GroupName')       
+            group = TGroup.objects.get(TGroup_ID = GroupID)
+            if group:
+                if groupName:
+                    group.TGroup_Name = groupName
+                    group.TGroup_Status = status
+                    group.save()
+                else:
+                    group.TGroup_Name = group.TGroup_Name
+                    group.TGroup_Status = status
+                    group.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Yêu Cầu Thành Công!',
+                    'TGroup_ID':        group.TGroup_ID,
+                    'TGroup_Name':      group.TGroup_Name,                   
+                    'TGroup_Status':    group.TGroup_Status,
+                })
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Mã Nhóm Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE GROUP 
+
+#FUNCTION UPDATE DATA GROUP 
+@csrf_exempt
+def Data_Update_Group(request):
+       try:
+        if request.method == 'POST':
+            GroupID = request.POST.get('GroupID')
+            group = TGroup.objects.filter(TGroup_ID = GroupID)
+            list_group = [{
+                     'TGroup_ID':     p.TGroup_ID, 
+                     'TGroup_Name':   p.TGroup_Name, 
+                     'TGroup_Status': p.TGroup_Status,} for p in group]
+            context = { 
+                'success': True,
+                'message': 'Lấy Data Thành Công',
+                'Groups': list_group,}
+            data = json.dumps(context, ensure_ascii=False)
+            return HttpResponse(data, content_type='application/json')
+        else:
+           return JsonResponse({'success': False,'message': 'Group ID Không Tồn Tại.'}) 
+       except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE DATA GROUP 
+
+################################################### PAGE GROUP DATA #########################
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+
+################################################### PAGE ATTACHMENT DATA #########################
+#FUNCTION LOAD AND PROCESS DATA ATTACHMENT
+def load_Attachment_Json(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        ########################### COMPANY DATA###########################    
+        attachs = Attachment.objects.all().order_by('-Attachment_ID')
+        list_attach = []
+        for attach in attachs:
+            attach_data = {
+                'Attachment_ID':           attach.Attachment_ID,
+                'Ticket_ID':               attach.Ticket_ID.Ticket_ID,
+                'Attachment_Name':         attach.Attachment_Url,
+                'Attachment_User_Name':    attach.Attachment_User_Name,
+                'Attachment_Date':         attach.Attachment_Date.strftime('%d/%m/%Y'),
+                'Attachment_Time':         attach.Attachment_Time.strftime('%H:%M'),
+                'Attachment_Status':       attach.Attachment_Status,
+            }
+            list_attach.append(attach_data)       
+
+        context = { 
+            'data': list_attach,
+        }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    else:
+        return redirect('')
+
+def load_attachment(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+        return render(request, 'Ticket_ListFiles.html')
+    else:
+        return redirect('/')
+#FUNCTION LOAD AND PROCESS DATA ATTACHMENT
+
+#FUNCTION DELETE ATTACHMENT 
+@csrf_exempt
+def Delete_Attachment(request):
+    try:
+        if request.method == 'POST':
+            AttachID = request.POST.get('AttachID')
+            try:
+                attach = Attachment.objects.get(Attachment_ID = AttachID)
+                if(attach):
+                    relative_path = 'Asset/Attachment-Upload/' + attach.Attachment_Url
+                    absolute_path = os.path.join(settings.BASE_DIR, settings.STATICFILES_DIRS[0], relative_path)
+                    if absolute_path:  # Kiểm tra xem file có tồn tại hay không
+                        os.remove(absolute_path)  # Xóa file
+                    attach.delete()
+                    return JsonResponse({'success': True,'message': 'Xóa yêu cầu thành công!' })
+                else:
+                    return JsonResponse({'success': False, 'message': 'Group ID ' + AttachID +' Không tôn tại'})
+            except Exception as ex:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Lỗi: {str(ex)}',
+                })
+            except Ticket.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'ID ' + AttachID +' Không tôn tại'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION DELETE ATTACHMENT 
+
+#FUNCTION UPDATE ATTACHMENT 
+@csrf_exempt
+def Update_Attachment(request):
+    try:
+        if request.method == 'POST':
+            status = request.POST.get('status')       
+            AttachID = request.POST.get('AttachID')       
+            attachName = request.POST.get('AttachName')       
+            attachment = Attachment.objects.get(Attachment_ID = AttachID)
+            if attachment:
+                if attachName:
+                    relative_path = 'Asset/Attachment-Upload/' + attachment.Attachment_Url
+                    absolute_path = os.path.join(settings.BASE_DIR, settings.STATICFILES_DIRS[0], relative_path)
+                    if absolute_path:  # Kiểm tra xem file có tồn tại hay không
+                        file_dir, old_filename = os.path.split(absolute_path)
+                        new_file_path = os.path.join(file_dir, attachName)
+                        os.rename(absolute_path, new_file_path)
+                    attachment.Attachment_Url   = attachName
+                    attachment.Attachment_Status = status
+                    attachment.save()
+                else:
+                    attachment.Attachment_Url = attachment.Attachment_Url
+                    attachment.Attachment_Status = status
+                    attachment.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Yêu Cầu Thành Công!',
+                    'Attachment_ID':        attachment.Attachment_ID,
+                    'Attachment_Name':      attachment.Attachment_Url,                   
+                    'Attachment_Status':    attachment.Attachment_Status,
+                })
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Mã Đính Kèm Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE ATTACHMENT 
+
+#FUNCTION UPDATE DATA ATTACHMENT 
+@csrf_exempt
+def Data_Update_Attachment(request):
+       try:
+        if request.method == 'POST':
+            AttachID = request.POST.get('AttachID')
+            attachment = Attachment.objects.filter(Attachment_ID = AttachID)
+            list_attach = [{
+                     'Attachment_ID':     p.Attachment_ID, 
+                     'Attachment_Name':   p.Attachment_Url, 
+                     'Attachment_Status': p.Attachment_Status,} for p in attachment]
+            context = { 
+                'success': True,
+                'message': 'Lấy Data Thành Công',
+                'Attachment': list_attach,}
+            data = json.dumps(context, ensure_ascii=False)
+            return HttpResponse(data, content_type='application/json')
+        else:
+           return JsonResponse({'success': False,'message': 'Group ID Không Tồn Tại.'}) 
+       except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE DATA ATTACHMENT 
+
+################################################### PAGE ATTACHMENT DATA #########################
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#---------------------------------------------------------------------tao-phan-cong/---------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+
+################################################### PAGE ASSIGN DATA #######################  
+#FUNCTION LOAD AND PROCESS DATA ASSIGN
+def load_Assign_Json(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        ########################### COMPANY DATA###########################    
+        assigns = Assign_User.objects.all().order_by('-Assign_ID')
+        list_assign = []
+        for assign in assigns:
+            assign_data = {
+                'Assign_ID':                assign.Assign_ID,
+                'ID_user':                  assign.ID_user.ID_user,
+                'UserName':                 assign.ID_user.FullName,
+                'TGroup_ID':                assign.TGroup_ID.TGroup_Name,
+                'Assign_User_Name':         assign.TGroup_ID,
+                'Assign_User_Name':         assign.Assign_User_Name ,
+                'Assign_User_Date':         assign.Assign_User_Date.strftime('%d/%m/%Y'),
+                'Assign_User_Time':         assign.Assign_User_Time.strftime('%H:%M'),
+                'Assign_User_Status':       assign.Assign_User_Status,
+            }
+            list_assign.append(assign_data)       
+        ########################### TGROUP DATA###########################
+        tgroups = TGroup.objects.filter(TGroup_Status = True)
+        list_tgroups = [{'TGroup_ID': tgroup.TGroup_ID, 'TGroup_Name': tgroup.TGroup_Name} for tgroup in tgroups]
+
+        context = { 
+            'data': list_assign,
+            'group': list_tgroups,
+        }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    else:
+        return redirect('')
+
+def load_assign(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+        return render(request, 'Ticket_ListAssign.html')
+    else:
+        return redirect('/')
+#FUNCTION LOAD AND PROCESS DATA ASSIGN
+
+#FUNCTION CREATE ASSIGN 
+@csrf_exempt
+def Create_Assign(request):
+    try:
+        if request.method == 'POST':           
+            assigns = []
+            group = request.POST.get('group')
+            users = request.POST.get('users')
+            userID =  request.session['UserInfo']['ID_user']
+            Name =  request.session['UserInfo']['FullName']
+                  
+            tgroup  =TGroup.objects.get(TGroup_ID = group)
+            assign_users =json.loads(users)
+            for u in assign_users:
+                user = Users.objects.get(ID_user = u)
+                check_assign = Assign_User.objects.filter(ID_user = u, TGroup_ID = group).first()
+                if check_assign:
+                    if (check_assign.Assign_User_Status == True): 
+                        Status_Create = 'Exits'
+                    else:
+                        check_assign.Assign_User_Status = True
+                        check_assign.save()
+                        Status_Create = 'Update'
+                    assign_item = {
+                            'Assign_ID':                check_assign.Assign_ID,
+                            'ID_user':                  check_assign.ID_user.ID_user,
+                            'UserName':                 check_assign.ID_user.FullName,
+                            'TGroup_ID':                check_assign.TGroup_ID.TGroup_ID,
+                            'TGroup_Name':              check_assign.TGroup_ID.TGroup_Name,
+                            'Assign_User_ID':           check_assign.Assign_User_ID,
+                            'Assign_User_Name':         check_assign.Assign_User_Name,
+                            'Assign_User_Date':         check_assign.Assign_User_Date.strftime('%d/%m/%Y'),
+                            'Assign_User_Time':         check_assign.Assign_User_Time.strftime('%H:%M'),
+                            'Assign_User_Status':       check_assign.Assign_User_Status,
+                            'Status_Create':            Status_Create
+                        }
+                    assigns.append(assign_item)
+                else:
+                    assign = Assign_User.objects.create(
+                        ID_user  = user, 
+                        TGroup_ID  = tgroup, 
+                        Assign_User_ID = userID,
+                        Assign_User_Name  = Name, 
+                        Assign_User_Date  = datetime.datetime.now().date(),
+                        Assign_User_Time  = datetime.datetime.now().time(),
+                        Assign_User_Status = 1,
+                    )
+                    assign.save()
+                    assignID = assign.Assign_ID
+                    assign_item = {
+                        'Assign_ID':                assignID,
+                        'ID_user':                  assign.ID_user.ID_user,
+                        'UserName':                 assign.ID_user.FullName,
+                        'TGroup_ID':                assign.TGroup_ID.TGroup_ID,
+                        'TGroup_Name':              assign.TGroup_ID.TGroup_Name,
+                        'Assign_User_ID':           assign.Assign_User_ID,
+                        'Assign_User_Name':         assign.Assign_User_Name,
+                        'Assign_User_Date':         assign.Assign_User_Date.strftime('%d/%m/%Y'),
+                        'Assign_User_Time':         assign.Assign_User_Time.strftime('%H:%M'),
+                        'Assign_User_Status':       assign.Assign_User_Status,
+                        'Status_Create':            'Insert'
+                    }
+                    assigns.append(assign_item)
+            context = {
+                'success': True,
+                'message': 'Công Ty Tạo Thành Công!',
+                'assigns': assigns
+            }
+            return JsonResponse(context)
+        else:
+            response = {'success': False, 'message': 'Invalid request method'}
+            # return JsonResponse(response, status=405)
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CREATE ASSIGN 
+
+#FUNCTION DELETE ASSIGN 
+@csrf_exempt
+def Delete_Assign(request):
+    try:
+        if request.method == 'POST':
+            AssignID = request.POST.get('AssignID')
+            try:
+                assign = Assign_User.objects.get(Assign_ID = AssignID)
+                if(assign):
+                    assign.delete()
+                    return JsonResponse({'success': True,'message': 'Xóa thành công!' })
+                else:
+                    return JsonResponse({'success': False, 'message': 'Assign ID ' + AssignID +' Không tôn tại'})
+            except Exception as ex:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Lỗi: {str(ex)}',
+                })
+            except Ticket.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'ID ' + AssignID +' Không tôn tại'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION DELETE ASSIGN 
+
+#FUNCTION UPDATE ATTACHMENT 
+@csrf_exempt
+def Update_Assign(request):
+    try:
+        if request.method == 'POST':
+            status = request.POST.get('status')       
+            AsignID = request.POST.get('AsignID')         
+            assign = Assign_User.objects.get(Assign_ID = AsignID)
+            if assign:
+                assign.Assign_User_Status = status
+                assign.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Yêu Cầu Thành Công!',
+                    'Assign_ID':             assign.Assign_ID,                
+                    'Assign_User_Status':    assign.Assign_User_Status,
+                })
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Mã Phân Công Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE ATTACHMENT 
+
+#FUNCTION AUTOCOMPLETE
+@csrf_exempt
+def user_autocomplete(request):
+    if request.method == 'POST':
+        term = request.POST.get('term')
+        group = request.POST.get('group')
+        assign = Assign_User.objects.filter(TGroup_ID = group , Assign_User_Status = True).values('ID_user')
+        users = Users.objects.filter(FullName__icontains=term, User_Type__lt = 2, User_Status =  True).exclude(ID_user__in=assign).values_list('ID_user', 'FullName')
+        result = [f'{user[0]} - {user[1]}' for user in users]
+        return JsonResponse(result, safe=False)
+#FUNCTION AUTOCOMPLETE
+
+################################################### PAGE ASSIGN DATA #######################  
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+
+################################################### PAGE USERS DATA #########################
+#FUNCTION LOAD AND PROCESS DATA USERS
+def load_User_Json(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        ########################### Check Role###########################    
+        # type = userinfo['Acc_type']
+        # status = check_role(userinfo['ID_user'], type)
+        # if status == False:
+        #     # return redirect('/dashboard/')
+        #     return HttpResponseRedirect('/dashboard/')
+        # else:
+            ########################### User DATA###########################    
+            user = Users.objects.all().order_by('-ID_user')       
+            
+            list_user = []
+            for u in user:
+                user_data = {
+                    'Avatar':                   u.Avatar if u.Avatar else 'Null',
+                    'img'   :                   u.displayName[0] + u.FullName[0],
+                    'ID_user':                  u.ID_user,
+                    'Mail':                     u.Mail,
+                    'FullName':                 u.FullName,
+                    'User_Type':                u.User_Type,
+                    'Acc_Type':                 u.Acc_Type,
+                    'Jobtitle':                 u.Jobtitle if u.Jobtitle else 'No Data',
+                    'Birthday':                 u.Birthday.strftime('%d/%m/%Y'),
+                    'Address':                  u.Address if u.Address else 'No Data',
+                    'Phone':                    u.Phone if u.Phone else 'No Data',
+                    'ID_Create':                u.ID_Create if u.ID_Create else 'No Data',
+                    'Name_Create':              u.Name_Create if u.Name_Create else 'No Data',
+                    'Date_Create':              u.Date_Create.strftime('%d/%m/%Y'),
+                    'Time_Create':              u.Time_Create.strftime('%H:%M'),
+                    'User_Type':                u.User_Type,
+                    'User_Status':              u.User_Status,
+                    # 'Online_Status': 'Online' if u.is_online else 'Offline',
+                }
+                list_user.append(user_data)       
+
+            context = { 
+                'data': list_user,
+            }
+            return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    else:
+        return redirect('')
+    
+def load_User(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+        return render(request, 'Ticket_ListUser.html')
+    else:
+        return redirect('/')
+#FUNCTION LOAD AND PROCESS DATA USERS
+
+#FUNCTION CREATE USERS 
+@csrf_exempt
+def Create_User(request):
+    try:
+        if request.method == 'POST':
+            email = request.POST.get('email')
+            password = request.POST.get('pass')
+            fullname = request.POST.get('fullname')
+            phone = request.POST.get('phone')
+            address = request.POST.get('address')
+            birthday = request.POST.get('birthday')
+            jobtitle = request.POST.get('jobtitle')
+            role = request.POST.get('role')
+            status_user = request.POST.get('status')
+
+            IDsession =  request.session['UserInfo']['ID_user']            
+            Namesession =  request.session['UserInfo']['FullName'] 
+
+            UserID = Check_IDUser()
+            user = Users.objects.create(
+                ID_user         = UserID,
+                Mail            = email, 
+                Password        = password, 
+                FullName        = fullname, 
+                displayName     = fullname, 
+                Birthday        = birthday if birthday else datetime.date(1990, 1, 1), 
+                User_Type       = role, 
+                Acc_Type        = 'System',
+                Address         = address, 
+                Jobtitle        = jobtitle, 
+                Phone           = phone if phone else 0, 
+                ID_Create       = IDsession, 
+                Name_Create     = Namesession, 
+                Date_Create     = datetime.datetime.now().date(),
+                Time_Create     = datetime.datetime.now().time(),
+                User_Status     = status_user,
+            )
+            user.save()
+            return JsonResponse({
+                    'success'           : True,
+                    'message'           : 'Công Ty Tạo Thành Công!',
+                    'ID_user'           : UserID,
+                    'Avatar'            : user.Avatar,
+                    'Mail'              : user.Mail,
+                    'FullName'          : user.FullName,
+                    'Birthday'          : user.Birthday,
+                    'User_Type'         : user.User_Type,
+                    'Acc_Type'          : user.Acc_Type,
+                    'Address'           : user.Address,
+                    'Jobtitle'          : user.Jobtitle,
+                    'Phone'             : user.Phone,
+                    'ID_Create'         : user.ID_Create,
+                    'Name_Create'       : user.Name_Create,
+                    'Date_Create'       : user.Date_Create.strftime('%d/%m/%Y'),
+                    'Time_Create'       : user.Time_Create.strftime('%H:%M'),
+                    'User_Status'       : user.User_Status,
+                    'img'               : user.displayName[0] +user.FullName[0],
+                })
+        else:
+            response = {'success': False, 'message': 'Invalid request method'}
+            # return JsonResponse(response, status=405)
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CREATE USERS 
+
+#FUNCTION DELETE USERS 
+@csrf_exempt
+def Delete_User(request):
+    try:
+        if request.method == 'POST':
+            UserID = request.POST.get('UserID')
+            try:
+                user = Users.objects.get(ID_user = UserID)
+                if(user):
+                    user.delete()
+                    return JsonResponse({'success': True,'message': 'Xóa thành công!' })
+                else:
+                    return JsonResponse({'success': False, 'message': 'User ID ' + UserID +' Không tôn tại'})
+            except Exception as ex:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Lỗi: {str(ex)}',
+                })
+            except Ticket.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'ID ' + UserID +' Không tôn tại'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION DELETE USERS 
+
+#FUNCTION UPDATE USERS 
+@csrf_exempt
+def Update_User(request):
+    try:
+        if request.method == 'POST':
+            action = request.POST.get('Action')       
+            status = request.POST.get('status')       
+            UserID = request.POST.get('UserID')         
+            UserType = request.POST.get('UserType')   
+
+            FullName = request.POST.get('FullName')         
+            Phone = request.POST.get('Phone')         
+            Address = request.POST.get('Address')         
+            Birthday = request.POST.get('Birthday')         
+            Jobtitle = request.POST.get('Jobtitle')    
+
+            user = Users.objects.filter(ID_user = UserID).first()
+            if user:
+                if(action == 'status'):
+                    user.User_Status = status
+                    user.save()
+                elif (action == 'role'):
+                    user.User_Type = UserType
+                    user.save()
+                elif (action == 'update'):
+                    user.FullName   = FullName
+                    user.Phone      = Phone
+                    user.Address    = Address
+                    user.Birthday   = Birthday if Birthday else datetime.date(1990, 1, 1)
+                    user.Jobtitle   = Jobtitle
+                    user.User_Type  = UserType
+                    user.User_Status = status
+                    user.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Yêu Cầu Thành Công!',
+                    'ID_user':             user.ID_user,                
+                    'User_Status':         user.User_Status,
+                    'FullName':            user.FullName,
+                    # 'Birthday':            datetime.datetime.strptime(user.Birthday, '%Y-%m-%d').date().strftime('%d/%m/%Y'),
+                    'Birthday':            user.Birthday.strftime('%d/%m/%Y'),
+                    'Address':             user.Address,
+                    'Jobtitle':            user.Jobtitle,
+                    'Phone':               user.Phone,
+                    'User_Type':           user.User_Type,
+                })
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Mã Phân Công Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE USERS 
+
+#FUNCTION UPDATE DATA USERS 
+@csrf_exempt
+def Data_Update_User(request):
+       try:
+        if request.method == 'POST':
+            UserID = request.POST.get('UserID')
+            user = Users.objects.filter(ID_user = UserID).first()
+            list_user = {
+                     'ID_user':           user.ID_user, 
+                     'Mail':              user.Mail, 
+                     'FullName':          user.FullName,
+                     'Phone':             user.Phone,
+                     'Address':           user.Address,
+                     'Birthday':          user.Birthday.strftime('%Y-%m-%d'),
+                     'Jobtitle':          user.Jobtitle,
+                     'User_Type':         user.User_Type,
+                     'User_Status':       user.User_Status,
+                     }
+            context = { 
+                'success': True,
+                'message': 'Lấy Data Thành Công',
+                'Users': list_user,}
+            data = json.dumps(context, ensure_ascii=False)
+            return HttpResponse(data, content_type='application/json')
+        else:
+           return JsonResponse({'success': False,'message': 'Group ID Không Tồn Tại.'}) 
+       except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE DATA USERS 
+
+#FUNCTION CHECK EMAIL USERS 
+@csrf_exempt
+def Check_Email(request):
+    try:
+        if request.method == 'POST':
+            email = request.POST.get('email')
+            try:
+                user = Users.objects.filter(Mail = email).first()
+                if(user):
+                    if user.User_Status == False:
+                         return JsonResponse({'success': False,'message': 'UserID:' + user.ID_user +'\n - Mail: ' + user.Mail + ' đã tồn tại và chưa được kích hoạt' })
+                    else:
+                        return JsonResponse({'success': False,'message': 'UserID:' + user.ID_user +'\n - Mail: ' + user.Mail + ' đã tồn tại' })
+                else:
+                    return JsonResponse({'success': True, 'message': 'Tạo Người Dùng'})
+            except Exception as ex:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Lỗi: {str(ex)}',
+                })
+            except Users.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK EMAIL USERS 
+################################################### PAGE USERS DATA #########################
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+################################################### PAGE VIEW TICKET DATA #########################
+#FUNCTION LOAD AND PROCESS DATA TICKET DETAIL
+def load_Ticket_Detail_Json(request,title, ticketID):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        ticket = get_object_or_404(Ticket, Ticket_ID=ticketID)
+        if ticket:
+            ########################### User DATA###########################    
+            user = Users.objects.filter(ID_user = ticket.ID_User.ID_user).first()
+            ########################### Assign DATA###########################    
+            assign = Users.objects.filter(ID_user = ticket.Ticket_User_Asign).first()
+            ########################### Company DATA###########################    
+            company = Company.objects.filter(Company_ID = ticket.Company_ID.Company_ID).first()
+            ########################### Comment DATA###########################    
+            comment = Comment.objects.filter(Ticket_ID = ticket.Ticket_ID, Comment_Status = True)
+            ########################### attach DATA###########################    
+            attach = Attachment.objects.filter(Ticket_ID = ticket.Ticket_ID, Attachment_Status = True).order_by('-Attachment_ID')
+            context = {
+                'ticket': ticket,
+                'Title': ticket.Ticket_Title,
+                'user': user,
+                'assign': assign,
+                'company': company,
+                'comments': comment,
+                'attachs': attach,
+            }
+            return render(request, 'Ticket_ViewTicket.html', context)
+        else:
+            return redirect('/danh-sach-yeu-cau/')
+        # return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    else:
+        return redirect('')
+#FUNCTION LOAD AND PROCESS DATA TICKET DETAIL
+
+#FUNCTION UPDATE STATUS TICKET 
+@csrf_exempt
+def Update_Status_Ticket(request):
+    try:
+        if request.method == 'POST':
+            ticketID = request.POST.get('ticketID')       
+            status = request.POST.get('status')       
+
+            ticket = Ticket.objects.filter(Ticket_ID = ticketID).first()
+            if ticket:
+                ticket.Ticket_Status = status
+                ticket.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Cập Nhật Status Thành Công!',
+                })
+
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Yêu Cầu Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE STATUS TICKET 
+
+#FUNCTION CREATE COMMENT 
+@csrf_exempt
+def Create_Comment(request):
+    try:
+        if request.method == 'POST':
+            comment = request.POST.get('comment')
+            ticketid = request.POST.get('ticketid')
+
+            userID =  request.session['UserInfo']['ID_user']
+            user = Users.objects.get(ID_user = userID)
+
+            ticket = Ticket.objects.get(Ticket_ID = ticketid)
+               
+            comment = Comment.objects.create(
+                Ticket_ID = ticket, 
+                ID_user  = user, 
+                Comment_Desc  = comment, 
+                Comment_User_Name = user.FullName,
+                Comment_Date  = datetime.datetime.now().date(),
+                Comment_Time  = datetime.datetime.now().time(),
+                Comment_Status = 1,
+            )
+            comment.save()
+            CommnetID = comment.Comment_ID
+            return JsonResponse({
+                    'success': True,
+                    'message': 'Bình Luận Thành Công!',
+                    'Comment_ID':          CommnetID,
+                    'Ticket_ID':           comment.Ticket_ID.Ticket_ID,
+                    'Comment_Desc':        comment.Comment_Desc,
+                    'ID_user':             comment.ID_user.ID_user,
+                    'Comment_User_Name':   comment.Comment_User_Name,
+                    'Comment_Date':        comment.Comment_Date.strftime('%d/%m/%Y'),
+                    'Comment_Time':        comment.Comment_Time.strftime('%H:%M'),
+                    'Comment_Status':      comment.Comment_Status,
+                })
+        else:
+            response = {'success': False, 'message': 'Invalid request method'}
+            # return JsonResponse(response, status=405)
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CREATE COMMENT 
+
+#FUNCTION UPDATE COMMENT 
+@csrf_exempt
+def Update_Comment(request):
+    try:
+        if request.method == 'POST':
+            CommentID = request.POST.get('CommentID')       
+            Desc = request.POST.get('Desc')       
+
+            comment = Comment.objects.filter(Comment_ID = CommentID).first()
+            if comment:
+                if Desc:
+                    comment.Comment_Desc = Desc
+                    comment.save()
+
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Cập Nhật Commnet Thành Công!',
+                        'Desc': Desc,
+                    })
+                else:
+                    comment.Comment_Status = False
+                    comment.save()
+
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Xóa Commnet Thành Công!',
+                })
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Mã Comment Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE COMMENT
+
+#FUNCTION UPDATE COMMENT 
+@csrf_exempt
+def Update_Ticket_Desc(request):
+    try:
+        if request.method == 'POST':
+            TicketID = request.POST.get('TicketID')       
+            Desc = request.POST.get('Desc')       
+
+            ticket = Ticket.objects.filter(Ticket_ID = TicketID).first()
+            if ticket:
+                ticket.Ticket_Desc = Desc
+                ticket.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Cập Nhật Yêu Cầu Thành Công!',
+                    'Desc': Desc,
+                })
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Mã Yêu Cầu Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE COMMENT
+
+#FUNCTION CHECK FILE NAME
+@csrf_exempt
+def Get_File_Name(request):
+    try:
+        if request.method == 'POST':
+            name = request.POST.get('name')
+            ticketID = request.POST.get('ticketID')
+            try:
+                file_name = Attachment.objects.filter(Ticket_ID = ticketID, Attachment_Url__contains = name).first()
+                if(file_name):
+                    return JsonResponse({'success': True,'message': 'Thành Công', 'name': file_name.Attachment_Url })
+                else:
+                    return JsonResponse({'success': False, 'message': 'Tên File Không Tồn Tại'})
+            except Exception as ex:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Lỗi: {str(ex)}',
+                })
+            except Users.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK FILE NAME 
+################################################### PAGE VIEW TICKET DATA #########################
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+
+################################################### PAGE COMMENT DATA #######################
+#FUNCTION LOAD AND PROCESS DATA COMMENT
+def load_Comment_Json(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        ########################### COMMENT DATA###########################    
+        comments = Comment.objects.all().order_by('-Comment_ID')
+        list_comment = []
+        for comment in comments:
+            comment_data = {
+                'Comment_ID':           comment.Comment_ID,
+                'Ticket_ID':            comment.Ticket_ID.Ticket_ID,
+                'ID_user':              comment.ID_user.ID_user,
+                'Comment_Desc':         comment.Comment_Desc,
+                'Comment_User_Name':    comment.Comment_User_Name,
+                'Comment_Date':         comment.Comment_Date.strftime('%d/%m/%Y'),
+                'Comment_Time':         comment.Comment_Time.strftime('%H:%M'),
+                'Comment_Status':       comment.Comment_Status,
+            }
+            list_comment.append(comment_data)       
+        ########################### USERS DATA###########################
+        # users = Users.objects.filter(User_Status = True, User_Type__lt = 2)
+        # list_users = [{'ID_user': user.ID_user, 'FullName': user.FullName} for user in users]
+        context = { 
+            'data': list_comment,
+            # 'users': list_users,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    else:
+        return redirect('')
+
+def load_comment(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+        return render(request, 'Ticket_ListComment.html')
+    else:
+        return redirect('/')
+#FUNCTION LOAD AND PROCESS DATA COMMENT
+
+# #FUNCTION CREATE TICKET 
+# @csrf_exempt
+# def Create_Company(request):
+#     try:
+#         if request.method == 'POST':
+#             Company_Name = request.POST.get('Company_Name')
+
+#             userID =  request.session['UserInfo']['ID_user']
+#             user = Users.objects.get(ID_user = userID)
+               
+#             company = Company.objects.create(
+#                 Company_Name = Company_Name, 
+#                 ID_user  = user, 
+#                 Company_User_Name  = user.FullName, 
+#                 Company_Date  = datetime.datetime.now().date(),
+#                 Company_Time  = datetime.datetime.now().time(),
+#                 Company_Status = 1,
+#             )
+#             company.save()
+#             companyID = company.Company_ID
+#             return JsonResponse({
+#                     'success': True,
+#                     'message': 'Công Ty Tạo Thành Công!',
+#                     'Company_ID':           companyID,
+#                     'Company_Name':         company.Company_Name,
+#                     'ID_user':              user.ID_user,
+#                     'Company_User_Name':    user.FullName,
+#                     'Company_Date':         company.Company_Date.strftime('%d/%m/%Y'),
+#                     'Company_Time':         company.Company_Time.strftime('%H:%M'),
+#                     'Company_Status':       company.Company_Status,
+#                 })
+#         else:
+#             response = {'success': False, 'message': 'Invalid request method'}
+#             # return JsonResponse(response, status=405)
+#             return JsonResponse({
+#                 'success': False,
+#                 'message': 'Invalid request method'
+#                 })
+#     except Exception as ex:
+#         return JsonResponse({
+#             'success': False,
+#             'message': f'Lỗi: {str(ex)}',
+#         })
+# #FUNCTION CREATE TICKET 
+
+# #FUNCTION DELETE TICKET 
+# @csrf_exempt
+# def Delete_Company(request):
+#     try:
+#         if request.method == 'POST':
+#             CompanyID = request.POST.get('CompanyID')
+#             try:
+#                 company = Company.objects.get(Company_ID = CompanyID)
+#                 if(company):
+#                     company.delete()
+#                     return JsonResponse({'success': True,'message': 'Xóa yêu cầu thành công!',})
+#                 else:
+#                     return JsonResponse({'success': False, 'message': 'Company ID ' + CompanyID +' Không tôn tại'})
+#             except Exception as ex:
+#                 return JsonResponse({
+#                     'success': False,
+#                     'message': f'Lỗi: {str(ex)}',
+#                 })
+#             except Ticket.DoesNotExist:
+#                 return JsonResponse({'success': False, 'message': 'ID ' + CompanyID +' Không tôn tại'})
+#         else:
+#             return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+#     except Exception as ex:
+#         return JsonResponse({
+#             'success': False,
+#             'message': f'Lỗi: {str(ex)}',
+#         })
+# #FUNCTION DELETE TICKET 
+
+# #FUNCTION UPDATE COMMENT 
+@csrf_exempt
+def Update_Comment(request):
+    try:
+        if request.method == 'POST':
+            status = request.POST.get('status')       
+            CommentID = request.POST.get('CommentID') 
+            comment = Comment.objects.get(Comment_ID = CommentID)
+            if comment:
+                if str(comment.Comment_Status) == status:
+                     return JsonResponse({
+                    'success': False,
+                    'message': 'Status đang ở trạng thái: "Không Kích Hoạt"!',         
+                })
+                else:
+                    comment.Comment_Status = status
+                    comment.save()
+
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Yêu Cầu Thành Công!',         
+                        'Comment_Status':    comment.Comment_Status,
+                        'Comment_ID'    :    comment.Comment_ID,
+                    })
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Mã Comment Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+# #FUNCTION UPDATE COMMENT 
+
+# #FUNCTION UPDATE COMMENT 
+@csrf_exempt
+def Update_Comment_Desc(request):
+    try:
+        if request.method == 'POST':    
+            CommentID = request.POST.get('CommentID') 
+            CommentDesc = request.POST.get('CommentDesc') 
+
+            comment = Comment.objects.get(Comment_ID = CommentID)
+            if comment:
+                comment.Comment_Desc = CommentDesc
+                comment.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Yêu Cầu Thành Công!',         
+                    'Comment_Desc'  :    comment.Comment_Desc,
+                    'Comment_ID'    :    comment.Comment_ID,
+                })
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Mã Comment Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+# #FUNCTION UPDATE COMMENT 
+
+# #FUNCTION UPDATE DATA COMMENT 
+@csrf_exempt
+def Data_Update_Comment(request):
+       try:
+        if request.method == 'POST':
+            CommentID = request.POST.get('CommentID')
+            comment = Comment.objects.filter(Comment_ID = CommentID).first()
+            list_comment = ({
+                     'Comment_ID':     comment.Comment_ID, 
+                     'Comment_Desc':   comment.Comment_Desc})
+            context = { 
+                'success': True,
+                'message': 'Lấy Data Thành Công',
+                'Comment': list_comment,}
+            data = json.dumps(context, ensure_ascii=False)
+            return HttpResponse(data, content_type='application/json')
+        else:
+           return JsonResponse({'success': False,'message': 'Comment ID Không Tồn Tại.'}) 
+       except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+# #FUNCTION UPDATE DATA COMMENT 
+
+################################################### PAGE COMMENT DATA ##########################  
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+################################################### PAGE GROUP ROLE DATA #######################
+#FUNCTION LOAD AND PROCESS DATA GROUP ROLE
+def load_Group_Role_Json(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        ########################### COMPANY DATA###########################    
+        grouproles = Role_Group.objects.all().order_by('-Role_Group_ID')
+        list_group_role = []
+        for group in grouproles:
+            group_role_data = {
+                'Role_Group_ID':           group.Role_Group_ID,
+                'Role_Group_Name':         group.Role_Group_Name,
+                'Menu_Name':               group.Menu_ID.Menu_Name if group.Menu_ID.Menu_Name else "No Data",
+                'Role_Group_Address':      group.Role_Group_Address if group.Role_Group_Address else "No Data",
+                'Role_Group_CreateBy':     group.Role_Group_CreateBy,
+                'Role_Group_Date':         group.Role_Group_Date.strftime('%d/%m/%Y'),
+                'Role_Group_Time':         group.Role_Group_Time.strftime('%H:%M'),
+                'Role_Group_Status':       group.Role_Group_Status,
+            }
+            list_group_role.append(group_role_data)       
+        ########################### USERS DATA###########################
+        users = Users.objects.filter(User_Status = True, User_Type__lt = 2)
+        list_users = [{'ID_user': user.ID_user, 'FullName': user.FullName} for user in users]
+
+
+        context = { 
+            'data': list_group_role,
+            'users': list_users,}
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    else:
+        return redirect('')
+
+def load_group_role(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+        return render(request, 'Ticket_RoleGroup.html')
+    else:
+        return redirect('/')
+#FUNCTION LOAD AND PROCESS DATA GROUP ROLE
+
+#FUNCTION CREATE GROUP ROLE
+@csrf_exempt
+def Create_Group_Role(request):
+    try:
+        if request.method == 'POST':
+            Group_Name = request.POST.get('Group_Name')
+            MenuID = request.POST.get('MenuID')
+            Menu_Add = request.POST.get('Menu_Add')
+
+            userID =  request.session['UserInfo']['ID_user']
+            user = Users.objects.get(ID_user = userID)
+
+            menu = Menu.objects.get(Menu_ID = MenuID)
+               
+            group = Role_Group.objects.create(
+                Role_Group_Name = Group_Name, 
+                ID_user  = user, 
+                Menu_ID = menu,
+                Role_Group_Address = Menu_Add,
+                Role_Group_CreateBy  = user.FullName, 
+                Role_Group_Date  = datetime.datetime.now().date(),
+                Role_Group_Time  = datetime.datetime.now().time(),
+                Role_Group_Status = 1,
+            )
+            group.save()
+            GroupID = group.Role_Group_ID
+            return JsonResponse({
+                    'success': True,
+                    'message': 'Công Ty Tạo Thành Công!',
+                    'Role_Group_ID':           GroupID,
+                    'Role_Group_Name':         group.Role_Group_Name,
+                    'ID_user':                 user.ID_user,
+                    'Menu_Name':               group.Menu_ID.Menu_Name,
+                    'Role_Group_Address':      group.Role_Group_Address,
+                    'Role_Group_CreateBy':     user.FullName,
+                    'Role_Group_Date':         group.Role_Group_Date.strftime('%d/%m/%Y'),
+                    'Role_Group_Time':         group.Role_Group_Time.strftime('%H:%M'),
+                    'Role_Group_Status':       group.Role_Group_Status,
+                })
+        else:
+            response = {'success': False, 'message': 'Invalid request method'}
+            # return JsonResponse(response, status=405)
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CREATE GROUP ROLE
+
+#FUNCTION DELETE GROUP ROLE
+@csrf_exempt
+def Delete_Group_Role(request):
+    try:
+        if request.method == 'POST':
+            GroupRoleID = request.POST.get('GroupRoleID')
+            try:
+                group = Role_Group.objects.get(Role_Group_ID = GroupRoleID)
+                if(group):
+                    group.delete()
+                    return JsonResponse({'success': True,'message': 'Xóa yêu cầu thành công!',})
+                else:
+                    return JsonResponse({'success': False, 'message': 'Group ID ' + GroupRoleID +' Không tôn tại'})
+            except Exception as ex:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Lỗi: {str(ex)}',
+                })
+            except Ticket.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'ID ' + GroupRoleID +' Không tôn tại'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION DELETE GROUP ROLE
+
+#FUNCTION UPDATE GROUP ROLE
+@csrf_exempt
+def Update_Group_Role(request):
+    try:
+        if request.method == 'POST':
+            status = request.POST.get('status')       
+            GroupID = request.POST.get('GroupID')       
+            groupName = request.POST.get('GroupName')   
+            menu = request.POST.get('Menu')   
+            Address = request.POST.get('Address')   
+
+            group = Role_Group.objects.get(Role_Group_ID = GroupID)
+            if group:             
+                if groupName or menu or Address: 
+                    menuID = Menu.objects.get(Menu_ID = menu)                
+                    group.Role_Group_Name = groupName
+                    group.Menu_ID = menuID
+                    group.Role_Group_Address = Address
+                    group.Role_Group_Status = status
+                    group.save()
+                else:
+                    menuID = Menu.objects.get(Menu_ID = group.Menu_ID.Menu_ID)
+                    group.Role_Group_Name = group.Role_Group_Name
+                    group.Menu_ID = menuID
+                    group.Role_Group_Address = group.Role_Group_Address
+                    group.Role_Group_Status = status
+                    group.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Yêu Cầu Thành Công!',
+                    'Role_Group_ID':        group.Role_Group_ID,
+                    'Role_Group_Name':      group.Role_Group_Name,                   
+                    'Menu_Name':              group.Menu_ID.Menu_Name,                   
+                    'Role_Group_Address':      group.Role_Group_Address,                   
+                    'Role_Group_Status':    group.Role_Group_Status,
+                })
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Mã Nhóm Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE GROUP ROLE
+
+#FUNCTION UPDATE DATA GROUP ROLE
+@csrf_exempt
+def Data_Update_Group_Role(request):
+       try:
+        if request.method == 'POST':
+            GroupID = request.POST.get('GroupID')
+            group = Role_Group.objects.filter(Role_Group_ID = GroupID)
+            list_group = [{
+                     'Role_Group_ID':     p.Role_Group_ID, 
+                     'Role_Group_Name':   p.Role_Group_Name, 
+                     'Menu_ID':           p.Menu_ID.Menu_ID, 
+                     'Role_Group_Address':   p.Role_Group_Address, 
+                     'Role_Group_Status': p.Role_Group_Status,} for p in group]
+            context = { 
+                'success': True,
+                'message': 'Lấy Data Thành Công',
+                'Groups': list_group,}
+            data = json.dumps(context, ensure_ascii=False)
+            return HttpResponse(data, content_type='application/json')
+        else:
+           return JsonResponse({'success': False,'message': 'Group ID Không Tồn Tại.'}) 
+       except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE DATA GROUP ROLE
+
+#FUNCTION LOAD MENU
+@csrf_exempt
+def Load_Data_Menu(request):
+    try:
+        if request.method == 'POST':          
+            menus = Menu.objects.all().order_by('Menu_Level')
+            list_menu = []
+            for menu in menus:
+                menu_data = {
+                    'Menu_ID':           menu.Menu_ID,
+                    'Menu_Name':         menu.Menu_Name,
+                }
+                list_menu.append(menu_data)
+            context = { 
+                'success': True,
+                'Menus': list_menu,
+            }
+            return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+        else:
+            response = {'success': False, 'message': 'Invalid request method'}
+            # return JsonResponse(response, status=405)
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION LOAD MENU
+
+################################################### PAGE GROUP ROLE DATA #######################
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+################################################### PAGE ROLE DATA #######################
+#FUNCTION LOAD AND PROCESS DATA ROLE
+def load_Role_Json(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        ########################### COMPANY DATA###########################    
+        roles = Role_Single.objects.all().order_by('-Role_ID')
+        list_role = []
+        for group in roles:
+            role_data = {
+                'Role_ID':           group.Role_ID,
+                'Role_Name':         group.Role_Name,
+                'Role_Group_ID':     group.Role_Group_ID.Role_Group_ID,
+                'Role_Group_Name':   group.Role_Group_ID.Role_Group_Name,
+                'Role_CreateBy':     group.Role_CreateBy,
+                'Role_Date':         group.Role_Date.strftime('%d/%m/%Y'),
+                'Role_Time':         group.Role_Time.strftime('%H:%M'),
+                'Role_Status':       group.Role_Status,
+            }
+            list_role.append(role_data)       
+        ########################### USERS DATA###########################
+        users = Users.objects.filter(User_Status = True, User_Type__lt = 2)
+        list_users = [{'ID_user': user.ID_user, 'FullName': user.FullName} for user in users]
+
+        ########################### GROUP ROLE DATA###########################
+        groups = Role_Group.objects.all()
+        list_group = [{'Role_Group_ID': group.Role_Group_ID, 'Role_Group_Name': group.Role_Group_Name} for group in groups]
+
+        context = { 
+            'data': list_role,
+            'users': list_users,
+            'groups': list_group,}
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    else:
+        return redirect('')
+
+def load_role(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+        return render(request, 'Ticket_Role.html')
+    else:
+        return redirect('/')
+#FUNCTION LOAD AND PROCESS DATA ROLE
+
+#FUNCTION CREATE ROLE
+@csrf_exempt
+def Create_Role(request):
+    try:
+        if request.method == 'POST':
+            RoleName = request.POST.get('Role_Name')
+            Group_ID = request.POST.get('Group_ID')
+
+            userID =  request.session['UserInfo']['ID_user']
+            user = Users.objects.get(ID_user = userID)
+            group = Role_Group.objects.get(Role_Group_ID = Group_ID)
+               
+            role = Role_Single.objects.create(
+                Role_Name = RoleName, 
+                ID_user  = user, 
+                Role_Group_ID =  group,
+                Role_CreateBy  = user.FullName, 
+                Role_Date  = datetime.datetime.now().date(),
+                Role_Time  = datetime.datetime.now().time(),
+                Role_Status = 1,
+            )
+            group.save()
+            RoleID = role.Role_ID
+            return JsonResponse({
+                    'success': True,
+                    'message': 'Công Ty Tạo Thành Công!',
+                    'Role_ID':           RoleID,
+                    'ID_user':                 user.ID_user,
+                    'Role_Name':               role.Role_Name,
+                    'Role_Group_ID':           role.Role_Group_ID.Role_Group_ID,
+                    'Role_Group_Name':         role.Role_Group_ID.Role_Group_Name,
+                    'Role_CreateBy':           user.FullName,
+                    'Role_Date':               role.Role_Date.strftime('%d/%m/%Y'),
+                    'Role_Time':               role.Role_Time.strftime('%H:%M'),
+                    'Role_Status':             role.Role_Status,
+                })
+        else:
+            response = {'success': False, 'message': 'Invalid request method'}
+            # return JsonResponse(response, status=405)
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CREATE ROLE
+
+#FUNCTION DELETE ROLE
+@csrf_exempt
+def Delete_Role(request):
+    try:
+        if request.method == 'POST':
+            RoleID = request.POST.get('RoleID')
+            try:
+                role = Role_Single.objects.get(Role_ID = RoleID)
+                if(role):
+                    role.delete()
+                    return JsonResponse({'success': True,'message': 'Xóa yêu cầu thành công!',})
+                else:
+                    return JsonResponse({'success': False, 'message': 'Group ID ' + RoleID +' Không tôn tại'})
+            except Exception as ex:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Lỗi: {str(ex)}',
+                })
+            except Ticket.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'ID ' + RoleID +' Không tôn tại'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION DELETE ROLE
+
+#FUNCTION UPDATE ROLE
+@csrf_exempt
+def Update_Role(request):
+    try:
+        if request.method == 'POST':
+            status = request.POST.get('status')       
+            RoleID = request.POST.get('RoleID')       
+            RoleName = request.POST.get('RoleName')       
+            GroupID = request.POST.get('GroupID')       
+            role = Role_Single.objects.get(Role_ID = RoleID)
+            if role:
+                if RoleName or GroupID:             
+                    role.Role_Name = RoleName if RoleName else role.Role_Name
+                    if GroupID: 
+                        groupid = Role_Group.objects.filter(Role_Group_ID = GroupID).first()
+                        role.Role_Group_ID = groupid
+                    role.Role_Status = status
+                    role.save()
+                else:
+                    role.Role_Name = role.Role_Name
+                    role.Role_Status = status
+                    role.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Yêu Cầu Thành Công!',
+                    'Role_ID':        role.Role_ID,
+                    'Role_Name':      role.Role_Name,                   
+                    'Role_Group_ID':  role.Role_Group_ID.Role_Group_ID,                   
+                    'Role_Group_Name':  role.Role_Group_ID.Role_Group_Name,                   
+                    'Role_Status':    role.Role_Status,
+                })
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Mã Nhóm Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE ROLE
+
+#FUNCTION UPDATE DATA ROLE
+@csrf_exempt
+def Data_Update_Role(request):
+       try:
+        if request.method == 'POST':
+            RoleID = request.POST.get('RoleID')
+            role = Role_Single.objects.filter(Role_ID = RoleID)
+            list_group = [{
+                     'Role_ID':         p.Role_ID, 
+                     'Role_Name':       p.Role_Name, 
+                     'Role_Group_ID':   p.Role_Group_ID.Role_Group_ID, 
+                     'Role_Status':     p.Role_Status,} for p in role]
+            context = { 
+                'success': True,
+                'message': 'Lấy Data Thành Công',
+                'Groups': list_group,}
+            data = json.dumps(context, ensure_ascii=False)
+            return HttpResponse(data, content_type='application/json')
+        else:
+           return JsonResponse({'success': False,'message': 'Group ID Không Tồn Tại.'}) 
+       except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE DATA ROLE
+
+################################################### PAGE ROLE DATA #######################
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+################################################### PAGE ROLE DATA #######################
+#FUNCTION LOAD AND PROCESS DATA AUHTORIZE
+def load_Authorize_Json(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        ########################### USERS DATA###########################   
+        users = Users.objects.all().filter(User_Status = True).order_by('-ID_user')
+        list_user = []
+        for user in users:
+            user_data = {
+                'ID_user':          user.ID_user,
+                'FullName':         user.FullName,
+            }
+            list_user.append(user_data)      
+        ########################### GROUP ROLE DATA###########################
+        groups = Role_Group.objects.all().filter(Role_Group_Status = True)      
+        list_group = [{'Role_Group_ID': group.Role_Group_ID, 'Role_Group_Name': group.Role_Group_Name} for group in groups]
+        ########################### ROLE DATA###########################
+        roles = Role_Single.objects.all().filter(Role_Status =  True)       
+        list_role = [{'Role_ID': role.Role_ID, 'Role_Name': role.Role_Name, 'Role_Group_ID': role.Role_Group_ID.Role_Group_ID } for role in roles]
+
+        context = { 
+            'users': list_user,
+            'groups': list_group,
+            'roles': list_role,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    else:
+        return redirect('')
+
+def load_authorize(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+        return render(request, 'Ticket_Authorize.html')
+    else:
+        return redirect('/')
+#FUNCTION LOAD AND PROCESS DATA AUHTORIZE
+
+#FUNCTION LOAD DATA AUHTORIZE USER
+@csrf_exempt
+def load_Authorize_data(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        currentDate = datetime.datetime.now()
+        user = request.POST.get('UserID')
+        ########################### GROUP ROLE DATA###########################
+        groups = Role_Group.objects.all().filter(Role_Group_Status = True)       
+        list_group = [{'Role_Group_ID': group.Role_Group_ID, 'Role_Group_Name': group.Role_Group_Name} for group in groups]
+        ########################### ROLE DATA###########################
+        roles = Role_Single.objects.all().filter(Role_Status =  True)        
+        list_role = [{'Role_ID': role.Role_ID, 'Role_Name': role.Role_Name, 'Role_Group_ID': role.Role_Group_ID.Role_Group_ID } for role in roles]
+
+        for role in list_role:
+            try:
+                # auth = Authorization_User.objects.filter(ID_user=user, Role_ID=role['Role_ID'],Authorization_From__lte=currentDate,Authorization_To__gte=currentDate, Authorization_Status = True).order_by('-Authorization_From','-Authorization_To').first()
+                auth = Authorization_User.objects.filter(ID_user=user, Role_ID=role['Role_ID'],Authorization_To__gte=currentDate, Authorization_Status = True).order_by('Authorization_From').first()
+                auth_to = Authorization_User.objects.filter(ID_user=user, Role_ID=role['Role_ID'],Authorization_To__gte=currentDate, Authorization_Status = True).order_by('-Authorization_To').first()
+                if auth:
+                    if auth.Authorization_Status == True:
+                        role['isStatus'] = 'checked'
+                        role['DateFrom'] = auth.Authorization_From.strftime('%d/%m/%Y'),
+                        role['DateTo']   = auth_to.Authorization_To.strftime('%d/%m/%Y'),
+                    else:
+                        role['isStatus'] = ''
+                        role['DateFrom'] = ''
+                        role['DateTo']   = ''
+                else:
+                    role['isStatus'] = ''
+                    role['DateFrom'] = ''
+                    role['DateTo']   = ''
+            except Authorization_User.DoesNotExist:
+                role['isStatus'] = ''
+                role['DateFrom'] = ''
+                role['DateTo']   = ''
+
+        context = { 
+            'groups': list_group,
+            'roles': list_role,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    else:
+        return redirect('')
+#FUNCTION LOAD DATA AUHTORIZE USER
+
+#FUNCTION CREATE ROLE
+@csrf_exempt
+def Create_Authorize(request):
+    try:
+        if request.method == 'POST':
+            Date_Current = datetime.datetime.now().date()
+            Date_From = request.POST.get('Date_From')
+            Date_To = request.POST.get('Date_To')
+            List_Users = request.POST.getlist('List_Users[]')
+            List_Roles = request.POST.getlist('List_Roles[]')
+
+            userID =  request.session['UserInfo']['ID_user']
+            user_create = Users.objects.get(ID_user = userID)
+
+            if Date_From == "": 
+                Date_From = Date_Current
+            else: 
+                Date_From = datetime.datetime.strptime(Date_From, '%Y-%m-%d').date()
+
+            if Date_To == "": 
+                Date_To = datetime.datetime.strptime('9999-12-31', '%Y-%m-%d').date() 
+            else: 
+                Date_To = datetime.datetime.strptime(Date_To, '%Y-%m-%d').date() 
+
+            if Date_From < Date_Current:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Ngày Bắt Đầu Phải Lớn Hơn Hoặc Bằng Ngày Hiện Tại.',
+                })
+            elif Date_To <= Date_Current:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Ngày Kết Thúc Phải Lón Hơn Ngày Hiện Tại.',
+                })
+            elif Date_From > Date_To:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Ngày Bắt Đầu Phải Nhỏ Hơn Ngày Kết Thúc.',
+                })
+
+            for u in List_Users:
+                data_user = json.loads(u)
+                user = Users.objects.get(ID_user = data_user['UserID'])
+                if user:
+                    for r in List_Roles:
+                        data_role = json.loads(r)
+                        role = Authorization_User.objects.filter(
+                                ID_user=user.ID_user, 
+                                Role_ID=data_role['RoleID'],
+                                Authorization_From__lte=Date_From,
+                                Authorization_To__gte=Date_From,
+                                Authorization_Status = True).order_by('-Authorization_ID').first()
+                        if data_role['Status'] == 'True':   #checkbox is checked                                                     
+                            if role: #authorize is exits
+                                role_single = Role_Single.objects.get(Role_ID = role.Role_ID.Role_ID)
+                                # Update_role_data(Date_From, Date_To ,role.Authorization_ID,'True')
+                                Update_role_data(Date_From, Date_To ,role_single,user,'True')
+                                # Insert_role_data(Date_From, Date_To, role.Role_ID, role.ID_user, user_create.ID_user,user_create.FullName)
+                                Insert_role_data(Date_From, Date_To, role_single, user, user_create.ID_user,user_create.FullName)
+                            else: #authorize is not exits
+                                role_single = Role_Single.objects.get(Role_ID = data_role['RoleID'])
+                                # Insert_role_data(Date_From, Date_To, data_role['RoleID'], user.ID_user, user_create.ID_user,user_create.FullName)
+                                Insert_role_data(Date_From, Date_To, role_single , user, user_create.ID_user,user_create.FullName)
+                        else: #checkbox is uncheck
+                            role_single = Role_Single.objects.get(Role_ID = data_role['RoleID'])
+                            if role: #authorize is exits
+                                Update_unrole_data(Date_From,user,role_single)
+                            else:
+                                Update_unrole_data(Date_From,user,role_single)                                            
+                            
+            return JsonResponse({
+                    'success': True,
+                    'message': 'Phân Quyền Thành Công!',
+                })
+        else:
+            response = {'success': False, 'message': 'Invalid request method'}
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+    
+def Update_role_data(Date_From,Date_To, Role, User, Status):
+    try:
+        date_last = Date_From - datetime.timedelta(days=1)
+        # role = Authorization_User.objects.get(Authorization_ID = Authorization_ID)
+        update = False
+        role = Authorization_User.objects.filter(
+            Authorization_Status = True, 
+            Authorization_To__gte=Date_From,
+            ID_user=User.ID_user, 
+            Role_ID = Role.Role_ID).order_by('Authorization_To')
+        if role:
+            for r in role:
+                if r.Authorization_To <  Date_To or r.Authorization_From <  Date_From:
+                    update = True
+                    auth_id = r.Authorization_ID
+                else:
+                    update = False
+        else: 
+            update = True
+
+        if update == True:
+            Date_3112 = datetime.datetime.strptime('9999-12-31', '%Y-%m-%d').date()
+            auth = Authorization_User.objects.get(Authorization_ID = auth_id)
+            if auth.Authorization_From < Date_From or auth.Authorization_To == Date_3112:
+                auth.Authorization_To = date_last
+                if Status == 'False':
+                    auth.Authorization_Status = Status
+                auth.save()
+            else:
+                auth.Authorization_To = auth.Authorization_From
+                if Status == 'False':
+                    auth.Authorization_Status = Status
+                auth.save()
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+
+def Update_unrole_data(Date_From, user, Role):
+    try:
+        role = Authorization_User.objects.filter(
+            ID_user = user.ID_user,
+            Authorization_Status = True, 
+            Authorization_To__gte=Date_From,
+            Role_ID = Role.Role_ID)
+        if role:
+            for r in role:
+                r.Authorization_Status = 'False'
+                r.save()
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+
+def Insert_role_data(Date_From, Date_To, Role, User, ID_Create ,FullName_Create):
+    try:
+        date_create = datetime.datetime.now().date()
+        time_create = datetime.datetime.now().time()
+        insert = 0
+        role = Authorization_User.objects.filter(
+            Authorization_Status = True, 
+            Authorization_To__gte=Date_From,
+            ID_user=User.ID_user,
+            Role_ID = Role.Role_ID).order_by('Authorization_To')
+        if role:
+            for r in role:
+                if r.Authorization_To <  Date_To or r.Authorization_From <  Date_From:
+                    insert = 1
+                elif r.Authorization_From > Date_To:
+                    date_last = r.Authorization_From - datetime.timedelta(days=1)
+                    insert = 2
+                    Date_To_= date_last
+                else:
+                    insert = 0
+        else: 
+            insert = 1
+
+        if insert == 1:
+            auth = Authorization_User.objects.create(
+                Role_ID = Role,
+                ID_user = User,
+                Authorization_From = Date_From,
+                Authorization_To = Date_To,
+                Authorization_CreateID = ID_Create,
+                Authorization_CreateBy = FullName_Create,
+                Authorization_Date = date_create,
+                Authorization_Time = time_create,
+                Authorization_Status = True
+            )
+            auth.save()
+        elif insert == 2:
+            auth = Authorization_User.objects.create(
+                Role_ID = Role,
+                ID_user = User,
+                Authorization_From = Date_From,
+                Authorization_To = Date_To_,
+                Authorization_CreateID = ID_Create,
+                Authorization_CreateBy = FullName_Create,
+                Authorization_Date = date_create,
+                Authorization_Time = time_create,
+                Authorization_Status = True
+            )
+            auth.save()
+        
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CREATE ROLE
+
+#FUNCTION DELETE ROLE
+@csrf_exempt
+def Delete_Role(request):
+    try:
+        if request.method == 'POST':
+            RoleID = request.POST.get('RoleID')
+            try:
+                role = Role_Single.objects.get(Role_ID = RoleID)
+                if(role):
+                    role.delete()
+                    return JsonResponse({'success': True,'message': 'Xóa yêu cầu thành công!',})
+                else:
+                    return JsonResponse({'success': False, 'message': 'Group ID ' + RoleID +' Không tôn tại'})
+            except Exception as ex:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Lỗi: {str(ex)}',
+                })
+            except Ticket.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'ID ' + RoleID +' Không tôn tại'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION DELETE ROLE
+
+#FUNCTION UPDATE ROLE
+@csrf_exempt
+def Update_Role(request):
+    try:
+        if request.method == 'POST':
+            status = request.POST.get('status')       
+            RoleID = request.POST.get('RoleID')       
+            RoleName = request.POST.get('RoleName')       
+            GroupID = request.POST.get('GroupID')       
+            role = Role_Single.objects.get(Role_ID = RoleID)
+            if role:
+                if RoleName or GroupID:             
+                    role.Role_Name = RoleName if RoleName else role.Role_Name
+                    if GroupID: 
+                        groupid = Role_Group.objects.filter(Role_Group_ID = GroupID).first()
+                        role.Role_Group_ID = groupid
+                    role.Role_Status = status
+                    role.save()
+                else:
+                    role.Role_Name = role.Role_Name
+                    role.Role_Status = status
+                    role.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Yêu Cầu Thành Công!',
+                    'Role_ID':        role.Role_ID,
+                    'Role_Name':      role.Role_Name,                   
+                    'Role_Group_ID':  role.Role_Group_ID.Role_Group_ID,                   
+                    'Role_Group_Name':  role.Role_Group_ID.Role_Group_Name,                   
+                    'Role_Status':    role.Role_Status,
+                })
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Mã Nhóm Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE ROLE
+
+#FUNCTION UPDATE DATA ROLE
+@csrf_exempt
+def Data_Update_Role(request):
+       try:
+        if request.method == 'POST':
+            RoleID = request.POST.get('RoleID')
+            role = Role_Single.objects.filter(Role_ID = RoleID)
+            list_group = [{
+                     'Role_ID':         p.Role_ID, 
+                     'Role_Name':       p.Role_Name, 
+                     'Role_Group_ID':   p.Role_Group_ID.Role_Group_ID, 
+                     'Role_Status':     p.Role_Status,} for p in role]
+            context = { 
+                'success': True,
+                'message': 'Lấy Data Thành Công',
+                'Groups': list_group,}
+            data = json.dumps(context, ensure_ascii=False)
+            return HttpResponse(data, content_type='application/json')
+        else:
+           return JsonResponse({'success': False,'message': 'Group ID Không Tồn Tại.'}) 
+       except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE DATA ROLE
+
+################################################### PAGE ROLE DATA #######################
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+################################################### PAGE AUTHORIZE ROLE #######################
+#FUNCTION CHECK AUTHORIZE USERS 
+@csrf_exempt
+def Auth_Role_User(request):
+    try:
+        if request.method == 'POST':
+            userinfo =  request.session['UserInfo']
+            ID_user  =  userinfo['ID_user']
+            if int(userinfo['Acc_type']) < 2:
+                IsAdmin = True
+            else:
+                IsAdmin = False
+            
+            current_date = datetime.datetime.now()
+            Dash_Role_Data = [
+                {'TCode': 'ZUM_View','Role': 'View','Status': 'False'},
+                {'TCode': 'ZUM_Edit','Role': 'Edit','Status': 'False'},
+                {'TCode': 'ZUM_Add','Role': 'Add','Status': 'False'},
+                {'TCode': 'ZUM_Del','Role': 'Delete','Status': 'False'},
+                {'TCode': 'ZUM_Admin','Role': 'Delete','Status': 'False'},
+            ]
+            Sing_Role = Role_Single.objects.filter(Role_Group_ID = 2, Role_Status = True)
+            if Sing_Role:
+                for s in Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                        ID_user =  ID_user, 
+                        Role_ID = s.Role_ID,
+                        Authorization_From__lte=current_date,
+                        Authorization_To__gte=current_date, 
+                        Authorization_Status = True).order_by('-Authorization_To').first() 
+                    if auth:
+                        for item_role in Dash_Role_Data:
+                            tcode = item_role['TCode']
+                            if tcode in auth.Role_ID.Role_Name:
+                                item_role['Status'] = 'True'
+            context = { 
+                'success': True,
+                'IsAdmin': IsAdmin,
+                'Roles': Dash_Role_Data,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+    
+def check_user(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            idUser = userinfo['ID_user']
+            typeUser = userinfo['Acc_type']
+            if typeUser > 0:
+                current_date = datetime.datetime.now()
+                Sing_Role = Role_Single.objects.filter(Role_Group_ID = 2, Role_Status = True).values('Role_ID')
+                if Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                                ID_user =  idUser, 
+                                Role_ID__in = Sing_Role.values('Role_ID'),
+                                Authorization_From__lte=current_date,
+                                Authorization_To__gte=current_date, 
+                                Authorization_Status = True) 
+                    if auth:
+                         return JsonResponse({
+                            'success': True,
+                            # 'Status':  True,
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                            # 'Status':  False,
+                        })     
+            else:
+                 return JsonResponse({
+                        'success': True,
+                        # 'Status':  True,
+                })
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK AUTHORIZE USERS 
+
+#FUNCTION CHECK AUTHORIZE TICKET 
+@csrf_exempt
+def Auth_Role_Ticket(request):
+    try:
+        if request.method == 'POST':
+            userinfo =  request.session['UserInfo']
+            ID_user  =  userinfo['ID_user']
+            if int(userinfo['Acc_type']) < 2:
+                IsAdmin = True
+            else:
+                IsAdmin = False
+            
+            current_date = datetime.datetime.now()
+            Dash_Role_Data = [
+                {'TCode': 'ZTC_View','Role': 'View','Status': 'False'},
+                {'TCode': 'ZTC_Edit','Role': 'Edit','Status': 'False'},
+                {'TCode': 'ZTC_Add','Role': 'Add','Status': 'False'},
+                {'TCode': 'ZTC_Del','Role': 'Delete','Status': 'False'},
+                {'TCode': 'ZTC_Admin','Role': 'Admin View','Status': 'False'},
+            ]
+            Sing_Role = Role_Single.objects.filter(Role_Group_ID = 3, Role_Status = True)
+            if Sing_Role:
+                for s in Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                        ID_user =  ID_user, 
+                        Role_ID = s.Role_ID,
+                        Authorization_From__lte=current_date,
+                        Authorization_To__gte=current_date, 
+                        Authorization_Status = True).order_by('-Authorization_To').first() 
+                    if auth:
+                        for item_role in Dash_Role_Data:
+                            tcode = item_role['TCode']
+                            if tcode in auth.Role_ID.Role_Name:
+                                item_role['Status'] = 'True'
+            context = { 
+                'success': True,
+                'IsAdmin': IsAdmin,
+                'Roles': Dash_Role_Data,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+    
+def check_ticket(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        isAdmin = False
+        Tcode = 'ZTC_Admin'
+        if userinfo:
+            idUser = userinfo['ID_user']
+            typeUser = userinfo['Acc_type']
+            if typeUser > 0:
+                current_date = datetime.datetime.now()
+                Sing_Role = Role_Single.objects.filter(Role_Group_ID = 3, Role_Status = True).values('Role_ID')
+                if Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                                ID_user =  idUser, 
+                                Role_ID__in = Sing_Role.values('Role_ID'),
+                                Authorization_From__lte=current_date,
+                                Authorization_To__gte=current_date, 
+                                Authorization_Status = True) 
+                    if auth:
+                         for item in auth:
+                            name = item.Role_ID.Role_Name
+                            if Tcode in name:
+                                isAdmin = True
+
+                         return JsonResponse({
+                            'success': True,
+                            'isAdmin': isAdmin
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                        })     
+            else:
+                 isAdmin = True
+                 return JsonResponse({
+                        'success': True,
+                        'isAdmin': isAdmin
+                })
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK AUTHORIZE TICKET 
+
+#FUNCTION CHECK AUTHORIZE ATTACH FILE
+@csrf_exempt
+def Auth_Role_Attach(request):
+    try:
+        if request.method == 'POST':
+            userinfo =  request.session['UserInfo']
+            ID_user  =  userinfo['ID_user']
+            if int(userinfo['Acc_type']) < 2:
+                IsAdmin = True
+            else:
+                IsAdmin = False
+            
+            current_date = datetime.datetime.now()
+            Dash_Role_Data = [
+                {'TCode': 'ZAF_View','Role': 'View','Status': 'False'},
+                {'TCode': 'ZAF_Edit','Role': 'Edit','Status': 'False'},
+                {'TCode': 'ZAF_Add','Role': 'Add','Status': 'False'},
+                {'TCode': 'ZAF_Del','Role': 'Delete','Status': 'False'},
+            ]
+            Sing_Role = Role_Single.objects.filter(Role_Group_ID = 4, Role_Status = True)
+            if Sing_Role:
+                for s in Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                        ID_user =  ID_user, 
+                        Role_ID = s.Role_ID,
+                        Authorization_From__lte=current_date,
+                        Authorization_To__gte=current_date, 
+                        Authorization_Status = True).order_by('-Authorization_To').first() 
+                    if auth:
+                        for item_role in Dash_Role_Data:
+                            tcode = item_role['TCode']
+                            if tcode in auth.Role_ID.Role_Name:
+                                item_role['Status'] = 'True'
+            context = { 
+                'success': True,
+                'IsAdmin': IsAdmin,
+                'Roles': Dash_Role_Data,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+    
+def check_attach(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            idUser = userinfo['ID_user']
+            typeUser = userinfo['Acc_type']
+            if typeUser > 0:
+                current_date = datetime.datetime.now()
+                Sing_Role = Role_Single.objects.filter(Role_Group_ID = 4, Role_Status = True).values('Role_ID')
+                if Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                                ID_user =  idUser, 
+                                Role_ID__in = Sing_Role.values('Role_ID'),
+                                Authorization_From__lte=current_date,
+                                Authorization_To__gte=current_date, 
+                                Authorization_Status = True) 
+                    if auth:
+                         return JsonResponse({
+                            'success': True,
+                            # 'Status':  True,
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                            # 'Status':  False,
+                        })     
+            else:
+                 return JsonResponse({
+                        'success': True,
+                        # 'Status':  True,
+                })
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK AUTHORIZE ATTACH FILE 
+
+#FUNCTION CHECK AUTHORIZE COMMENT
+@csrf_exempt
+def Auth_Role_Comment(request):
+    try:
+        if request.method == 'POST':
+            userinfo =  request.session['UserInfo']
+            ID_user  =  userinfo['ID_user']
+            if int(userinfo['Acc_type']) < 2:
+                IsAdmin = True
+            else:
+                IsAdmin = False
+            
+            current_date = datetime.datetime.now()
+            Dash_Role_Data = [
+                {'TCode': 'ZCM_View','Role': 'View','Status': 'False'},
+                {'TCode': 'ZCM_Edit','Role': 'Edit','Status': 'False'},
+                {'TCode': 'ZCM_Del','Role': 'Delete','Status': 'False'},
+            ]
+            Sing_Role = Role_Single.objects.filter(Role_Group_ID = 5, Role_Status = True)
+            if Sing_Role:
+                for s in Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                        ID_user =  ID_user, 
+                        Role_ID = s.Role_ID,
+                        Authorization_From__lte=current_date,
+                        Authorization_To__gte=current_date, 
+                        Authorization_Status = True).order_by('-Authorization_To').first() 
+                    if auth:
+                        for item_role in Dash_Role_Data:
+                            tcode = item_role['TCode']
+                            if tcode in auth.Role_ID.Role_Name:
+                                item_role['Status'] = 'True'
+            context = { 
+                'success': True,
+                'IsAdmin': IsAdmin,
+                'Roles': Dash_Role_Data,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+    
+def check_comment(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            idUser = userinfo['ID_user']
+            typeUser = userinfo['Acc_type']
+            if typeUser > 0:
+                current_date = datetime.datetime.now()
+                Sing_Role = Role_Single.objects.filter(Role_Group_ID = 5, Role_Status = True).values('Role_ID')
+                if Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                                ID_user =  idUser, 
+                                Role_ID__in = Sing_Role.values('Role_ID'),
+                                Authorization_From__lte=current_date,
+                                Authorization_To__gte=current_date, 
+                                Authorization_Status = True) 
+                    if auth:
+                         return JsonResponse({
+                            'success': True,
+                            # 'Status':  True,
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                            # 'Status':  False,
+                        })     
+            else:
+                 return JsonResponse({
+                        'success': True,
+                        # 'Status':  True,
+                })
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK AUTHORIZE COMMENT
+
+#FUNCTION CHECK AUTHORIZE COMPANY
+@csrf_exempt
+def Auth_Role_Company(request):
+    try:
+        if request.method == 'POST':
+            userinfo =  request.session['UserInfo']
+            ID_user  =  userinfo['ID_user']
+            if int(userinfo['Acc_type']) < 2:
+                IsAdmin = True
+            else:
+                IsAdmin = False
+            
+            current_date = datetime.datetime.now()
+            Dash_Role_Data = [
+                {'TCode': 'ZCP_View','Role': 'View','Status': 'False'},
+                {'TCode': 'ZCP_Edit','Role': 'Edit','Status': 'False'},
+                {'TCode': 'ZCP_Add','Role': 'Add','Status': 'False'},
+                {'TCode': 'ZCP_Del','Role': 'Delete','Status': 'False'},
+            ]
+            Sing_Role = Role_Single.objects.filter(Role_Group_ID = 6, Role_Status = True)
+            if Sing_Role:
+                for s in Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                        ID_user =  ID_user, 
+                        Role_ID = s.Role_ID,
+                        Authorization_From__lte=current_date,
+                        Authorization_To__gte=current_date, 
+                        Authorization_Status = True).order_by('-Authorization_To').first() 
+                    if auth:
+                        for item_role in Dash_Role_Data:
+                            tcode = item_role['TCode']
+                            if tcode in auth.Role_ID.Role_Name:
+                                item_role['Status'] = 'True'
+            context = { 
+                'success': True,
+                'IsAdmin': IsAdmin,
+                'Roles': Dash_Role_Data,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+    
+def check_company(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            idUser = userinfo['ID_user']
+            typeUser = userinfo['Acc_type']
+            if typeUser > 0:
+                current_date = datetime.datetime.now()
+                Sing_Role = Role_Single.objects.filter(Role_Group_ID = 6, Role_Status = True).values('Role_ID')
+                if Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                                ID_user =  idUser, 
+                                Role_ID__in = Sing_Role.values('Role_ID'),
+                                Authorization_From__lte=current_date,
+                                Authorization_To__gte=current_date, 
+                                Authorization_Status = True) 
+                    if auth:
+                         return JsonResponse({
+                            'success': True,
+                            # 'Status':  True,
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                            # 'Status':  False,
+                        })     
+            else:
+                 return JsonResponse({
+                        'success': True,
+                        # 'Status':  True,
+                })
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK AUTHORIZE COMPANY 
+
+#FUNCTION CHECK AUTHORIZE GROUP
+@csrf_exempt
+def Auth_Role_Group(request):
+    try:
+        if request.method == 'POST':
+            userinfo =  request.session['UserInfo']
+            ID_user  =  userinfo['ID_user']
+            if int(userinfo['Acc_type']) < 2:
+                IsAdmin = True
+            else:
+                IsAdmin = False
+            
+            current_date = datetime.datetime.now()
+            Dash_Role_Data = [
+                {'TCode': 'ZGR_View','Role': 'View','Status': 'False'},
+                {'TCode': 'ZGR_Edit','Role': 'Edit','Status': 'False'},
+                {'TCode': 'ZGR_Add','Role': 'Add','Status': 'False'},
+                {'TCode': 'ZGR_Del','Role': 'Delete','Status': 'False'},
+            ]
+            Sing_Role = Role_Single.objects.filter(Role_Group_ID = 7, Role_Status = True)
+            if Sing_Role:
+                for s in Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                        ID_user =  ID_user, 
+                        Role_ID = s.Role_ID,
+                        Authorization_From__lte=current_date,
+                        Authorization_To__gte=current_date, 
+                        Authorization_Status = True).order_by('-Authorization_To').first() 
+                    if auth:
+                        for item_role in Dash_Role_Data:
+                            tcode = item_role['TCode']
+                            if tcode in auth.Role_ID.Role_Name:
+                                item_role['Status'] = 'True'
+            context = { 
+                'success': True,
+                'IsAdmin': IsAdmin,
+                'Roles': Dash_Role_Data,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+    
+def check_group(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            idUser = userinfo['ID_user']
+            typeUser = userinfo['Acc_type']
+            if typeUser > 0:
+                current_date = datetime.datetime.now()
+                Sing_Role = Role_Single.objects.filter(Role_Group_ID = 7, Role_Status = True).values('Role_ID')
+                if Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                                ID_user =  idUser, 
+                                Role_ID__in = Sing_Role.values('Role_ID'),
+                                Authorization_From__lte=current_date,
+                                Authorization_To__gte=current_date, 
+                                Authorization_Status = True) 
+                    if auth:
+                         return JsonResponse({
+                            'success': True,
+                            # 'Status':  True,
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                            # 'Status':  False,
+                        })     
+            else:
+                 return JsonResponse({
+                        'success': True,
+                        # 'Status':  True,
+                })
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK AUTHORIZE GROUP 
+
+#FUNCTION CHECK AUTHORIZE ASSIGN
+@csrf_exempt
+def Auth_Role_Assign(request):
+    try:
+        if request.method == 'POST':
+            userinfo =  request.session['UserInfo']
+            ID_user  =  userinfo['ID_user']
+            if int(userinfo['Acc_type']) < 2:
+                IsAdmin = True
+            else:
+                IsAdmin = False
+            
+            current_date = datetime.datetime.now()
+            Dash_Role_Data = [
+                {'TCode': 'ZAS_View','Role': 'View','Status': 'False'},
+                {'TCode': 'ZAS_Edit','Role': 'Edit','Status': 'False'},
+                {'TCode': 'ZAS_Add','Role': 'Add','Status': 'False'},
+                {'TCode': 'ZAS_Del','Role': 'Delete','Status': 'False'},
+            ]
+            Sing_Role = Role_Single.objects.filter(Role_Group_ID = 8, Role_Status = True)
+            if Sing_Role:
+                for s in Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                        ID_user =  ID_user, 
+                        Role_ID = s.Role_ID,
+                        Authorization_From__lte=current_date,
+                        Authorization_To__gte=current_date, 
+                        Authorization_Status = True).order_by('-Authorization_To').first() 
+                    if auth:
+                        for item_role in Dash_Role_Data:
+                            tcode = item_role['TCode']
+                            if tcode in auth.Role_ID.Role_Name:
+                                item_role['Status'] = 'True'
+            context = { 
+                'success': True,
+                'IsAdmin': IsAdmin,
+                'Roles': Dash_Role_Data,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+    
+def check_assign(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            idUser = userinfo['ID_user']
+            typeUser = userinfo['Acc_type']
+            if typeUser > 0:
+                current_date = datetime.datetime.now()
+                Sing_Role = Role_Single.objects.filter(Role_Group_ID = 8, Role_Status = True).values('Role_ID')
+                if Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                                ID_user =  idUser, 
+                                Role_ID__in = Sing_Role.values('Role_ID'),
+                                Authorization_From__lte=current_date,
+                                Authorization_To__gte=current_date, 
+                                Authorization_Status = True) 
+                    if auth:
+                         return JsonResponse({
+                            'success': True,
+                            # 'Status':  True,
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                            # 'Status':  False,
+                        })     
+            else:
+                 return JsonResponse({
+                        'success': True,
+                        # 'Status':  True,
+                })
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK AUTHORIZE ASSIGN 
+
+#FUNCTION CHECK AUTHORIZE GROUP ROLE
+@csrf_exempt
+def Auth_Role_GroupRole(request):
+    try:
+        if request.method == 'POST':
+            userinfo =  request.session['UserInfo']
+            ID_user  =  userinfo['ID_user']
+            if int(userinfo['Acc_type']) < 2:
+                IsAdmin = True
+            else:
+                IsAdmin = False
+            
+            current_date = datetime.datetime.now()
+            Dash_Role_Data = [
+                {'TCode': 'ZRG_View','Role': 'View','Status': 'False'},
+                {'TCode': 'ZRG_Edit','Role': 'Edit','Status': 'False'},
+                {'TCode': 'ZRG_Add','Role': 'Add','Status': 'False'},
+                {'TCode': 'ZRG_Del','Role': 'Delete','Status': 'False'},
+            ]
+            Sing_Role = Role_Single.objects.filter(Role_Group_ID = 10, Role_Status = True)
+            if Sing_Role:
+                for s in Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                        ID_user =  ID_user, 
+                        Role_ID = s.Role_ID,
+                        Authorization_From__lte=current_date,
+                        Authorization_To__gte=current_date, 
+                        Authorization_Status = True).order_by('-Authorization_To').first() 
+                    if auth:
+                        for item_role in Dash_Role_Data:
+                            tcode = item_role['TCode']
+                            if tcode in auth.Role_ID.Role_Name:
+                                item_role['Status'] = 'True'
+            context = { 
+                'success': True,
+                'IsAdmin': IsAdmin,
+                'Roles': Dash_Role_Data,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+    
+def check_grouprole(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            idUser = userinfo['ID_user']
+            typeUser = userinfo['Acc_type']
+            if typeUser > 0:
+                current_date = datetime.datetime.now()
+                Sing_Role = Role_Single.objects.filter(Role_Group_ID = 10, Role_Status = True).values('Role_ID')
+                if Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                                ID_user =  idUser, 
+                                Role_ID__in = Sing_Role.values('Role_ID'),
+                                Authorization_From__lte=current_date,
+                                Authorization_To__gte=current_date, 
+                                Authorization_Status = True) 
+                    if auth:
+                         return JsonResponse({
+                            'success': True,
+                            # 'Status':  True,
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                            # 'Status':  False,
+                        })     
+            else:
+                 return JsonResponse({
+                        'success': True,
+                        # 'Status':  True,
+                })
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK AUTHORIZE GROUP ROLE
+
+#FUNCTION CHECK AUTHORIZE ROLE
+@csrf_exempt
+def Auth_Role(request):
+    try:
+        if request.method == 'POST':
+            userinfo =  request.session['UserInfo']
+            ID_user  =  userinfo['ID_user']
+            if int(userinfo['Acc_type']) < 2:
+                IsAdmin = True
+            else:
+                IsAdmin = False
+            
+            current_date = datetime.datetime.now()
+            Dash_Role_Data = [
+                {'TCode': 'ZRL_View','Role': 'View','Status': 'False'},
+                {'TCode': 'ZRL_Edit','Role': 'Edit','Status': 'False'},
+                {'TCode': 'ZRL_Add','Role': 'Add','Status': 'False'},
+                {'TCode': 'ZRL_Del','Role': 'Delete','Status': 'False'},
+            ]
+            Sing_Role = Role_Single.objects.filter(Role_Group_ID = 11, Role_Status = True)
+            if Sing_Role:
+                for s in Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                        ID_user =  ID_user, 
+                        Role_ID = s.Role_ID,
+                        Authorization_From__lte=current_date,
+                        Authorization_To__gte=current_date, 
+                        Authorization_Status = True).order_by('-Authorization_To').first() 
+                    if auth:
+                        for item_role in Dash_Role_Data:
+                            tcode = item_role['TCode']
+                            if tcode in auth.Role_ID.Role_Name:
+                                item_role['Status'] = 'True'
+            context = { 
+                'success': True,
+                'IsAdmin': IsAdmin,
+                'Roles': Dash_Role_Data,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+    
+def check_role(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            idUser = userinfo['ID_user']
+            typeUser = userinfo['Acc_type']
+            if typeUser > 0:
+                current_date = datetime.datetime.now()
+                Sing_Role = Role_Single.objects.filter(Role_Group_ID = 11, Role_Status = True).values('Role_ID')
+                if Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                                ID_user =  idUser, 
+                                Role_ID__in = Sing_Role.values('Role_ID'),
+                                Authorization_From__lte=current_date,
+                                Authorization_To__gte=current_date, 
+                                Authorization_Status = True) 
+                    if auth:
+                         return JsonResponse({
+                            'success': True,
+                            # 'Status':  True,
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                            # 'Status':  False,
+                        })     
+            else:
+                 return JsonResponse({
+                        'success': True,
+                        # 'Status':  True,
+                })
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK AUTHORIZE ROLE
+
+#FUNCTION CHECK AUTHORIZE
+@csrf_exempt
+def Auth_Authorize(request):
+    try:
+        if request.method == 'POST':
+            userinfo =  request.session['UserInfo']
+            ID_user  =  userinfo['ID_user']
+            if int(userinfo['Acc_type']) < 2:
+                IsAdmin = True
+            else:
+                IsAdmin = False
+            
+            current_date = datetime.datetime.now()
+            Dash_Role_Data = [
+                {'TCode': 'ZAU_View','Role': 'View','Status': 'False'},
+                {'TCode': 'ZAU_Add','Role': 'Add','Status': 'False'},
+            ]
+            Sing_Role = Role_Single.objects.filter(Role_Group_ID = 14, Role_Status = True)
+            if Sing_Role:
+                for s in Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                        ID_user =  ID_user, 
+                        Role_ID = s.Role_ID,
+                        Authorization_From__lte=current_date,
+                        Authorization_To__gte=current_date, 
+                        Authorization_Status = True).order_by('-Authorization_To').first() 
+                    if auth:
+                        for item_role in Dash_Role_Data:
+                            tcode = item_role['TCode']
+                            if tcode in auth.Role_ID.Role_Name:
+                                item_role['Status'] = 'True'
+            context = { 
+                'success': True,
+                'IsAdmin': IsAdmin,
+                'Roles': Dash_Role_Data,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+    
+def check_authorize(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            idUser = userinfo['ID_user']
+            typeUser = userinfo['Acc_type']
+            if typeUser > 0:
+                current_date = datetime.datetime.now()
+                Sing_Role = Role_Single.objects.filter(Role_Group_ID = 14, Role_Status = True).values('Role_ID')
+                if Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                                ID_user =  idUser, 
+                                Role_ID__in = Sing_Role.values('Role_ID'),
+                                Authorization_From__lte=current_date,
+                                Authorization_To__gte=current_date, 
+                                Authorization_Status = True) 
+                    if auth:
+                         return JsonResponse({
+                            'success': True,
+                            # 'Status':  True,
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                            # 'Status':  False,
+                        })     
+            else:
+                 return JsonResponse({
+                        'success': True,
+                        # 'Status':  True,
+                })
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK AUTHORIZE
+################################################### PAGE AUTHORIZE ROLE #######################
+
+############################################ PAGE TICKET HELPDESK - END ############################################################
+
+
+
+
+
+
+
+
+
+############################################ OTHER - START ############################################################
 def Admin(request):
     #load template in folder teamplates
     template =  loader.get_template('Master_page.html')
+    return HttpResponse(template.render())
+
+def Trangchu(request):
+    #load template in folder teamplates
+    template =  loader.get_template('trangchu.html')
     return HttpResponse(template.render())
 
 def Home(request):
@@ -39,10 +4629,10 @@ def Home(request):
     template =  loader.get_template('Home_Admin.html')
     return HttpResponse(template.render())
 
-def Page_data(request):
-    #load template in folder teamplates
-    data =  T001.objects.using('default').all()
-    return render(request, 'Page_data.html', {'data': data})
+# def Page_data(request):
+#     #load template in folder teamplates
+#     data =  T001.objects.using('default').all()
+#     return render(request, 'Page_data.html', {'data': data})
 
 #function Product
 def Product_data(request):
@@ -200,13 +4790,13 @@ def update_product(request):
 
 #function Login
 @csrf_exempt
-def login_system(request):
+def login_system_1(request):
     try:
         if request.method == 'POST':
             email = request.POST.get('email')
             password = request.POST.get('pass')
             remember = request.POST.get('checkbox')
-            user = Users.objects.filter(Mail = email, Password = password, User_Status = True)
+            user = Users.objects.filter(~Q(User_Type__lt= 2), Mail = email, Password = password, User_Status = True,) # 0 - administrator , 1 - Mod
             if(user):
                  # Lưu dữ liệu vào session
                  for user in user:
@@ -248,10 +4838,8 @@ def login_system(request):
             'message': f'Login Failed: {str(ex)}',
         })
 
-
-
 # Page Login account office 365
-def microsoft_login_token(request):
+def microsoft_login_token_1(request):
     code = request.GET.get('code')
 
     if code is None:
@@ -333,13 +4921,14 @@ def microsoft_login_token(request):
             Password    ='',
             FullName    =response_data.get('surname') + " " + response_data.get('givenName'),
             displayName =response_data.get('displayName'),
-            Birthday    = datetime.date(1990, 1, 1),  # Chưa có thông tin về ngày sinh trong Microsoft Graph API
+            Birthday    = response_data.get('birthday') if response_data.get('birthday') else datetime.date(1990, 1, 1),  # Chưa có thông tin về ngày sinh trong Microsoft Graph API
             Acc_Type    ='Microsoft',
             Address     ='',
             Jobtitle    =response_data.get('jobTitle') if response_data.get('jobTitle') else "",
             Phone       =response_data.get('mobilePhone') if response_data.get('jobTitle') else 0,
             Avatar      =photo_url,
-            User_Status =True  #User_Status là True khi mới đăng ký
+            User_Type   = 2, # 2 - EndUser
+            User_Status =True  #User_Status là True khi mới đăng ký        
         )
         user.save()
 
@@ -486,52 +5075,55 @@ def facebook_login(request):
 def Login_page(request):
     cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
-    cookie_facebook_data   = GetCookie(request, 'cookie_facebook_data')
-    cookie_google_data     = GetCookie(request, 'cookie_google_data')
+    # cookie_facebook_data   = GetCookie(request, 'cookie_facebook_data')
+    # cookie_google_data     = GetCookie(request, 'cookie_google_data')
     if(cookie_microsoft_data):
         response_data = json.loads(cookie_microsoft_data)
         # Lưu dữ liệu vào session
-        request.session['UserInfo'] = {
-            'ID_user': response_data.get('ID_user'),
-            'Mail': response_data.get('Mail'),
-            'FullName': response_data.get('FullName'),
-            'displayName': response_data.get('displayName'),
-            'Avatar': response_data.get('Avatar'),
-            'Photo': response_data.get('displayName')[0] + response_data.get('FullName')[0],
+        # a = request.session.get('User_Info').get('UserID')
+        if 'UserInfo' in request.session:
+            request.session['UserInfo'] = {
+                'ID_user': response_data.get('ID_user'),
+                'Mail': response_data.get('Mail'),
+                'FullName': response_data.get('FullName'),
+                'displayName': response_data.get('displayName'),
+                'Avatar': response_data.get('Avatar'),
+                'Photo': response_data.get('displayName')[0] + response_data.get('FullName')[0],
         }
         return redirect('/danh-sach-test/')
-    elif(cookie_google_data):
-        response_data = json.loads(cookie_google_data)
-        # Truy cập các giá trị trong response_data
-        request.session['UserInfo'] = {
-            'ID_user': response_data.get('ID_user'),
-            'Mail': response_data.get('Mail'),
-            'FullName': response_data.get('FullName'),
-            'displayName': response_data.get('displayName'),
-            'Avatar': response_data.get('Avatar'),
-            'Photo': response_data.get('displayName')[0] + response_data.get('FullName')[0],
-        }
-        return redirect('/danh-sach-test/')
-    elif(cookie_facebook_data):
-        response_data = json.loads(cookie_facebook_data)
-        request.session['UserInfo'] = {
-            'ID_user': response_data.get('ID_user'),
-            'Mail': response_data.get('Mail'),
-            'FullName': response_data.get('FullName'),
-            'displayName': response_data.get('displayName'),
-            'Avatar': response_data.get('Avatar'),
-            'Photo': response_data.get('displayName')[0] + response_data.get('FullName')[0],
-        }
-        return redirect('/danh-sach-test/')
+    # elif(cookie_google_data):
+    #     response_data = json.loads(cookie_google_data)
+    #     # Truy cập các giá trị trong response_data
+    #     request.session['UserInfo'] = {
+    #         'ID_user': response_data.get('ID_user'),
+    #         'Mail': response_data.get('Mail'),
+    #         'FullName': response_data.get('FullName'),
+    #         'displayName': response_data.get('displayName'),
+    #         'Avatar': response_data.get('Avatar'),
+    #         'Photo': response_data.get('displayName')[0] + response_data.get('FullName')[0],
+    #     }
+    #     return redirect('/danh-sach-test/')
+    # elif(cookie_facebook_data):
+    #     response_data = json.loads(cookie_facebook_data)
+    #     request.session['UserInfo'] = {
+    #         'ID_user': response_data.get('ID_user'),
+    #         'Mail': response_data.get('Mail'),
+    #         'FullName': response_data.get('FullName'),
+    #         'displayName': response_data.get('displayName'),
+    #         'Avatar': response_data.get('Avatar'),
+    #         'Photo': response_data.get('displayName')[0] + response_data.get('FullName')[0],
+    #     }
+    #     return redirect('/danh-sach-test/')
     elif(cookie_system_data):
         response_data = json.loads(cookie_system_data)
-        request.session['UserInfo'] = {
-            'ID_user': response_data.get('ID_user'),
-            'Mail': response_data.get('Mail'),
-            'FullName': response_data.get('FullName'),
-            'displayName': response_data.get('displayName'),
-            'Avatar': response_data.get('Avatar'),
-            'Photo': response_data.get('displayName')[0] + response_data.get('FullName')[0],
+        if 'UserInfo' in request.session:
+            request.session['UserInfo'] = {
+                'ID_user': response_data.get('ID_user'),
+                'Mail': response_data.get('Mail'),
+                'FullName': response_data.get('FullName'),
+                'displayName': response_data.get('displayName'),
+                'Avatar': response_data.get('Avatar'),
+                'Photo': response_data.get('displayName')[0] + response_data.get('FullName')[0],
         }
         return redirect('/danh-sach-test/')
     else:
@@ -539,38 +5131,6 @@ def Login_page(request):
         template =  loader.get_template('Login.html')
         return HttpResponse(template.render())
 #function Login
-
-
-#function check
-def logout(request):
-    # Xóa cookie 'user_microsoft'
-    response = HttpResponseRedirect('/login/')  # Chuyển hướng đến trang home (có thể thay đổi tên view tương ứng)
-    response.delete_cookie('cookie_microsoft_data')
-    response.delete_cookie('cookie_facebook_data')
-    response.delete_cookie('cookie_google_data')
-    request.session.flush()
-    return response
-
-def Check_IDUser():
-     User_data =  Users.objects.using('default').all()
-     if(User_data):
-         count = User_data.count()
-         if count > 0:
-             last_user = User_data[count - 1]
-             id = last_user.ID_user
-             UserID = 'U' + str(int(id[1:]) + 1).zfill(9)
-         else:
-             UserID = "U000000001"
-     else:
-            UserID = "U000000001"
-     return UserID
-
-def check_User_exit(email):
-    exit_IDuser = Users.objects.filter(Mail = email)
-    if(exit_IDuser):
-        return exit_IDuser
-    else:
-        return None
 
 # Hàm lấy thông tin người dùng từ Google API
 def get_user_info_google(access_token):
@@ -623,46 +5183,7 @@ def get_user_info_microsoft(access_token):
         # Xử lý lỗi khi không thể lấy thông tin người dùng từ Microsoft API
         pass
 
-
-
-#functon set session User
-def set_session_user(request, data_user):
-    request.session['UserInfo'] = {
-         'ID_user': data_user['ID_user'],
-         'Mail': data_user['Mail'],
-         'FullName': data_user['FullName'],
-         'displayName': data_user['displayName'],
-         'Avatar': data_user['Avatar'],
-         'Photo': data_user['displayName'][0] + data_user['FullName'][0],
-    }
-
-#functon set get delete cookies
-def SetCookie(response , name_data, cookie_data, url_redirect):
-    age =  90 * 24 * 60 * 60 #90 day, cookie lifes
-    response = HttpResponseRedirect(url_redirect)
-    response.set_cookie(name_data,cookie_data,age)
-    return response
-
-def GetCookie(request, name_data):
-    response = request.COOKIES.get(name_data)
-    return response
-
-def DeleteCookie(response, name_data):
-    response.delete_cookie(name_data)
-    return response
+############################################ OTHER - END ############################################################
 
 
 
-
-
-
-
-
-
-
-
-#test link
-def test(request):
-    #load template in folder teamplates
-    template =  loader.get_template('testlogin.html')
-    return HttpResponse(template.render())

@@ -1,6 +1,26 @@
+
+@media (min-width: 576px){
+  .modal-dialog-create-ticket {
+      width: 90% !important;
+      max-width: none !important;
+      /* margin: 30px auto; */
+  }
+  .modal-dialog-create-user {
+    width: 60% !important;
+    max-width: none !important;
+    /* margin: 30px auto; */
+  }
+}
+
+/* @media (min-width: 992px){
+
+} */
+
 .card-title-edit{
-    color: #2C46B7 !important;
+    /* color: #2C46B7 !important; */
+    color: #C82A2E !important;
     font-size: 30px !important;
+    font-weight: 100 !important;
 }
 .col-button{
     text-align: right;
@@ -11,15 +31,6 @@
   margin-right: 5px;
 }
 
-/* form modal */
-.title-modal{
-  font-size: 30px;
-  color: white;
-}
-.header-modal{
-  background-color: #1F3BB3;
-  margin: 2px;
-}
 
 /* #price-format{
     text-align: right;
@@ -119,4 +130,1224 @@
   background-size: cover !important; /* Hiển thị hình ảnh vừa khung */
   background-position: center center !important; /* Căn giữa hình ảnh */
   max-width: 100% !important;
+}
+
+.delivery-input-checkbox{
+  transform: scale(1.5);
+  margin-right: 5px;
+  margin-left: 2px;
+}
+.delivery-input-check{
+  margin-top: 10px;
+}
+
+/*  CSS customize table */
+.content-wrapper{
+  padding: 10px !important;
+}
+.content-wrapper-custom{
+  padding: 10px !important;
+}
+.breadcrumb-custom{
+  margin-left: 10px;
+}
+.tr-table{
+  /* background-color: #2C46B7; */
+  background-image: linear-gradient(135deg, #C82A2E, #F15A24);
+    color: white;
+}
+.tr-table th{
+  font-size: 16px !important;
+  padding-left: 0px !important;
+}
+
+.btn-status,.btn-type,.btn-assign{
+  font-size: 10px !important;
+  padding: 10px 20px 10px 20px !important;
+}
+
+/* textbox */
+#search-TicketID{
+  width: 125px;
+  text-align: left;
+}
+#search-TicketTitle{
+  width: 200px;
+  max-width: 300px;
+}
+#search-TicketDes{
+  width: 300px;
+  max-width: 400px;
+}
+.db-company,.db-group,.db-type,.db-status, .db-User_Type{
+  width: 100%;
+  height: 2rem;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+}
+.ticket-ID{
+  display: none;
+}
+
+
+/* #################### Model all ####################*/
+.modal-body-custom{
+  padding: 10px !important;
+}
+.header-modal{
+  padding: 10px !important;
+  background-image: linear-gradient(135deg, #C82A2E, #F15A24);
+}
+.header-modal label{
+  font-size: 15px;
+}
+.title-modal{
+  font-size: 25px;
+  color: white;
+}
+.title-modal i{
+  font-size: 25px !important;
+  margin-left: 10px !important;
+}
+.form-group label{
+  font-size: 15px !important;
+}
+.modal-footer{
+  border-top: 1px dashed #dee2e6;
+}
+.close i{
+  font-size: 20px !important;
+}
+.close:hover i{
+  color: white;
+}
+.modal-footer-custom{
+  padding: 10px 0 0 0 !important;
+}
+
+/* #################### Model all ####################*/
+
+
+
+/* #################### Model Ticket ####################*/
+/* Ticket Status */
+#status-button{
+  border-radius: 0;
+}
+#status-button i{
+  margin-right: 10px;
+}
+.file-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+#file-input {
+  display: none;
+}
+#file-input-upload {
+  display: none;
+}
+
+.attach-file {
+  background-color: #C82A2E;
+  color: white;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+#file-size-info {
+  margin-top: 10px;
+  font-size: 20px !important;
+}
+
+#upload-button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+#upload-button:disabled {
+  background-color: gray;
+  cursor: not-allowed;
+}
+.attach-custom{
+  border: 2px dashed #C82A2E;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  color: #C82A2E;
+  font-size: 15px;
+}
+#input_title{
+  height: 50px;
+    font-size: 30px;
+}
+.require-form{
+  color: #C82A2E;
+}
+.column-hidden{
+  display: none !important;
+}
+.attachs-file-item{
+  margin-bottom: 35px;
+  margin-top: 10px;
+}
+.attachment-download{
+  padding: 10px;
+  border: 2px dashed #C82A2E;
+  color: #C82A2E !important;
+  text-decoration: none;
+  font-size: 15px;
+}
+#down-ticket-button{
+  padding: 20px;
+    border-radius: 0;
+    margin-bottom: 20px;
+}
+.form-upload{
+  display: none;
+}
+.update-ticket,.delete-ticket,.view-ticket{
+  border-radius: 0 !important;
+    border: none !important;
+    padding: 10px !important;
+}
+.update-ticket i ,.delete-ticket i,.view-ticket i{
+  font-size: 20px !important;
+}
+.view-ticket a{
+  text-decoration: none;
+}
+.top-title{
+  display: flex;
+  justify-content: space-between;
+}
+.addTicket,.btn-remove-filter{
+  margin-bottom: 15px;
+    margin-top: -10px;
+    border-radius: 0 !important;
+}
+#assign-button, #status-button,#update-ticket-button{
+  border-radius: 0 !important;
+}
+.btn-success-cus,.btn-danger-cus{
+  margin-right: 10px;
+  border-radius: 0 !important;
+}
+.update-hidden{
+  display: none;
+}
+/* #################### Model Ticket ####################*/
+
+
+/* #################### Css Page Company ####################*/
+
+/* ########### Css List ###########*/
+.btn-company-status{
+  font-size: 10px !important;
+  padding: 10px 20px 10px 20px !important;
+}
+#search-CompanyID{
+  width: 80px;
+  max-width: 100px;
+}
+#search-CompanyDate{
+  max-width: 145px;
+}
+#search-CompanyTime{
+  max-width: 130px;
+}
+.addCompany,.btn-remove-filter{
+    margin-bottom: 15px;
+    margin-top: -10px;
+    border-radius: 0 !important;
+}
+#create-ticket-button,#create-company-button, #Update-company-button{
+  border-radius: 0 !important;
+  margin-bottom: 10px;
+}
+.update-company,.delete-company{
+  border-radius: 0 !important;
+    border: none !important;
+    padding: 10px !important;
+}
+.update-company i ,.delete-company i{
+  font-size: 20px !important;
+}
+/* ########### Css List ###########*/
+
+/* #################### Css Page Company ####################*/
+
+
+
+/* #################### Css Page Group ####################*/
+
+/* ########### Css List ###########*/
+.btn-group-status{
+  font-size: 10px !important;
+  padding: 10px 20px 10px 20px !important;
+}
+#search-groupID{
+  width: 80px;
+  max-width: 100px;
+}
+#search-groupDate{
+  max-width: 145px;
+}
+#search-groupTime{
+  max-width: 130px;
+}
+.addGroup,.btn-remove-filter{
+    margin-bottom: 15px;
+    margin-top: -10px;
+    border-radius: 0 !important;
+}
+#create-ticket-button,#create-group-button, #Update-group-button{
+  border-radius: 0 !important;
+  margin-bottom: 10px;
+}
+.update-group,.delete-group{
+  border-radius: 0 !important;
+    border: none !important;
+    padding: 10px !important;
+}
+.update-group i ,.delete-group i{
+  font-size: 20px !important;
+}
+/* ########### Css List ###########*/
+
+
+/* #################### Css Page Group ####################*/
+
+
+
+/* #################### Css Page Attachment ####################*/
+
+/* ########### Css List ###########*/
+.btn-attach-status{
+  font-size: 10px !important;
+  padding: 10px 20px 10px 20px !important;
+}
+#search-TicketID{
+  width: 130px;
+  max-width: 150px;
+}
+#search-AttachmentID{
+  width: 80px;
+  max-width: 100px;
+}
+#search-AttachmentDate{
+  max-width: 145px;
+}
+#search-AttachmentTime{
+  max-width: 130px;
+}
+.addattach,.btn-remove-filter{
+    margin-bottom: 15px;
+    margin-top: -10px;
+    border-radius: 0 !important;
+}
+#create-ticket-button,#create-attach-button, #Update-attach-button{
+  border-radius: 0 !important;
+  margin-bottom: 10px;
+}
+.update-attach,.delete-attach{
+  border-radius: 0 !important;
+    border: none !important;
+    padding: 10px !important;
+}
+.update-attach i ,.delete-attach i{
+  font-size: 20px !important;
+}
+/* ########### Css List ###########*/
+
+
+/* #################### Css Page Attachment ####################*/
+
+
+
+/* #################### Css Page Assign ####################*/
+
+/* ########### Css List ###########*/
+.btn-assign-status{
+  font-size: 10px !important;
+  padding: 10px 20px 10px 20px !important;
+}
+#search-ID_user{
+  width: 130px;
+  max-width: 150px;
+}
+#search-Assign_ID{
+  width: 80px;
+  max-width: 100px;
+}
+#search-Assign_User_Date, #search-username{
+  max-width: 180px;
+  max-width: 200px;
+}
+#search-Assign_User_Time{
+  max-width: 130px;
+}
+#search-TGroup_ID{
+  width: 100px;
+}
+.addAssign,.btn-remove-filter{
+    margin-bottom: 15px;
+    margin-top: -10px;
+    border-radius: 0 !important;
+}
+#create-assign-button, #Update-assign-button{
+  border-radius: 0 !important;
+  margin-bottom: 10px;
+}
+.update-assign,.delete-assign{
+  border-radius: 0 !important;
+    border: none !important;
+    padding: 10px !important;
+}
+.update-assign i ,.delete-assign i{
+  font-size: 20px !important;
+}
+/* ########### Css List ###########*/
+.form-group-custom{
+  margin-bottom: 0px !important;
+}
+.suggestion {
+  padding: 5px;
+  cursor: pointer;
+  background: #EEEEEE;
+}
+
+.suggestion:hover {
+  background-color: #e6e6e6;
+}
+
+.suggestion.selected {
+  background-color: #CCCCCC;
+  /* background-color: #f2f2f2; */
+  font-weight: bold;
+  color: #F15A24;
+}
+.modal-content-custom{
+  width: 110% !important;
+}
+.container-item {
+  display: flex;
+  flex-wrap: wrap; /* Cho phép các phần tử xuống dòng */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  height: auto;
+  /* padding: 10px; */
+}
+#selectedItemsContainer{
+  width: auto;
+    display: flex;
+    flex-wrap: wrap;
+}
+#selectedItemsContainer .selected-item{
+  border: 0px !important;
+    background-image: linear-gradient(135deg, #C82A2E, #F15A24) !important;
+    color: white !important;
+    padding: 8px;
+    margin: 5px;
+}
+#selectedItemsContainer .delete-button{
+  margin-left: 5px !important;
+  border: 0px !important;
+  background: transparent !important;
+  color: white !important;
+}
+#input_assign_name{
+  width: auto;
+  border: 0px !important;
+}
+.selected-item {
+  margin-right: 10px;
+  overflow-wrap: break-word; /* Ngắt từ khi vượt quá chiều rộng */
+  white-space: normal; /* Cho phép xuống dòng */
+}
+
+/* #################### Css Page Assign ####################*/
+
+
+/* #################### Css Page User ####################*/
+
+/* ########### Css List ###########*/
+#CreateUserModal input, #CreateUserModal select,
+#UpdateUserModal input, #UpdateUserModal select{
+  border-radius: 0px;
+  height: 50px;
+  font-size: 18px;
+}
+.btn-user-status, .btn-user-role{
+  font-size: 10px !important;
+  padding: 10px 20px 10px 20px !important;
+}
+#search-ID_User{
+  width: 130px !important;
+  max-width: 150px;
+}
+#search-FullName{
+  width: 150px !important;
+  max-width: 200px;
+}
+#search-Birthday,#search-Date_Create{
+  max-width: 180px;
+  max-width: 200px;
+}
+#search-Time_Create{
+  max-width: 130px;
+}
+.addUser,.btn-remove-filter,.showUser{
+    margin-bottom: 15px;
+    margin-top: -10px;
+    border-radius: 0 !important;
+}
+.db-rows{
+  padding: 11px;
+    vertical-align: middle;
+    margin-bottom: 22px;
+}
+#create-user-button, #Update-user-button{
+  border-radius: 0 !important;
+  margin-bottom: 10px;
+}
+.update-user,.delete-user{
+  border-radius: 0 !important;
+    border: none !important;
+    padding: 10px !important;
+}
+.update-user i ,.delete-user i{
+  font-size: 20px !important;
+}
+/* ########### Css List ###########*/
+.form-group-custom{
+  margin-bottom: 0px !important;
+}
+#input_user_name{
+  width: auto;
+  border: 0px !important;
+}
+
+.avatar-title-list{
+  width: 40px;
+    height: 40px;
+    position: inherit;
+    left: 40%;
+    border: 1px solid white;
+    background-color: #1F3BB3;
+    text-align: center;
+    color: white;
+    font-weight: bolder;
+    font-size: 20px;
+    border-radius: 100%;
+    padding-top: 8px;
+}
+.hidden-column{
+  display: none;
+  /* transition: opacity 0.3s ease; */
+}
+.show-column{
+  display: table-cell;
+}
+/* #################### Css Page User ####################*/
+
+/* #################### Css Page view Ticket ####################*/
+.status_view{
+  padding: 10px 20px !important;
+    border-radius: 2px !important;
+    max-height: 40px !important;
+    margin-right: 5px;
+}
+.inform-ticket{
+  /* border-bottom: 1.6px dashed #ccc; */
+    padding: 10px 20px !important;
+    margin: 0 15px 0 0px !important;
+    width: 100% !important;
+    background-image: linear-gradient(135deg, #C82A2E, #F15A24);
+    color: white;
+}
+.content-ticket{
+  margin: 15px 10px;
+}
+.content-ticket img{
+    max-width: 98% !important;
+}
+.container-comment-content img{
+    max-width: 98% !important;
+}
+.inform-ticket p{
+  font-size: 16px;
+  font-weight: bold;
+}
+.assign-ticket{
+  display: flex;
+  justify-content: space-between;
+}
+.assign-ticket p{
+  font-size: 16px;
+  font-weight: 300;
+}
+.top-title-right{
+  display: flex;
+}
+.top-title-right-ava{
+  margin-right: 25px;
+  margin-bottom: 15px;
+}
+.avatar-title-view {
+  width: 60px;
+  height: 60px;
+  position: inherit;
+  left: 40%;
+  border: 1px solid white;
+  background-color: #1F3BB3;
+  text-align: center;
+  color: white;
+  font-weight: bolder;
+  font-size: 33px;
+  border-radius: 100%;
+  padding-top: 5px;
+}
+.top-title-right p{
+  font-size: 12px;
+    font-weight: 600;
+    margin: 0;
+    margin-top: -2px;
+}
+.top-title-right-info{
+  margin-top: 4px;
+}
+.top-title-right-info .font-company{
+  font-size: 10px !important;
+}
+.img-xs-view{
+  width: 60px;
+  height: 60px;
+}
+.content-ticket-p{
+  font-size: 25px;
+    font-weight: 200;
+}
+.hr-content{
+  border: 1px dashed #fff;
+  margin-right: 25px;
+}
+
+.container-comment{
+  border: 1px solid #ccc;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    margin-bottom: 25px;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    /* box-shadow: 0 0 10px 5px rgba(0, 0, 0, 0.5); */
+}
+.container-comment-info{
+  display: flex;
+  background-image: linear-gradient(135deg, #C82A2E, #F15A24);
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  padding: 5px 10px;
+}
+.container-comment-content{
+  min-height: 150px;
+  padding: 5px 10px;
+}
+.container-comment-footer{
+  text-align: right;
+}
+.avatar-title-comment {
+  width: 45px;
+    height: 45px;
+    position: inherit;
+    left: 40%;
+    border: 1px solid white;
+    text-align: center;
+    color: #1F3BB3;
+    font-weight: bolder;
+    font-size: 22px;
+    border-radius: 100%;
+    padding-top: 5px;
+    background: white;
+}
+.container-comment-info-ava{
+  margin-right: 25px;
+  margin-left: -15px;
+}
+.container-comment-info-user p{
+  color: white;
+    margin-bottom: 0;
+    font-size: 15px;
+    font-weight: 300;
+}
+.comment-ID{
+  margin: 0;
+    font-size: 18px;
+    font-weight: 300;
+}
+.hr-comment{
+  margin: 5px 0 5px 0;
+  border: 1px dashed #dcdcdc;
+}
+.btn-MD{
+  margin-top: 15px;
+}
+.delete-comment,.update-comment,.quote-comment {
+    border-radius: 0 !important;
+    border: none !important;
+    padding: 10px !important;
+    margin-left: -10px;
+}
+.delete-comment i,.update-comment i, .quote-comment i{
+  font-size: 20px !important;
+}
+.content-ticket-title{
+  display: flex;
+  justify-content: space-between;
+}
+.update-ticket-detail, .update-ticket-complete,.update-ticket-status,.update-ticket-cancel,.quote-comment_top{
+  border-radius: 0 !important;
+  border: none !important;
+  padding: 10px !important;
+  margin-left: -10px;
+  margin-top: -10px;
+  margin-right: 10px;
+}
+.update-ticket-detail i, .update-ticket-complete i,.update-ticket-status i,.update-ticket-cancel i,.quote-comment_top i{
+font-size: 20px !important;
+margin-left: -5px;
+}
+#image-gallery{
+  margin-bottom: 50px;
+}
+#image-gallery p{
+  font-size: 16px;
+  font-weight: 700;
+}
+#upload-file-button, #down-files-button{
+   padding: 20px;
+    border-radius: 0;
+    margin: 0;
+}
+.top-title-left{
+  display: flex;
+}
+#create-comment-button{
+  border-radius: 0;
+}
+/* #################### Css Page view Ticket ####################*/
+
+/* #################### Css Page Comment ####################*/
+#search-CommentID{
+  width: 100px !important;
+  max-width: 120px;
+}
+#search-UserID{
+  width: 130px !important;
+  max-width: 150px;
+}
+#search-Username{
+  width: 150px !important;
+  max-width: 200px;
+}
+#search-CommentDate{
+  width: 140px;
+  max-width: 200px;
+}
+#search-CommentTime{
+  max-width: 140px;
+}
+.btn-comment-status{
+  font-size: 10px !important;
+  padding: 10px 20px 10px 20px !important;
+}
+
+.commentDesc {
+  max-width: 200px !important;
+  overflow: hidden !important;
+  transition: max-width 0.5s ease;
+}
+.commentToggle {
+  max-width: 1000px !important;
+  transition: max-width 0.5s ease;
+}
+#desc-toggle{
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+#desc-toggle i {
+ color: white;
+}
+.commentDesc img,.commentToggle img {
+  width: 500px !important;
+  height: auto !important;
+  border-radius: 0 !important;
+}
+/* #################### Css Page Comment ####################*/
+
+/* #################### Css Page Group Role ####################*/
+.addGroupRole,.btn-remove-filter{
+  margin-bottom: 15px;
+  margin-top: -10px;
+  border-radius: 0 !important;
+}
+.btn-grouprole-status{
+  font-size: 10px !important;
+  padding: 10px 20px 10px 20px !important;
+}
+#search-GroupRoleID{
+  width: 100px !important;
+  max-width: 120px;
+}
+#search-GroupRoleCreate{
+  width: 130px !important;
+  max-width: 150px;
+}
+#search-GroupRoleName{
+  width: 150px !important;
+  max-width: 200px;
+}
+#search-GroupRoleDate{
+  width: 140px;
+  max-width: 200px;
+}
+#search-GroupRoleTime{
+  max-width: 140px;
+}
+/* .db-status{
+  font-size: 10px !important;
+  padding: 10px 20px 10px 20px !important;
+} */
+
+/* #################### Css Page Group Role ####################*/
+
+/* #################### Css Page Role ####################*/
+.addRole,.btn-remove-filter, .addRoleUser{
+  margin-bottom: 15px;
+  margin-top: -10px;
+  border-radius: 0 !important;
+}
+.btn-role-status{
+  font-size: 10px !important;
+  padding: 10px 20px 10px 20px !important;
+}
+#search-RoleID{
+  width: 100px !important;
+  max-width: 120px;
+}
+#search-RoleCreate{
+  width: 130px !important;
+  max-width: 150px;
+}
+/* #search-RoleName{
+  width: 150px !important;
+  max-width: 200px;
+} */
+#search-RoleDate{
+  width: 140px;
+  max-width: 200px;
+}
+#search-RoleTime{
+  max-width: 140px;
+}
+/* #################### Css Page Role ####################*/
+
+/* #################### Css Page Authorize ####################*/
+.auth-custom-user{
+  padding: 0 !important;
+}
+.auth-custom-user input{
+  margin-top: 10px !important;
+  margin-bottom: 10px !important;
+}
+.view-group{
+  border-radius: 0 !important;
+    border: none !important;
+    padding: 10px !important;
+}
+.role-item-group{
+  display: flex;
+  background-image: linear-gradient(135deg, #C82A2E, #F15A24);
+  color: white;
+}
+.role-item-group p{
+  font-size: 20px;
+  padding-top: 5px;
+  font-weight: 200;
+}
+.role-item-group #checkbox-group{
+  margin: 0 10px 0 10px;
+}
+.role-item-data{
+  padding-left: 30px;
+}
+.role-single-item-data{
+  display: flex;
+}
+.role-single-item-data p{
+  font-size: 14px;
+  padding-top: 5px;
+  font-weight: 600;
+}
+.role-single-item-data #checkbox-role{
+  margin-right: 10px;
+}
+.role-item-data table{
+  width: 100% !important;
+}
+.row-custom{
+  width: 100% !important;
+}
+.func-date{
+  display: flex;
+}
+#input-from, #input-to{
+  border-radius: 0;
+    height: 50px;
+    margin-bottom: 10px;
+    margin-top: -10px;
+    margin-right: 5px;
+}
+/* #################### Css Page Authorize ####################*/
+
+/* #################### Css Dashboard Comment ####################*/
+.card-custom-primary{
+  border-left: 0.25rem solid #4e73df!important;
+  height: 111px;
+  border-radius: 5px !important;
+}
+.title_year{
+  color: #4e73df!important;
+  font-size: 18px;
+  font-weight: 200;
+}
+.card-custom-success{
+  border-left: 0.25rem solid #1cc88a!important;
+  height: 111px;
+  border-radius: 5px !important;
+}
+.title_month{
+  color: #1cc88a!important;
+  font-size: 18px;
+  font-weight: 200;
+}
+.card-custom-info{
+  border-left: 0.25rem solid #36b9cc!important;
+  height: 111px;
+  border-radius: 5px !important;
+}
+.title_week{
+  color: #36b9cc!important;
+  font-size: 18px;
+  font-weight: 200;
+}
+.card-custom-warning{
+  border-left: 0.25rem solid #f6c23e!important;
+  height: 111px;
+  border-radius: 5px !important;
+}
+.title_day{
+  color: #f6c23e!important;
+  font-size: 18px;
+  font-weight: 200;
+}
+
+.colum-chart-month{
+  height: 400px !important;
+  max-height: 600px;
+}
+#chart_div_month_stautus{
+  width: 1200px !important;
+  max-width: 1400px !important;
+}
+#chart_user_month_stautu{
+  width: 1200px !important;
+  max-width: 1400px !important;
+}
+.colum-chart-status{
+  height: 450px !important;
+  max-height: 600px;
+}
+.avatar-title-dashboard{
+  width: 40px;
+    height: 40px;
+    position: inherit;
+    left: 40%;
+    border: 1px solid white;
+    background-color: #1F3BB3;
+    text-align: center;
+    color: white;
+    font-weight: bolder;
+    font-size: 20px;
+    border-radius: 100%;
+    padding-top: 5px;
+}
+.year_user_per-item{
+  margin-top: 15px !important;
+}
+.title_year-custom{
+  display: flex;
+}
+.icon-custom-up{
+  font-weight: bolder;
+  margin-left: 10px;
+  color: #1cc88a;
+  font-size: 15px;
+}
+.icon-custom-up i {
+  color: #1cc88a;
+  font-size: 22px;
+  vertical-align: middle;
+}
+.icon-custom-down{
+  font-weight: bolder;
+  margin-left: 10px;
+  color: #f73122;
+  font-size: 15px;
+}
+.icon-custom-down i{
+  color: #f73122;
+  font-size: 22px;
+  vertical-align: middle;
+}
+
+.content_year-custom{
+  display: flex;
+}
+.content_year-custom i{
+  font-size: 30px;
+  vertical-align: middle;
+  margin-right: 10px;
+  color: #ccc;
+}
+.content_year-custom .icon-up{
+  /* color: #1cc88a; */
+  color: #f73122;
+  margin-left: 15px;
+}
+.content_year-custom .icon-down{
+  color: #1cc88a;
+  margin-left: 15px;
+}
+.content_year-custom .icon-user-up{
+  color: #1cc88a;
+  margin-left: 15px;
+}
+.content_year-custom .icon-user-down{
+  color: #f73122;
+  margin-left: 15px;
+}
+.content_year-custom h3{
+  font-size: 30px !important;
+  font-weight: 100;
+  margin-right: 10px;
+}
+.disable-report{
+  display: none !important;
+}
+/* #################### Css Dashboard Comment ####################*/
+
+.quote {
+  border-left: 2px solid #ccc;
+  padding-left: 10px;
+}
+
+.quote p {
+  font-style: italic;
+  margin-bottom: 5px;
+}
+
+.quote cite {
+  font-size: 12px;
+  color: #999;
+}
+
+/* Phân trang */
+/* CSS cho phần phân trang */
+#pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+#pagination-container .page-item {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.pagination-button {
+  color: #333;
+  border: 1px solid #ccc;
+    background-color: #fff;
+    padding: 10px 15px;
+    border-radius: 5px;
+    margin-right: 5px;
+    transition: all 0.3s ease-in-out;
+  margin-right: 10px;
+  margin-bottom: 22px;
+}
+
+.pagination-button:hover {
+  background-color: #2C46B7;
+  color: #fff;
+}
+
+#pagination-container .active {
+  background-color: #2C46B7;
+  color: #fff;
+}
+
+
+.disable-button{
+  opacity: 0.5;
+  pointer-events: none;
+}
+.admin-button{
+  pointer-events: none;
+}
+.hide-option {
+  display: none;
+}
+.theme-setting-wrapper{
+  display: none !important;
+}
+.button-fix{
+  /* position: fixed;
+  top: 107px; */
+  z-index: 9999999;
+}
+.comment-title-hidden{
+  display: none;
+}
+
+
+/* --------------------------------- */
+@supports (-webkit-appearance: none) or (-moz-appearance: none) {
+  .checkbox-wrapper-14 input[type=checkbox] {
+    --active: #275EFE;
+    --active-inner: #fff;
+    --focus: 2px rgba(39, 94, 254, .3);
+    --border: #BBC1E1;
+    --border-hover: #275EFE;
+    --background: #fff;
+    --disabled: #F6F8FF;
+    --disabled-inner: #E1E6F9;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    height: 21px;
+    outline: none;
+    display: inline-block;
+    vertical-align: top;
+    position: relative;
+    margin: 0;
+    cursor: pointer;
+    border: 1px solid var(--bc, var(--border));
+    background: var(--b, var(--background));
+    transition: background 0.3s, border-color 0.3s, box-shadow 0.2s;
+    margin: 5px;
+  }
+  .checkbox-wrapper-14 input[type=checkbox]:after {
+    content: "";
+    display: block;
+    left: 0;
+    top: 0;
+    position: absolute;
+    transition: transform var(--d-t, 0.3s) var(--d-t-e, ease), opacity var(--d-o, 0.2s);
+    
+  }
+  .checkbox-wrapper-14 label{
+    font-size: 20px !important;
+  }
+  .checkbox-wrapper-14 input[type=checkbox]:checked {
+    --b: var(--active);
+    --bc: var(--active);
+    --d-o: .3s;
+    --d-t: .6s;
+    --d-t-e: cubic-bezier(.2, .85, .32, 1.2);
+  }
+  .checkbox-wrapper-14 input[type=checkbox]:disabled {
+    --b: var(--disabled);
+    cursor: not-allowed;
+    opacity: 0.9;
+  }
+  .checkbox-wrapper-14 input[type=checkbox]:disabled:checked {
+    --b: var(--disabled-inner);
+    --bc: var(--border);
+  }
+  .checkbox-wrapper-14 input[type=checkbox]:disabled + label {
+    cursor: not-allowed;
+  }
+  .checkbox-wrapper-14 input[type=checkbox]:hover:not(:checked):not(:disabled) {
+    --bc: var(--border-hover);
+  }
+  .checkbox-wrapper-14 input[type=checkbox]:focus {
+    box-shadow: 0 0 0 var(--focus);
+  }
+  .checkbox-wrapper-14 input[type=checkbox]:not(.switch) {
+    width: 21px;
+  }
+  .checkbox-wrapper-14 input[type=checkbox]:not(.switch):after {
+    opacity: var(--o, 0);
+  }
+  .checkbox-wrapper-14 input[type=checkbox]:not(.switch):checked {
+    --o: 1;
+  }
+  .checkbox-wrapper-14 input[type=checkbox] + label {
+    display: inline-block;
+    vertical-align: middle;
+    cursor: pointer;
+    margin-left: 4px;
+  }
+
+  .checkbox-wrapper-14 input[type=checkbox]:not(.switch) {
+    border-radius: 7px;
+  }
+  .checkbox-wrapper-14 input[type=checkbox]:not(.switch):after {
+    width: 5px;
+    height: 9px;
+    border: 2px solid var(--active-inner);
+    border-top: 0;
+    border-left: 0;
+    left: 7px;
+    top: 4px;
+    transform: rotate(var(--r, 20deg));
+  }
+  .checkbox-wrapper-14 input[type=checkbox]:not(.switch):checked {
+    --r: 43deg;
+  }
+  .checkbox-wrapper-14 input[type=checkbox].switch {
+    width: 38px;
+    border-radius: 11px;
+  }
+  .checkbox-wrapper-14 input[type=checkbox].switch:after {
+    left: 2px;
+    top: 2px;
+    border-radius: 50%;
+    width: 17px;
+    height: 17px;
+    background: var(--ab, var(--border));
+    transform: translateX(var(--x, 0));
+  }
+  .checkbox-wrapper-14 input[type=checkbox].switch:checked {
+    --ab: var(--active-inner);
+    --x: 17px;
+  }
+  .checkbox-wrapper-14 input[type=checkbox].switch:disabled:not(:checked):after {
+    opacity: 0.6;
+  }
+}
+
+.checkbox-wrapper-14 * {
+  box-sizing: inherit;
+}
+.checkbox-wrapper-14 *:before,
+.checkbox-wrapper-14 *:after {
+  box-sizing: inherit;
 }
