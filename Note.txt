@@ -26,4 +26,5 @@ https://stackoverflow.com/questions/54824864/django-python-sql-server-pyodbc-isn
 # pip uninstall django-pyodbc-azure 
 # pip uninstall django-mssql-backend 
 # pip install mssql-django
+new
 
