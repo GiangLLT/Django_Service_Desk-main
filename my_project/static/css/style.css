@@ -1226,7 +1226,10 @@ margin-left: -5px;
 .comment-title-hidden{
   display: none;
 }
-
+.comment_list_unread{
+  max-height: 300px;
+  overflow-y: scroll;
+}
 
 /* --------------------------------- */
 @supports (-webkit-appearance: none) or (-moz-appearance: none) {

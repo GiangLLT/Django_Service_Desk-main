@@ -384,13 +384,10 @@ $('#login-system').click(function(event) {
       },
       success: function(response) {
         if (response.success) {
-          window.location.href = "/danh-sach-test/";
-        
-          // Swal.fire(
-          //   'success',
-          //   'Login Sucess',
-          //   'success'
-          // )
+          if(response.remember){
+            setCookie(response.cookie_name, response.cookie_data, response.cookie_day);
+          }
+          window.location.href = "/dashboard/";
         }
         else{
           Swal.fire({
@@ -412,6 +409,13 @@ $('#login-system').click(function(event) {
   });
   }
 });
+
+function setCookie(name, value, days) {
+  const expires = new Date();
+  expires.setDate(expires.getDate() + days);
+  const cookieValue = escape(value) + (days ? `; expires=${expires.toUTCString()}` : '');
+  document.cookie = `${name}=${cookieValue}`;
+}
 
 function validateEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -768,9 +772,109 @@ function add_menu(data){
   }
   menu_custom.innerHTML = html_data;
 }
+
+$(document).on('click', '.btn-read-comment', function() {
+  read_all_comment();
+});
+function read_all_comment(){
+  var list = document.querySelectorAll('.unread-list[data-unread]');
+  if(list.length > 0){      
+    var list_unread = [];
+    list.forEach(function(item){
+      var id = item.getAttribute('data-unread');;
+      var data_unread = {'ReadCommentID': id};
+      list_unread.push(JSON.stringify(data_unread));
+    });
+    unread_all_comment(list_unread, list);
+  } 
+}
+function unread_all_comment(data, list){
+  $.ajax({
+    url: '/cap-nhat-all-comment-unread/',
+    dataType: 'json',
+    method: 'POST',
+      data: {
+        'data[]': data,
+      },
+    success: function(response) {
+        if(response.success){
+          var count = document.querySelector('.comment_count');
+          count.textContent = 'Bạn Có 0 Comment Chưa Đọc';         
+          list.forEach(function(item){
+            item.remove();
+          });
+        }
+        else{
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo',
+            text: response.message,
+          });
+        }
+    },
+    error: function(rs, e) {
+        alert('Oops! something went wrong..111');
+    }
+  });
+}
+
+function load_unread_comment(){
+  $.ajax({
+    url: '/load-read-comment/',
+    type: 'POST',
+    success: function(response) {
+      if(response.success){
+        if(response.data){
+          var icon_count = document.querySelector('.count-unread');
+          if(response.data){
+            add_comment(response.Count, response.data);
+            icon_count.classList.remove('hide-option');
+          }
+          else{
+            icon_count.classList.add('hide-option');
+          }
+        }
+      }
+      else{
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: response.message,
+        });
+      }
+    },
+    error: function(xhr, status, error) {
+      // Xử lý lỗi
+      Swal.fire({
+        icon: 'error',
+        title: 'Thông Báo Lỗi',
+        text: response.message,
+      });
+    }
+  });
+}
+function add_comment(count_num, data){
+  var count = document.querySelector('.comment_count');
+  count.textContent = 'Bạn Có ' + count_num + ' Comment Chưa Đọc';
+  for(i=0 ; i < data.length; i++){
+    $('.comment_list_unread').append('<a data-unread="'+data[i].ReadComment_ID+'" class="dropdown-item preview-item unread-list" href="/cap-nhat-comment-unread/'+data[i].TicketID+'/'+data[i].Ticket_Slug+'/'+data[i].ReadComment_ID+'">'+
+    '<div class="preview-thumbnail">'+
+    '<img src="/static/Asset/img/ava.png" alt="image" class="img-sm profile-pic">'+
+    '</div>'+
+    '<div class="preview-item-content flex-grow py-2">'+
+    '<p class="preview-subject ellipsis font-weight-medium text-dark">'+data[i].TicketID +' - '+ data[i].Ticket_Title+'</p>'+
+    '<p class="fw-light small-text mb-0">'+data[i].Comment_UserName+' đã bình luận</p>'+
+    '<p class="fw-light small-text mb-0">'+data[i].Comment_Date+' - '+data[i].Comment_Time+'</p>'+
+    '</div>'+
+    '</a>');
+  }; 
+}
+
+
 // Gọi hàm myFunction khi trang vừa tải xong
 document.addEventListener('DOMContentLoaded', function() {
   Load_Menu_Master();
+  load_unread_comment()
 });
 
 //########### Menu Function ########### 
@@ -6095,9 +6199,9 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
         method: 'POST',
         success: function(response) {
           if (response.success) {
-            var buttonEdit = document.querySelectorAll('.update-group');
-            var buttonDel = document.querySelectorAll('.delete-group');
-            var buttonSta = document.querySelectorAll('.btn-role-status');
+            var buttonEdit = document.querySelectorAll('.update-comment');
+            var buttonDel = document.querySelectorAll('.delete-comment');
+            var buttonSta = document.querySelectorAll('.btn-comment-status');
             if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
               buttonEdit.forEach(function(edit){
                 edit.classList.remove('disable-button');
@@ -6116,13 +6220,13 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
             }
             //Role Delete User
             if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
-              buttonDel.forEach(function(edit){
-                edit.classList.remove('disable-button');
+              buttonDel.forEach(function(del){
+                del.classList.remove('disable-button');
               });
             }
             else{
               buttonDel.forEach(function(edit){
-                edit.classList.add('disable-button');
+                del.classList.add('disable-button');
               }); 
             }
           } else {

@@ -132,6 +132,14 @@ class Comment(models.Model):
     class Meta:
         db_table = 'Comment'
 
+class ReadComment(models.Model):
+    ReadComment_ID = models.AutoField(primary_key=True)
+    Comment_ID = models.ForeignKey(Comment, on_delete=models.CASCADE, db_column='Comment_ID')
+    ID_user = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='ID_user')
+    ReadComment_Isread = models.BooleanField()
+    class Meta:
+        db_table = 'ReadComment'
+
 class Assign_User(models.Model):
     Assign_ID = models.AutoField(primary_key=True)
     ID_user = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='ID_user')

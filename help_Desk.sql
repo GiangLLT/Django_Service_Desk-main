@@ -142,6 +142,19 @@ VALUES ('1000000023', 'U000000001',N'Đã Hoàn Thành, Check lại nhé.', '' ,
 INSERT INTO Comment (Ticket_ID, ID_user , Comment_Desc, Comment_level,  Comment_User_Name,Comment_Date,Comment_Time, Comment_Status)
 VALUES ('1000000023', 'U000000001',N'Đã Hoàn Thành, Check lại nhé 1.', '' , N'Lê Lộc Trường Giang', '2023-05-29','14:00:00' , 0)
 
+CREATE TABLE ReadComment (
+    ReadComment_ID		int PRIMARY KEY IDENTITY(1,1) NOT NULL ,
+    Comment_ID	int,
+	ID_User		nvarchar(20),
+	ReadComment_Isread		bit,
+	FOREIGN KEY (Comment_ID) REFERENCES Comment(Comment_ID),
+	FOREIGN KEY (ID_User) REFERENCES User_System(ID_User),
+);
+GO
+INSERT INTO ReadComment (Comment_ID,ReadComment_Isread)
+VALUES ('1058', 0)
+
+
 CREATE TABLE Assign_User (
     Assign_ID		int PRIMARY KEY IDENTITY(1,1) NOT NULL ,
 	ID_User			nvarchar(20),

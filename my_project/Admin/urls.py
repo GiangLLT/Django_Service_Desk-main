@@ -23,6 +23,8 @@ urlpatterns = [
 
     #------------- Ticket Detail-----------------------
     path('chi-tiet-yeu-cau/<int:ticketID>/<str:title>/', views.load_Ticket_Detail_Json, name='load_Ticket_Detail_Json'),                                 #Ticket Page - Trang hiển thị yêu cầu
+    path('cap-nhat-comment-unread/<int:ticketID>/<str:title>/<str:ReadCommentID>', views.update_unread, name='update_unread'),                                 #Ticket Page - Trang hiển thị yêu cầu
+    path('cap-nhat-all-comment-unread/', views.update_unread_all, name='update_unread_all'),                                 #Ticket Page - Trang hiển thị yêu cầu
     path('tao-binh-luan/', views.Create_Comment, name='Create_Comment'),                                 #Ticket data - hiển thị danh sách yêu cầu dạng json
     path('get-file-name/', views.Get_File_Name, name='Get_File_Name'),                                   #Ticket Update - chỉnh sửa yêu cầu
     path('cap-nhat-tinh-trang/', views.Update_Status_Ticket, name='Update_Status_Ticket'),               #Ticket Update - chỉnh sửa yêu cầu
@@ -136,13 +138,16 @@ urlpatterns = [
     path('role-authorize/', views.check_authorize, name='check_authorize'),
     #------------- Authorize Role -------------------------
 
-    path('send-mail/', views.send_email, name='send_email'),
+    
 
     #------------- Function-----------------------
     path('logout/', views.logout, name='logout'),                                                       #Logot Page - đăng xuất
     path('setcookie/', views.SetCookie),                                                                #Function set cookie - lưu cookie
     path('getcookie/', views.GetCookie),                                                                #Function get cookie - lấy cookie                   
     path('deletecookie/', views.DeleteCookie),                                                          #Function delete cookie - xóa cookie
+
+    path('send-mail/', views.send_email, name='send_email'),
+    path('load-read-comment/', views.read_comment, name='read_comment'),
     #------------- Ticket-----------------------
 
     #------------- Login------------------------

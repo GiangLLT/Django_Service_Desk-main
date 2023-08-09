@@ -103,7 +103,7 @@
           </li>
         </ul>
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item dropdown d-none d-lg-block">
+          {% comment %} <li class="nav-item dropdown d-none d-lg-block">
             <a class="nav-link dropdown-bordered dropdown-toggle dropdown-toggle-split" id="messageDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false"> Select Category </a>
             <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list pb-0" aria-labelledby="messageDropdown">
               <a class="dropdown-item py-3" >
@@ -135,7 +135,7 @@
                 </div>
               </a>
             </div>
-          </li>
+          </li> {% endcomment %}
           <li class="nav-item d-none d-lg-block">
             <div id="datepicker-popup" class="input-group date datepicker navbar-date-picker">
               <span class="input-group-addon input-group-prepend border-right">
@@ -191,15 +191,16 @@
           <li class="nav-item dropdown"> 
             <a class="nav-link count-indicator" id="countDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
               <i class="icon-bell"></i>
-              <span class="count"></span>
+              <span class="count hide-option count-unread"></span>
             </a>
-            <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list pb-0" aria-labelledby="countDropdown">
+            <div class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list pb-0 comment_list_unread" aria-labelledby="countDropdown">
               <a class="dropdown-item py-3">
-                <p class="mb-0 font-weight-medium float-left">You have 7 unread mails </p>
-                <span class="badge badge-pill badge-primary float-right">View all</span>
+                <p class="mb-0 font-weight-medium float-left comment_count">Bạn có 0 Comment Chưa Đọc  </p>
+                {% comment %} <span class="badge badge-pill badge-primary float-right">Read all</span> {% endcomment %}
+                <button class="badge badge-pill badge-primary float-right btn-read-comment">Read all</button>
               </a>
               <div class="dropdown-divider"></div>
-              <a class="dropdown-item preview-item">
+              {% comment %} <a class="dropdown-item preview-item">
                 <div class="preview-thumbnail">
                   <img src="{% static 'Asset/img/ava.png' %}" alt="image" class="img-sm profile-pic">
                 </div>
@@ -225,7 +226,7 @@
                   <p class="preview-subject ellipsis font-weight-medium text-dark">Travis Jenkins </p>
                   <p class="fw-light small-text mb-0"> The meeting is cancelled </p>
                 </div>
-              </a>
+              </a> {% endcomment %}
             </div>
           </li>
           <li class="nav-item dropdown d-none d-lg-block user-dropdown">

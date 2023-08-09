@@ -8,7 +8,7 @@ from oauth2_provider.views.generic import ProtectedResourceView
 
 from django.core.paginator import Paginator
 from django.db.models import Count
-from .models import Product, Category, Users, Ticket, Company, TGroup, Comment, Attachment, TImage, Assign_User, Role_Group, Role_Single, Authorization_User, Menu
+from .models import Product, Category, Users, Ticket, Company, TGroup, Comment, Attachment, TImage, Assign_User, Role_Group, Role_Single, Authorization_User, Menu, ReadComment
 
 from django.shortcuts import render, redirect
 from django.conf import settings
@@ -115,18 +115,25 @@ def login_system(request):
                 # Lưu chuỗi JSON vào cookie
                 # Lưu access_token vào cookie (lưu ý: cần kiểm tra tính bảo mật của cookie)
                 if(remember == 'true'):
-                    url_redirect = '/danh-sach-yeu-cau/'
-                    response = HttpResponse('cookie success')
-                    response = SetCookie(response , 'cookie_system_data', session_data, url_redirect)
-                    response = DeleteCookie(response , 'cookie_microsoft_data')
-                    response = DeleteCookie(response , 'cookie_google_data')
-                    response = DeleteCookie(response , 'cookie_facebook_data')
-                    return response    
+                    # url_redirect = '/dashboard/'
+                    # response = HttpResponse('cookie success')
+                    # response = SetCookie(response , 'cookie_system_data', session_data, url_redirect)
+                    # response = DeleteCookie(response , 'cookie_microsoft_data')
+                    # return response
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Login Successed',
+                        'remember': True,
+                        'cookie_name': 'cookie_system_data',
+                        'cookie_data': session_data,
+                        'cookie_day': 90,
+                        })
+                else:  
                 # return HttpResponseRedirect('/danh-sach-yeu-cau/')  
-                return redirect('/danh-sach-yeu-cau/')                       
-                # return JsonResponse({
-                # 'success': True,
-                # 'message': 'Login Successed',}) 
+                # return redirect('/dashboard/')                       
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Login Successed',}) 
             else:
                 return JsonResponse({
                 'success': False,
@@ -259,8 +266,8 @@ def microsoft_login_token(request):
      # Lưu access_token vào cookie (lưu ý: cần kiểm tra tính bảo mật của cookie)
     url_redirect = '/dashboard/'
     response = SetCookie(response , 'cookie_microsoft_data', session_data, url_redirect)
-    response = DeleteCookie(response , 'cookie_google_data')
-    response = DeleteCookie(response , 'cookie_facebook_data')  
+    # response = DeleteCookie(response , 'cookie_google_data')
+    # response = DeleteCookie(response , 'cookie_facebook_data')  
     response = DeleteCookie(response , 'cookie_system_data')  
     return response
 # Page Login account office 365
@@ -274,8 +281,14 @@ def logout(request):
         response.delete_cookie('cookie_microsoft_data')  # Xóa cookie 'cookie_microsoft_data'
         request.session.flush()  # Xóa tất cả dữ liệu trong session
         return response
+    elif 'cookie_system_data' in request.COOKIES:
+        response = HttpResponseRedirect('/')  # Chuyển hướng đến trang home (thay đổi tên view tương ứng)
+        response.delete_cookie('cookie_system_data')  # Xóa cookie 'cookie_microsoft_data'
+        request.session.flush()  # Xóa tất cả dữ liệu trong session
+        return response
     else:
-        return HttpResponse("Không tìm thấy cookie để xóa.")
+        # return HttpResponse("Không tìm thấy cookie để xóa.")
+        return HttpResponseRedirect('/')
 #LOGOUT 
 
 ################################################### Login O365, system #####################  
@@ -420,8 +433,55 @@ def role_menu(request):
             'success': False,
             'message': f'Lỗi: {str(ex)}',
         })
-
 #LOAD DATA ROLE MENU
+
+#LOAD DATA READ COMMENT
+@csrf_exempt
+def read_comment(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            IDuser = userinfo['ID_user']
+            # IsRead = Comment.objects.filter(
+            #     Q(Ticket_ID__ID_User=IDuser) | Q(Ticket_ID__Ticket_User_Asign=IDuser) # Điều kiện OR
+            #     & Q(ReadComment__ReadComment_Isread=True)  # Lọc theo trạng thái isread               
+            # )
+            IsRead = ReadComment.objects.filter(
+                Q(Comment_ID__Ticket_ID__ID_User=IDuser) | Q(Comment_ID__Ticket_ID__Ticket_User_Asign=IDuser) & Q(Comment_ID__Comment_Status = True),
+                # Comment_ID__Comment_Status = True,
+                ReadComment_Isread=False, 
+                ID_user = IDuser       
+            ).order_by('-ReadComment_ID')
+            if IsRead:
+                 list_comment = [{
+                     'ReadComment_ID': r.ReadComment_ID, 
+                     'TicketID': r.Comment_ID.Ticket_ID.Ticket_ID, 
+                     'Ticket_Title': r.Comment_ID.Ticket_ID.Ticket_Title,
+                     'CommentID': r.Comment_ID.Comment_ID,
+                     'Comment_Date': r.Comment_ID.Comment_Date.strftime('%d/%m/%Y'),
+                     'Comment_Time': r.Comment_ID.Comment_Time.strftime('%H:%M'),
+                     'Ticket_Slug': convert_title_to_slug(r.Comment_ID.Ticket_ID.Ticket_Title),
+                     'Comment_User': r.Comment_ID.ID_user.ID_user,
+                     'Comment_UserName': r.Comment_ID.ID_user.FullName,
+                     'Isread': r.ReadComment_Isread,
+                     } for r in IsRead]
+                 context = { 
+                'success': True,
+                'data': list_comment,
+                'Count': len(list_comment),
+                }
+            else:
+                context = { 
+                'success': True,
+                'data': '',
+                }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#LOAD DATA READ COMMENT
 ################################################### AUTHORIZE MENU MASTER PAGE ###########
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -831,10 +891,12 @@ def load_dashboard_Json(request):
     else:
         return redirect('')
 
+
 def Dashboard(request):
     cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
-    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    if(request.session['UserInfo']):
         return render(request, 'Ticket_Dashboard.html')
     else:
         return redirect('/')
@@ -2537,6 +2599,49 @@ def Update_Status_Ticket(request):
         })
 #FUNCTION UPDATE STATUS TICKET 
 
+#FUNCTION UPDATE UNREAD COMMENT
+def update_unread(request,ticketID,title,ReadCommentID):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        userID = userinfo['ID_user']
+        comment = ReadComment.objects.get(ReadComment_ID = ReadCommentID,ID_user = userID)
+        if comment:           
+            comment.ReadComment_Isread = True
+            comment.save()
+        link = '/chi-tiet-yeu-cau/'+str(ticketID)+'/'+title
+        return redirect(link)
+    else:
+        return redirect('')
+#FUNCTION UPDATE UNREAD COMMENT
+
+#FUNCTION UPDATE UNREAD ALl COMMENT
+@csrf_exempt
+def update_unread_all(request):
+    try:
+        if request.method == 'POST':
+            List_Unread = request.POST.getlist('data[]')
+            if List_Unread:
+                for u in List_Unread:
+                    data_ID = json.loads(u)
+                    comment = ReadComment.objects.get(ReadComment_ID = data_ID['ReadCommentID'])
+                    if comment:           
+                        comment.ReadComment_Isread = True
+                        comment.save()
+            return JsonResponse({
+                    'success': True,
+                    })
+        else:
+            return JsonResponse({
+                    'success': False,
+                    'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE UNREAD ALl COMMENT
+
 #FUNCTION CREATE COMMENT 
 @csrf_exempt
 def Create_Comment(request):
@@ -2561,6 +2666,7 @@ def Create_Comment(request):
             )
             comment.save()
             CommnetID = comment.Comment_ID
+            Update_Unread_Comment(CommnetID,ticketid,userID)
             return JsonResponse({
                     'success': True,
                     'message': 'Bình Luận Thành Công!',
@@ -2586,6 +2692,43 @@ def Create_Comment(request):
             'message': f'Lỗi: {str(ex)}',
         })
 #FUNCTION CREATE COMMENT 
+
+#FUNCTION CREATE UNREAD COMMENT 
+def Update_Unread_Comment(CommnetID,TicketID,userID):
+    try:
+        list_user = []
+        usr = Ticket.objects.get(Ticket_ID = TicketID)
+        if usr:
+            list_user.append({'UserID': usr.ID_User.ID_user})
+            list_user.append({'UserID': usr.Ticket_User_Asign})
+        User = Comment.objects.filter(Ticket_ID = TicketID).values('ID_user').distinct()
+        if User:
+            for u in User:
+                user_exists = any(user_dict['UserID'] == u['ID_user'] for user_dict in list_user)
+            #    if u['ID_user'] not in [user_dict['UserID'] for user_dict in list_user] or userID != u['ID_user']:
+                if user_exists == False:
+                    list_user.append({'UserID': u['ID_user']})
+
+        if list_user:
+            ID_Comment = Comment.objects.get(Comment_ID = CommnetID)
+            for l in list_user: 
+                if l['UserID'] != userID:
+                    ID = Users.objects.get(ID_user = l['UserID'])             
+                    Rcomment = ReadComment.objects.create(
+                        Comment_ID = ID_Comment,
+                        ID_user = ID,
+                        ReadComment_Isread =  False
+                    )
+                    Rcomment.save()
+            return True
+        else:
+            return False
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CREATE UNREAD COMMENT 
 
 #FUNCTION UPDATE COMMENT 
 @csrf_exempt
