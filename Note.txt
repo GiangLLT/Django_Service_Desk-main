@@ -21,6 +21,8 @@ git merge origin/main
 git add Note.txt
 git commit -m "Update Note.txt"
 
+git push
+
 git pull https://github.com/GiangLLT/Django_Service_Desk-main.git main
 
 git pull origin main
