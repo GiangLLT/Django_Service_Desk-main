@@ -46,6 +46,9 @@ from django.core.mail import send_mail
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 
+from bs4 import BeautifulSoup
+import base64
+
 # Create your views here.
 ############################################ PAGE TICKET HELPDESK - START ############################################################
 
@@ -212,7 +215,7 @@ def microsoft_login_token(request):
     exit_IDuser = Users.objects.filter(Mail = email)
     if(exit_IDuser):
         for user in exit_IDuser:
-            # Cậẻp nhật các thuộc tính của User
+            # Cập nhật các thuộc tính của User
             user.Mail = email
             user.FullName = response_data.get('surname') + " " + response_data.get('givenName')
             user.displayName = response_data.get('displayName')
@@ -271,6 +274,321 @@ def microsoft_login_token(request):
     response = DeleteCookie(response , 'cookie_system_data')  
     return response
 # Page Login account office 365
+
+#CHEKC MAIL OFFICE 365
+def check_emails(request):
+    client_id = '5c17ff26-50a1-4003-bc31-f0545709c2f7'
+    client_secret = 'EeJ8Q~ip-6TA~p1C7Y9t24l81qig0lFv1t5CPdwO'
+    # scope = 'https://graph.microsoft.com/.default'
+    scope = 'https://graph.microsoft.com/Mail.Read'
+    tenant_id = 'c43d3f81-f57a-48cc-8b07-74b39935d876'
+
+    # Đăng nhập để lấy access token
+    token_url = 'https://login.microsoftonline.com/'+tenant_id+'/oauth2/v2.0/token'
+    token_data = {
+        'grant_type': 'authorization_code',
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'scope': scope,
+    }
+    token_response = requests.post(token_url, data=token_data)
+    access_token = token_response.json().get('access_token')
+
+    while True:
+        # Gọi Microsoft Graph API để lấy danh sách email từ hộp thư
+        response = requests.get(
+            'https://graph.microsoft.com/v1.0/me/messages',
+            headers={'Authorization': f'Bearer {access_token}'}
+        )
+        emails = response.json().get('value', [])
+        for email in emails:
+            if email['subject'] == 'Ticket Request':
+                # Lấy email và pass từ email được trigger
+                email_address = email['from']
+                email_password = email['body']
+
+        # Xử lý dữ liệu từ emails để tạo ticket
+        # Ví dụ: lặp qua danh sách emails và tạo ticket
+
+        # Đợi một khoảng thời gian trước khi kiểm tra lại
+        time.sleep(5)  # Đợi 5 giây trước khi kiểm tra lại
+
+def get_authorization_code(request):
+    full_host = request.build_absolute_uri('/') 
+    # Redirect người dùng đến URL xác thực để đăng nhập
+    # redirect_uri = 'https://localhost:8000/test-mail/'
+    redirect_uri = full_host +'load-mail-unread/'
+    tenant_id = 'c43d3f81-f57a-48cc-8b07-74b39935d876'
+    authorization_url = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize?client_id=5c17ff26-50a1-4003-bc31-f0545709c2f7&response_type=code&redirect_uri={redirect_uri}&scope=https://graph.microsoft.com/Mail.Read'
+    return redirect(authorization_url)
+
+def get_access_token(authorization_code,full_host):
+    redirect_uri = full_host +'load-mail-unread/'
+    token_url = 'https://login.microsoftonline.com/c43d3f81-f57a-48cc-8b07-74b39935d876/oauth2/v2.0/token'
+    token_data = {
+        'grant_type': 'authorization_code',
+        'client_id': '5c17ff26-50a1-4003-bc31-f0545709c2f7',
+        'client_secret': 'EeJ8Q~ip-6TA~p1C7Y9t24l81qig0lFv1t5CPdwO',
+        'code': authorization_code,
+        'redirect_uri': redirect_uri,
+        'scope': 'https://graph.microsoft.com/Mail.Read',
+        # 'scope': 'https://graph.microsoft.com/Mail.ReadWrite',
+    }
+    token_response = requests.post(token_url, data=token_data)
+    access_token = token_response.json().get('access_token')
+    return access_token
+
+# Sử dụng mã truy cập để gọi Microsoft Graph API
+def call_graph_api(request):
+    prefix = '[SDP]'
+    authorization_code = request.GET.get('code')
+    full_host = request.build_absolute_uri('/') 
+    access_token = get_access_token(authorization_code,full_host)
+
+    # Tính thời gian ngày hôm nay và ngày hôm trước
+    today = datetime.datetime.utcnow().date()
+    yesterday = today - timedelta(days=1)
+
+    # Đường dẫn thư mục trên máy chủ để lưu các tệp đính kèm
+    # attachment_dir = '/static/Asset/Attachment-Upload/'
+    attachment_dir = os.path.join(settings.BASE_DIR , 'static', 'Asset', 'Attachment-Upload')
+    attachment_dir_img = os.path.join(settings.BASE_DIR , 'static', 'Asset', 'Attachment-Image')
+
+    response = requests.get(
+        # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+        f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+        headers={'Authorization': f'Bearer {access_token}'}
+    )
+    emails = response.json().get('value', [])
+    
+    if emails:
+        for email in emails:
+            email_id = email['id']  # ID của email
+            email_subject = email['subject']  # Tiêu đề email
+            email_from = email['from']['emailAddress']['address']  # Địa chỉ email người gửi
+
+            # Lấy danh sách người nhận
+            recipients = email['toRecipients']
+            recipient_addresses = [recipient['emailAddress']['address'] for recipient in recipients]
+
+            # Lấy danh sách người được CC
+            cc_recipients = email.get('ccRecipients', [])
+            cc_addresses = [cc['emailAddress']['address'] for cc in cc_recipients]
+
+            email_body = email['body']['content']  # Nội dung email
+
+            #function create Ticket by mail 
+            email_group_ticket = check_group_ticket(email_subject,email_body)           
+            email_type_ticket = 1 #Type Hỗ Trợ
+            email_company_ticket = 1          
+            Context = Create_Ticket_Mail(request,email_id, email_subject, email_body,email_type_ticket,email_company_ticket,email_group_ticket,email_from,recipients)
+            if Context:
+                email_attachments = email['hasAttachments']  # Danh sách đính kèm
+                # Xử lý danh sách đính kèm
+                if email_attachments:
+                    attachment_names = []
+                    attachment_url = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/attachments'
+                    attachment_response = requests.get(
+                        attachment_url,
+                        headers={'Authorization': f'Bearer {access_token}'}
+                    )               
+                    attachments = attachment_response.json().get('value', [])
+                    if attachments:
+                        #image
+                        soup = BeautifulSoup(email_body, 'html.parser')
+                        img_tags = soup.find_all('img')
+                        for img_tag in img_tags:
+                            src = img_tag.get('src', '')
+                            if src.startswith('cid:'):
+                                content_id = src[4:]
+
+                                for attachment in attachments:
+                                    if attachment['contentType'].startswith('image/') and attachment['contentId'] == content_id:
+                                        img_data = attachment['contentBytes']
+
+                                        img_filename = f'{content_id}.png'  # Tên tệp hình ảnh
+                                        img_path = os.path.join(attachment_dir_img, img_filename)  # Đường dẫn tới tệp hình ảnh trên máy chủ
+
+                                        with open(img_path, 'wb') as img_file:
+                                            img_file.write(base64.b64decode(img_data))
+                                        
+                                        with open(img_path, 'rb') as img_file:
+                                            img_base64 = base64.b64encode(img_file.read()).decode('utf-8')
+                                            # img_src = f'data:{attachment["contentType"]};base64,{img_base64}'
+                                            img_src = f'/static/Asset/Attachment-Image/{content_id}.png'
+                                            img_tag['src'] = img_src
+                                        break
+                        ticket = Ticket.objects.get(Ticket_ID = Context['Ticket_ID']) 
+                        if ticket:
+                            ticket.Ticket_Desc = str(soup)    
+                            ticket.save()                                   
+                        #attachment file
+                        for attachment in attachments:
+                            if not attachment['contentType'].startswith('image/'):
+                                ticketID = Context['Ticket_ID']
+                                attachment_id   = attachment['id']
+                                attachment_name = attachment['name']
+                                # attachment_type = attachment['contentType']
+                                # attachment_size = attachment['size']
+                                # attachment_names.append(attachment_name)
+
+                                attachment_item = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/attachments/{attachment_id}'
+                                attachment_item_response = requests.get(
+                                    attachment_item,
+                                    headers={'Authorization': f'Bearer {access_token}'}
+                                )
+                                attachment_data = attachment_item_response.content
+                                # Xây dựng đường dẫn lưu tệp trên máy chủ
+                                current_datetime = datetime.datetime.now()
+                                numeric_date = current_datetime.strftime('%d%m%Y')
+                                numeric_time = current_datetime.strftime('%H%M')
+                                attachment_name_full = str(ticketID) + '_' + numeric_date + '_' + numeric_time + '_' + attachment_name
+                                attachment_path = os.path.join(attachment_dir, attachment_name_full)
+
+                                # Lưu tệp đính kèm vào máy chủ
+                                with open(attachment_path, 'wb') as attachment_file:
+                                    attachment_file.write(attachment_data)
+                                
+                                #create attachment data
+                                create_attachment_mail(ticketID,attachment_name_full)
+
+                else:
+                    #gửi mail thống báo lỗi không thành công.
+                    mail = "Gửi mail thông báo"
+                    
+
+            # email_read_url = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}'
+            # # update_data = {
+            # #     'isRead': True
+            # # }
+            # payload = {
+            #     "isRead": True,
+            # }
+            # update_headers = {
+            #     'Authorization': f'Bearer {access_token}',
+            #     'Content-Type': 'application/json'
+            # }
+            # # update_response = requests.patch(email_read_url, json=update_data, headers=update_headers)
+            # update_response = requests.patch(email_read_url, headers=update_headers,data=json.dumps(payload))
+
+            # if update_response.status_code == 204:
+            #     return True
+            # else:
+            #     return False
+
+    return emails
+
+def check_group_ticket(title_ticket,email_body):
+    try:
+        ticket_type = TGroup.objects.filter(~Q(TGroup_Name = 'Khác') or ~Q(TGroup_Name = 'Other')).values('TGroup_ID','TGroup_Name')
+        if ticket_type:
+            for t in ticket_type:
+                if t['TGroup_Name'].lower() in title_ticket.lower():
+                    return t['TGroup_ID']
+                if t['TGroup_Name'].lower() in email_body.lower():
+                    return t['TGroup_ID']
+        ticket_other = TGroup.objects.filter(Q(TGroup_Name = 'Khác') or Q(TGroup_Name = 'Other')).values('TGroup_ID','TGroup_Name')
+        return ticket_other[0]['TGroup_ID']
+    except Exception as ex:
+        return ''
+
+def read_email(access_token,email_id):
+    # Cập nhật trạng thái của email sang đã đọc
+    email_read_url = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}'
+    update_data = {
+        'isRead': True
+    }
+    update_headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json'
+    }
+    update_response = requests.patch(email_read_url, json=update_data, headers=update_headers)
+
+    if update_response.status_code == 204:
+        return True
+    else:
+        return False    
+#CHEKC MAIL OFFICE 365
+
+#FUNCTION CREATE TICKET 
+def Create_Ticket_Mail(request,email_id, email_subject, email_body,email_type_ticket,email_company_ticket,email_group_ticket,email_from,recipients):
+    try:
+            if recipients:
+                recipient_addresses = [recipient['emailAddress']['address'] for recipient in recipients]
+                # email = Assign_User.objects.filter(TGroup_ID = email_group_ticket, ID_user__Mail__in = recipient_addresses).values('Assign_User_ID','Assign_User_Name')
+                email = Assign_User.objects.filter(TGroup_ID = email_group_ticket, ID_user__Mail__in = recipient_addresses)
+                if email:
+                    sorted_emails = sorted(email, key=lambda x: recipient_addresses.index(x.ID_user.Mail))
+                    mail = sorted_emails[0]
+                    assign_User = mail.ID_user.ID_user
+                    assign_Name = mail.ID_user.FullName
+                else: 
+                    suggest_data = suggest_ticket(request,email_subject, email_group_ticket)
+                    assign_User = suggest_data['ticket_assigned_user_id']
+                    assign_Name = suggest_data['ticket_assigned_username']
+            else:    
+                suggest_data = suggest_ticket(request,email_subject, email_group_ticket)
+                assign_User = suggest_data['ticket_assigned_user_id']
+                assign_Name = suggest_data['ticket_assigned_username']
+            
+            company = Company.objects.get( Company_ID = email_company_ticket)
+            group = TGroup.objects.get( TGroup_ID = email_group_ticket)
+            user = Users.objects.get( Mail = email_from)
+            if user:
+                slug_title =  convert_title_to_slug(email_subject)
+                #create Ticket
+                ticket = Ticket.objects.create(
+                    Ticket_Title = email_subject, 
+                    Ticket_Desc  = email_body, 
+                    Ticket_Type  = email_type_ticket, 
+                    Company_ID   = company,
+                    TGroup_ID    = group, 
+                    ID_User      = user,
+                    Ticket_User_Name = user.FullName,
+                    Ticket_Date  = datetime.datetime.now().date(),
+                    Ticket_Time  = datetime.datetime.now().time(),
+                    Ticket_User_Asign = assign_User,
+                    Ticket_Name_Asign = assign_Name,
+                    Ticket_Status = 1,
+                )
+                ticket.save()
+                TicketID = ticket.Ticket_ID
+                email_assign = Users.objects.get(ID_user = assign_User)
+                context = {
+                    'Ticket_ID': TicketID,
+                    'Slug_Title': slug_title,
+                    'Email_Assign': email_assign
+                }
+                return context
+    except Assign_User.DoesNotExist:
+                #Sent Email thông báo chưa có tài khoản
+                pass
+    except Exception as ex:
+        return ''
+        # return JsonResponse({
+        #     'success': False,
+        #     'message': f'Lỗi: {str(ex)}',
+        # })
+#FUNCTION CREATE TICKET 
+
+def create_attachment_mail(TicketID, AttachmentUrl):
+    try:
+        user = Users.objects.get(ID_user = 'U000000001')
+        ticket = Ticket.objects.get(Ticket_ID = TicketID)
+        if ticket and user:
+            attach = Attachment.objects.create(
+                Ticket_ID =  ticket,
+                ID_user   = user,
+                Attachment_Url = AttachmentUrl,
+                Attachment_User_Name = 'Auto System',
+                Attachment_Date = datetime.datetime.now().date(),
+                Attachment_Time = datetime.datetime.now().time(),
+                Attachment_Status = 1
+            )
+            attach.save()
+            return True
+    except Exception as ex:
+        return False
 
 #LOGOUT 
 @csrf_exempt
@@ -424,10 +742,16 @@ def role_menu(request):
 
             context = {
                     'success' : True,
+                    'isData' : True,
                     'Group_Roles'  : list_group_data,
                     'Menus'  : list_menu_data,
-                }    
-            return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+                }   
+        else:
+             context = {
+                    'success' : True,
+                    'isData' : False,
+                }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
     except Exception as ex:
         return JsonResponse({
             'success': False,
@@ -926,7 +1250,7 @@ def load_Ticket_Json(request):
                 'Ticket_ID': ticket.Ticket_ID,
                 'Ticket_Title': ticket.Ticket_Title,
                 'Ticket_Title_Slug': slug_title,
-                'Ticket_Desc': ticket.Ticket_Desc,
+                'Ticket_Desc': ticket.Ticket_Desc[:30] if len(ticket.Ticket_Desc) > 30 else ticket.Ticket_Desc,
                 'Ticket_Type': ticket.Ticket_Type,
                 'Company_ID': ticket.Company_ID.Company_ID,
                 'Company_Name': ticket.Company_ID.Company_Name,
@@ -2438,7 +2762,7 @@ def Update_User(request):
                     'User_Status':         user.User_Status,
                     'FullName':            user.FullName,
                     # 'Birthday':            datetime.datetime.strptime(user.Birthday, '%Y-%m-%d').date().strftime('%d/%m/%Y'),
-                    'Birthday':            user.Birthday.strftime('%d/%m/%Y'),
+                    'Birthday':            datetime.datetime.strptime(user.Birthday, '%Y-%m-%d').strftime('%d/%m/%Y'),
                     'Address':             user.Address,
                     'Jobtitle':            user.Jobtitle,
                     'Phone':               user.Phone,

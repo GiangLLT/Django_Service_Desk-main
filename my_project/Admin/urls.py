@@ -138,7 +138,12 @@ urlpatterns = [
     path('role-authorize/', views.check_authorize, name='check_authorize'),
     #------------- Authorize Role -------------------------
 
-    
+    #------------- Office 365 Automation -------------------------
+    # path('test-mail1/', views.check_emails, name='check_emails'),
+    path('load-mail-unread/', views.call_graph_api, name='call_graph_api'),
+    path('get-code/', views.get_authorization_code, name='get_authorization_code'),
+    path('read-mail/<str:email_id>/', views.read_email, name='read_email'),
+    #------------- Office 365 Automation -------------------------
 
     #------------- Function-----------------------
     path('logout/', views.logout, name='logout'),                                                       #Logot Page - đăng xuất

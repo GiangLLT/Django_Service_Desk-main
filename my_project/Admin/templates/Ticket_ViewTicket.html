@@ -33,6 +33,7 @@
                     </div>
                     <div class="top-title-right-info">
                       <p>{{user.FullName}}</p>
+                      <p>{%if user.Phone != 0 %} 0{{user.Phone}} {%else%} No Phone {% endif %}</p>
                       {% comment %} <p class="{{ company.Company_Name.length > 27 ? font-company : '' }}">{{company.Company_Name}}</p> {% endcomment %}
                       <p class="{% if company.Company_Name|length > 27 %}font-company{% endif %}">{{ company.Company_Name }}</p>
                       <p>{{ ticket.Ticket_Date|date:"d/m/Y" }} - {{ ticket.Ticket_Time|time:"H:i" }}</p>

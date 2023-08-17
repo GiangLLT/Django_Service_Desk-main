@@ -431,8 +431,15 @@ $('#login-button').click(function(event) {
 
 
 function microsoft_login() {
+  // Lấy thông tin về URL hiện tại
+  var currentURL = window.location.href;
+  // Tách ra host từ URL
+  // var urlObject = new URL(currentURL);
+  // var host = urlObject.host;
+
   var clientId = '5c17ff26-50a1-4003-bc31-f0545709c2f7'; // Replace with your own client ID
-  var redirectUri = 'https://localhost:8000/login/callback/'; // Replace with your own redirect URI
+  // var redirectUri = 'https://localhost:8000/login/callback/'; // Replace with your own redirect URI
+  var redirectUri = currentURL +'login/callback/'; // Replace with your own redirect URI
   var scope = 'https://graph.microsoft.com/.default'; // Replace with your own scopes
 
   var loginUrl = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize' +
@@ -689,187 +696,190 @@ function statusChangeCallback(response) {
 //################################################## PAGE TICKET HELPDESK - START ##################################################  
 
 //########### Menu Function ########### 
-function Load_Menu_Master() {
-  // Thực hiện các tác vụ cần thực hiện khi trang vừa tải xong
-  $.ajax({
-    url: '/menu-data/',
-    type: 'POST',
-    success: function(response) {
-      if(response.success){
-        add_menu(response);
-      }
-      else{
-        Swal.fire({
-          icon: 'error',
-          title: 'Thông Báo Lỗi',
-          text: response.message,
-        });
-      }
-    },
-    error: function(xhr, status, error) {
-      // Xử lý lỗi
-      Swal.fire({
-        icon: 'error',
-        title: 'Thông Báo Lỗi',
-        text: response.message,
-      });
-    }
-  });
-}
-function add_menu(data){
-  var groups = data.Group_Roles;
-  var menus = data.Menus;
-  var html_data = '';
-  // var html_data_custom = '';
-  // var html_data_for = '';
-  var menu_custom = document.querySelector('#menu-custom');
-  for(i=0; i < menus.length; i++){
-    var html_data_custom = '';
-    var html_data_for = '';
-    var add = menus[i].Menu_Adress;
-    var menuID = menus[i].Menu_ID;
-    if(add != ''){
-      html_data += '  <li class="nav-item">' +
-      '<a class="nav-link" href="'+menus[i].Menu_Adress+'">'+
-      '<i class="'+menus[i].Menu_Icon+' menu-icon"></i>'+
-      '<span class="menu-title">'+menus[i].Menu_Name+'</span>'+
-      '</a>'+
-      '</li>';
-    }   
-    else{
-      for(y=0; y < groups.length; y ++){
-        var id = groups[y].Menu_ID;
-        var name = groups[y].Role_Group_Name;      
-        // var li = groups[y].Role_Group_Name.split('-');
-        if(menuID == id){
-          var hasHyphen = name.includes("-");
-          if(hasHyphen == true){
-            var GroupName = name.split('-');
-            name = GroupName[1];
-          }
-          // html_data_for +='<li class="nav-item"> <a class="nav-link" href="'+groups[y].Role_Group_Address+'">'+groups[y].Role_Group_Name+'</a></li>';
-          html_data_for +='<li class="nav-item"> <a class="nav-link" href="'+groups[y].Role_Group_Address+'">'+name+'</a></li>';
-        }
-      }
-      if(html_data_for != ''){
-        html_data_custom ='<li class="nav-item nav-category">'+menus[i].Menu_Name+'</li>'+
-        '<li class="nav-item">'+
-        '<a class="nav-link" data-bs-toggle="collapse" href="#ui-manage'+menus[i].Menu_ID+'" aria-expanded="false" aria-controls="ui-manage'+menus[i].Menu_ID+'">'+
-        '<i class="menu-icon '+menus[i].Menu_Icon+'"></i>'+
-        '<span class="menu-title">'+menus[i].Menu_Name+'</span>'+
-        '<i class="menu-arrow"></i> '+
-        '</a>'+
-        '<div class="collapse" id="ui-manage'+menus[i].Menu_ID+'">'+
-        '<ul class="nav flex-column sub-menu">'+
-        html_data_for +
-        ' </ul>'+
-        '</div>'+
-        '</li>';
-
-        html_data += html_data_custom;
-      }
-    } 
-  }
-  menu_custom.innerHTML = html_data;
-}
-
-$(document).on('click', '.btn-read-comment', function() {
-  read_all_comment();
-});
-function read_all_comment(){
-  var list = document.querySelectorAll('.unread-list[data-unread]');
-  if(list.length > 0){      
-    var list_unread = [];
-    list.forEach(function(item){
-      var id = item.getAttribute('data-unread');;
-      var data_unread = {'ReadCommentID': id};
-      list_unread.push(JSON.stringify(data_unread));
-    });
-    unread_all_comment(list_unread, list);
-  } 
-}
-function unread_all_comment(data, list){
-  $.ajax({
-    url: '/cap-nhat-all-comment-unread/',
-    dataType: 'json',
-    method: 'POST',
-      data: {
-        'data[]': data,
-      },
-    success: function(response) {
+if (window.location.pathname != '/'){ //function run if different homepage
+  function Load_Menu_Master() {
+    // Thực hiện các tác vụ cần thực hiện khi trang vừa tải xong
+    $.ajax({
+      url: '/menu-data/',
+      type: 'POST',
+      success: function(response) {
         if(response.success){
-          var count = document.querySelector('.comment_count');
-          count.textContent = 'Bạn Có 0 Comment Chưa Đọc';         
-          list.forEach(function(item){
-            item.remove();
-          });
+          if(response.isData){
+            add_menu(response);
+          }
         }
         else{
           Swal.fire({
             icon: 'error',
-            title: 'Thông Báo',
+            title: 'Thông Báo Lỗi',
             text: response.message,
           });
         }
-    },
-    error: function(rs, e) {
-        alert('Oops! something went wrong..111');
-    }
-  });
-}
-
-function load_unread_comment(){
-  $.ajax({
-    url: '/load-read-comment/',
-    type: 'POST',
-    success: function(response) {
-      if(response.success){
-        if(response.data){
-          var icon_count = document.querySelector('.count-unread');
-          if(response.data){
-            add_comment(response.Count, response.data);
-            icon_count.classList.remove('hide-option');
-          }
-          else{
-            icon_count.classList.add('hide-option');
-          }
-        }
-      }
-      else{
+      },
+      error: function(xhr, status, error) {
+        // Xử lý lỗi
         Swal.fire({
           icon: 'error',
           title: 'Thông Báo Lỗi',
           text: response.message,
         });
       }
-    },
-    error: function(xhr, status, error) {
-      // Xử lý lỗi
-      Swal.fire({
-        icon: 'error',
-        title: 'Thông Báo Lỗi',
-        text: response.message,
-      });
-    }
-  });
-}
-function add_comment(count_num, data){
-  var count = document.querySelector('.comment_count');
-  count.textContent = 'Bạn Có ' + count_num + ' Comment Chưa Đọc';
-  for(i=0 ; i < data.length; i++){
-    $('.comment_list_unread').append('<a data-unread="'+data[i].ReadComment_ID+'" class="dropdown-item preview-item unread-list" href="/cap-nhat-comment-unread/'+data[i].TicketID+'/'+data[i].Ticket_Slug+'/'+data[i].ReadComment_ID+'">'+
-    '<div class="preview-thumbnail">'+
-    '<img src="/static/Asset/img/ava.png" alt="image" class="img-sm profile-pic">'+
-    '</div>'+
-    '<div class="preview-item-content flex-grow py-2">'+
-    '<p class="preview-subject ellipsis font-weight-medium text-dark">'+data[i].TicketID +' - '+ data[i].Ticket_Title+'</p>'+
-    '<p class="fw-light small-text mb-0">'+data[i].Comment_UserName+' đã bình luận</p>'+
-    '<p class="fw-light small-text mb-0">'+data[i].Comment_Date+' - '+data[i].Comment_Time+'</p>'+
-    '</div>'+
-    '</a>');
-  }; 
-}
+    });
+  }
+  function add_menu(data){
+    var groups = data.Group_Roles;
+    var menus = data.Menus;
+    var html_data = '';
+    // var html_data_custom = '';
+    // var html_data_for = '';
+    var menu_custom = document.querySelector('#menu-custom');
+    for(i=0; i < menus.length; i++){
+      var html_data_custom = '';
+      var html_data_for = '';
+      var add = menus[i].Menu_Adress;
+      var menuID = menus[i].Menu_ID;
+      if(add != ''){
+        html_data += '  <li class="nav-item">' +
+        '<a class="nav-link" href="'+menus[i].Menu_Adress+'">'+
+        '<i class="'+menus[i].Menu_Icon+' menu-icon"></i>'+
+        '<span class="menu-title">'+menus[i].Menu_Name+'</span>'+
+        '</a>'+
+        '</li>';
+      }   
+      else{
+        for(y=0; y < groups.length; y ++){
+          var id = groups[y].Menu_ID;
+          var name = groups[y].Role_Group_Name;      
+          // var li = groups[y].Role_Group_Name.split('-');
+          if(menuID == id){
+            var hasHyphen = name.includes("-");
+            if(hasHyphen == true){
+              var GroupName = name.split('-');
+              name = GroupName[1];
+            }
+            // html_data_for +='<li class="nav-item"> <a class="nav-link" href="'+groups[y].Role_Group_Address+'">'+groups[y].Role_Group_Name+'</a></li>';
+            html_data_for +='<li class="nav-item"> <a class="nav-link" href="'+groups[y].Role_Group_Address+'">'+name+'</a></li>';
+          }
+        }
+        if(html_data_for != ''){
+          html_data_custom ='<li class="nav-item nav-category">'+menus[i].Menu_Name+'</li>'+
+          '<li class="nav-item">'+
+          '<a class="nav-link" data-bs-toggle="collapse" href="#ui-manage'+menus[i].Menu_ID+'" aria-expanded="false" aria-controls="ui-manage'+menus[i].Menu_ID+'">'+
+          '<i class="menu-icon '+menus[i].Menu_Icon+'"></i>'+
+          '<span class="menu-title">'+menus[i].Menu_Name+'</span>'+
+          '<i class="menu-arrow"></i> '+
+          '</a>'+
+          '<div class="collapse" id="ui-manage'+menus[i].Menu_ID+'">'+
+          '<ul class="nav flex-column sub-menu">'+
+          html_data_for +
+          ' </ul>'+
+          '</div>'+
+          '</li>';
 
+          html_data += html_data_custom;
+        }
+      } 
+    }
+    menu_custom.innerHTML = html_data;
+  }
+
+  $(document).on('click', '.btn-read-comment', function() {
+    read_all_comment();
+  });
+  function read_all_comment(){
+    var list = document.querySelectorAll('.unread-list[data-unread]');
+    if(list.length > 0){      
+      var list_unread = [];
+      list.forEach(function(item){
+        var id = item.getAttribute('data-unread');;
+        var data_unread = {'ReadCommentID': id};
+        list_unread.push(JSON.stringify(data_unread));
+      });
+      unread_all_comment(list_unread, list);
+    } 
+  }
+  function unread_all_comment(data, list){
+    $.ajax({
+      url: '/cap-nhat-all-comment-unread/',
+      dataType: 'json',
+      method: 'POST',
+        data: {
+          'data[]': data,
+        },
+      success: function(response) {
+          if(response.success){
+            var count = document.querySelector('.comment_count');
+            count.textContent = 'Bạn Có 0 Comment Chưa Đọc';         
+            list.forEach(function(item){
+              item.remove();
+            });
+          }
+          else{
+            Swal.fire({
+              icon: 'error',
+              title: 'Thông Báo',
+              text: response.message,
+            });
+          }
+      },
+      error: function(rs, e) {
+          alert('Oops! something went wrong..111');
+      }
+    });
+  }
+
+  function load_unread_comment(){
+    $.ajax({
+      url: '/load-read-comment/',
+      type: 'POST',
+      success: function(response) {
+        if(response.success){
+          if(response.data){
+            var icon_count = document.querySelector('.count-unread');
+            if(response.data){
+              add_comment(response.Count, response.data);
+              icon_count.classList.remove('hide-option');
+            }
+            else{
+              icon_count.classList.add('hide-option');
+            }
+          }
+        }
+        else{
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi',
+            text: response.message,
+          });
+        }
+      },
+      error: function(xhr, status, error) {
+        // Xử lý lỗi
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: response.message,
+        });
+      }
+    });
+  }
+  function add_comment(count_num, data){
+    var count = document.querySelector('.comment_count');
+    count.textContent = 'Bạn Có ' + count_num + ' Comment Chưa Đọc';
+    for(i=0 ; i < data.length; i++){
+      $('.comment_list_unread').append('<a data-unread="'+data[i].ReadComment_ID+'" class="dropdown-item preview-item unread-list" href="/cap-nhat-comment-unread/'+data[i].TicketID+'/'+data[i].Ticket_Slug+'/'+data[i].ReadComment_ID+'">'+
+      '<div class="preview-thumbnail">'+
+      '<img src="/static/Asset/img/ava.png" alt="image" class="img-sm profile-pic">'+
+      '</div>'+
+      '<div class="preview-item-content flex-grow py-2">'+
+      '<p class="preview-subject ellipsis font-weight-medium text-dark">'+data[i].TicketID +' - '+ data[i].Ticket_Title+'</p>'+
+      '<p class="fw-light small-text mb-0">'+data[i].Comment_UserName+' đã bình luận</p>'+
+      '<p class="fw-light small-text mb-0">'+data[i].Comment_Date+' - '+data[i].Comment_Time+'</p>'+
+      '</div>'+
+      '</a>');
+    }; 
+  }
+}
 
 // Gọi hàm myFunction khi trang vừa tải xong
 document.addEventListener('DOMContentLoaded', function() {
@@ -5276,7 +5286,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
           '<td data-column="jobtitle" id="toggle-column" class="'+show_hide+'">' + product.Jobtitle + '</td>' +
           '<td data-column="birthday" id="toggle-column" class="'+show_hide+'">' + product.Birthday + '</td>' +
           '<td data-column="address" id="toggle-column" class="'+show_hide+'">' + product.Address + '</td>' +
-          '<td data-column="phone" id="toggle-column" class="'+show_hide+'">' + product.Phone + '</td>' +
+          '<td data-column="phone" id="toggle-column" class="'+show_hide+'">' + (product.Phone != 'No Data'? '0'+product.Phone : 'No Data') + '</td>' +
           '<td data-column="createid" id="toggle-column" class="'+show_hide+'">' + product.ID_Create + '</td>' +
           '<td data-column="createname" id="toggle-column" class="'+show_hide+'">' + product.Name_Create + '</td>' +         
           '<td data-column="date" id="toggle-column" class="'+show_hide+'">' + product.Date_Create + '</td>' +
@@ -5902,7 +5912,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       '<td data-column="jobtitle" id="toggle-column" class="'+show_hide+'">' + (data.Jobtitle ? data.Jobtitle : 'No Data') + '</td>' +
       '<td data-column="birthday" id="toggle-column" class="'+show_hide+'">' + data.Birthday + '</td>' +
       '<td data-column="address" id="toggle-column" class="'+show_hide+'">' + (data.Address ? data.Address : 'No Data')+ '</td>' +
-      '<td data-column="phone" id="toggle-column" class="'+show_hide+'">' + (data.Phone ? data.Phone : 'No Data')+ '</td>' +
+      '<td data-column="phone" id="toggle-column" class="'+show_hide+'">' + (data.Phone ? '0'+data.Phone : 'No Data')+ '</td>' +
       '<td data-column="createid" id="toggle-column" class="'+show_hide+'">' + data.ID_Create + '</td>' +
       '<td data-column="createname" id="toggle-column" class="'+show_hide+'">' + data.Name_Create + '</td>' +         
       '<td data-column="date" id="toggle-column" class="'+show_hide+'">' + data.Date_Create + '</td>' +
@@ -6009,7 +6019,8 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       var input_Role = modal.querySelector('#input_role').value;
       var input_status = modal.querySelector('#input_status').value;
     
-      if (input_ID && input_Name && input_Phone && input_Address && input_Birth && input_Jobtitle && input_Role && input_status) {
+      // if (input_ID && input_Name && input_Phone && input_Address && input_Birth && input_Jobtitle && input_Role && input_status) {
+      if (input_ID && input_Name && input_Phone  && input_Birth && input_Role && input_status) {
         update_user(input_ID , input_Name , input_Phone , input_Address , input_Birth , input_Jobtitle , input_Role , input_status);  
       } else {
         Swal.fire({
