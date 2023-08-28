@@ -4,6 +4,13 @@ from oauth2_provider.views import AuthorizationView, TokenView
 
 urlpatterns = [
     #Helpdesk
+     #------------- API -----------------------
+     path('api-test/', views.api_test, name='api_test'),
+     path('api-load-mail/', views.api_load_mail, name='api_load_mail'),
+     path('load-mail/', views.start_realtime_mail_tracking, name='start_realtime_mail_tracking'),
+     path('load-info/', views.get_user_info, name='get_user_info'),
+     #------------- API -----------------------
+
     #------------- Dashboard-----------------------
     path('dashboard/', views.Dashboard, name='Dashboard'),                                            #Ticket Page - Trang hiển thị yêu cầu
     path('data-dashboard/', views.load_dashboard_Json, name='load_dashboard_Json'),                   #Ticket data - hiển thị danh sách yêu cầu dạng json

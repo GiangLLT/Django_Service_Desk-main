@@ -440,7 +440,7 @@ function microsoft_login() {
   var clientId = '5c17ff26-50a1-4003-bc31-f0545709c2f7'; // Replace with your own client ID
   // var redirectUri = 'https://localhost:8000/login/callback/'; // Replace with your own redirect URI
   var redirectUri = currentURL +'login/callback/'; // Replace with your own redirect URI
-  var scope = 'https://graph.microsoft.com/.default'; // Replace with your own scopes
+  var scope = 'https://graph.microsoft.com/User.Read'; // Replace with your own scopes
 
   var loginUrl = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize' +
     '?client_id=' + encodeURIComponent(clientId) +

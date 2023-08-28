@@ -27,7 +27,13 @@ class Product(models.Model):
         return self.category
     
 
+#API
+class MailStatus(models.Model):
+    Mail_ID = models.CharField(max_length=1000)
+    Status = models.BooleanField(max_length=20)
 
+    def __str__(self):
+        return self.Mail_ID
 
 
 #model Helpdesk

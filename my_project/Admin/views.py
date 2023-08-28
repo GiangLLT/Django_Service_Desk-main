@@ -49,8 +49,206 @@ from django.template.loader import render_to_string
 from bs4 import BeautifulSoup
 import base64
 
+from msal import PublicClientApplication, ConfidentialClientApplication
+import base64
+import hashlib
+import random
+import string
+
 # Create your views here.
 ############################################ PAGE TICKET HELPDESK - START ############################################################
+
+
+################################################### API #####################  
+@csrf_exempt
+def api_test(request):
+    if request.method == 'POST':
+        try:
+            context=[]
+            data = json.loads(request.body)
+            if isinstance(data, list) and len(data) > 0:          
+                for item in data:
+                    Mail_ID = item.get('Mail_ID')
+                    Status = item.get('Status')
+                    data1 = item.get('api')['data1']
+                    data2 = item.get('api')['data2']
+
+                    data_context = {
+                        'Mail_ID': Mail_ID,
+                        'Status' : Status,
+                        'api'    : {
+                            'data1' : data1,
+                            'data2' : data2
+                        }
+                    }
+                    context.append(data_context)
+                return JsonResponse(context, safe=False)
+            else:
+                return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@csrf_exempt
+def api_load_mail(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            if data:          
+                Mail_ID = data.get('Mail_ID')
+                Status = data.get('Status')
+                if Status:
+                    request.session['mail_id'] = Mail_ID
+                    access_token = get_authorization_code_API()
+                    if access_token:
+                        request.session['mail_id'] = {
+                            'Mail_ID' : Mail_ID,
+                            'access_token' : access_token
+                        }
+                        response = call_graph_api(request)
+                        response_data = response.content.decode('utf-8')  # Giải mã dữ liệu từ bytes sang str
+                        response_json = json.loads(response_data)  # Chuyển đổi thành đối tượng JSON
+
+                        if 'success' in response_json and response_json['success'] == 'Success':
+                            return JsonResponse({'success': 'Success'}, status=200)
+                        else:
+                            return JsonResponse({'Error': response_json['error']}, status=400)
+                    else:
+                        if request.session.get('mail_id'):
+                            del request.session['mail_id']
+                        return JsonResponse({'error': 'Token is empty'}, status=400)
+            else:
+                return JsonResponse({'error': 'Invalid JSON format'}, status=400)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+def get_authorization_code_API():
+    tenant_id = settings.MICROSOFT_TENANT_ID_EMAIL
+    client_id = settings.MICROSOFT_CLIENT_ID_EMAIL
+    client_secret = settings.MICROSOFT_CLIENT_SECRET_EMAIL
+    scope = 'https://graph.microsoft.com/Mail.ReadWrite https://graph.microsoft.com/Mail.Send'
+    token_url = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token'
+
+    # Thông tin người dùng cố định
+    username = settings.EMAIL_HOST_USER
+    password = settings.EMAIL_HOST_PASSWORD
+
+    token_data = {
+        'grant_type': 'password',
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'scope': scope,
+        'username': username,
+        'password': password
+    }
+
+    token_response = requests.post(token_url, data=token_data)
+
+    if token_response.status_code == 200:
+        access_token = token_response.json().get('access_token')
+        return access_token
+        # Xử lý access token hoặc trả về kết quả tương ứng
+    else:
+        # Xử lý lỗi hoặc trả về thông báo tương ứng
+        access_token = ''
+        return access_token
+################################################### API #####################  
+
+################################################### REAL TIME #####################  
+def generate_code_verifier(length=32):
+    characters = string.ascii_letters + string.digits + '-._~'
+    return ''.join(random.choice(characters) for _ in range(length))
+
+def generate_code_challenge(verifier):
+    hashed_verifier = hashlib.sha256(verifier.encode()).digest()
+    code_challenge = base64.urlsafe_b64encode(hashed_verifier).rstrip(b'=').decode()
+    return code_challenge
+
+def get_access_token_new():
+    # full_host = request.build_absolute_uri('/') 
+    # redirect_uri = full_host +'api-load-mail/'
+    # Thông tin ứng dụng đã đăng ký trong Azure AD
+    tenant_id = settings.MICROSOFT_TENANT_ID_EMAIL
+    client_id = settings.MICROSOFT_CLIENT_ID_EMAIL
+    client_secret = settings.MICROSOFT_CLIENT_SECRET_EMAIL
+    authority = f'https://login.microsoftonline.com/{tenant_id}'
+
+    # Tạo đối tượng ConfidentialClientApplication
+    cca = ConfidentialClientApplication(
+        client_id=client_id,
+        client_credential=client_secret,
+        authority=authority
+    )
+
+    # # Xác thực người dùng
+    result = cca.acquire_token_for_client(scopes=['https://graph.microsoft.com/.default'])
+    # Xác thực bằng authorization code
+    # result = cca.acquire_token_by_authorization_code(
+    #     auth_code,
+    #     scopes=['https://graph.microsoft.com/Mail.ReadWrite', 'https://graph.microsoft.com/Mail.Send'],
+    #     redirect_uri=redirect_uri
+    # )
+    access_token = result['access_token']
+    return access_token
+
+def get_user_info(access_token):
+    access_token = get_access_token_new()
+    user_info_url = 'https://graph.microsoft.com/v1.0/users'  # Đổi thành URL tương ứng nếu cần thông tin người dùng khác
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.get(user_info_url, headers=headers)
+
+    if response.status_code == 200:
+        user_info = response.json()
+        user_id = user_info['id']
+        return user_id
+    else:
+        return None  # Xử lý lỗi tại đây
+
+def start_realtime_mail_tracking(request):
+    access_token = get_access_token_new()
+    full_host = request.build_absolute_uri('/') 
+    redirect_uri = full_host +'api-load-mail/'
+    userid = '6cc6b729-02aa-42cc-a4e2-1aedadfa4c73'
+
+    # Xác thực để theo dõi sự kiện email mới
+    url = 'https://graph.microsoft.com/v1.0/subscriptions'
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json'
+    }
+    data = {
+        "changeType": "created",
+        "notificationUrl": redirect_uri,  # Thay bằng URL của view xử lý sự kiện
+        "resource": "me/mailFolders('SDP')/messages",
+        # "resource": f"users/{userid}/mailFolders('SDP')/messages",
+        "filter": {
+            "subject": "[SDP]",
+            "isRead": False
+        },
+        "expirationDateTime": "9999-12-31T23:59:59.0000000Z",
+        "clientState": "secretClientValue"
+    }
+
+    response = requests.post(url, json=data, headers=headers)
+
+    if response.status_code == 201:
+        return JsonResponse({"message": "Real-time mail tracking started successfully."})
+    else:
+        return JsonResponse({"message": "Failed to start real-time mail tracking."})
+
+# View để xử lý thông báo từ Microsoft Graph API
+def handle_incoming_email(request):
+    if request.method == 'POST':
+        data = request.body.decode('utf-8')
+        # Xử lý dữ liệu từ Microsoft Graph API khi có sự kiện email mới
+        return JsonResponse({"message": "Email event handled successfully."})
+    return JsonResponse({"message": "Invalid request."})
+################################################### REAL TIME #####################  
 
 
 ################################################### Login O365, system #####################  
@@ -156,14 +354,16 @@ def login_system(request):
 # Page Login account office 365
 def microsoft_login_token(request):
     code = request.GET.get('code')
-
+    full_host = request.build_absolute_uri('/')
+    url_host = full_host + 'login/callback/'
     if code is None:
         # Redirect to the Microsoft login page
         url = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
         params = {
             'client_id': '5c17ff26-50a1-4003-bc31-f0545709c2f7',
             'response_type': 'code',
-            'redirect_uri': 'https://localhost:8000/login/callback/',
+            # 'redirect_uri': 'https://localhost:8000/login/callback/',
+            'redirect_uri': url_host,
             'scope': 'https://graph.microsoft.com/.default',
         }
         auth_url = url + '?' + urlencode(params)
@@ -174,7 +374,8 @@ def microsoft_login_token(request):
     data = {
         'grant_type': 'authorization_code',
         'code': code,
-        'redirect_uri': 'https://localhost:8000/login/callback/',
+        # 'redirect_uri': 'https://localhost:8000/login/callback/',
+        'redirect_uri': url_host,
         'client_id': '5c17ff26-50a1-4003-bc31-f0545709c2f7',
         'client_secret': 'EeJ8Q~ip-6TA~p1C7Y9t24l81qig0lFv1t5CPdwO',
     }
@@ -316,35 +517,51 @@ def check_emails(request):
 def get_authorization_code(request):
     full_host = request.build_absolute_uri('/') 
     # Redirect người dùng đến URL xác thực để đăng nhập
-    # redirect_uri = 'https://localhost:8000/test-mail/'
     redirect_uri = full_host +'load-mail-unread/'
-    tenant_id = 'c43d3f81-f57a-48cc-8b07-74b39935d876'
-    authorization_url = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize?client_id=5c17ff26-50a1-4003-bc31-f0545709c2f7&response_type=code&redirect_uri={redirect_uri}&scope=https://graph.microsoft.com/Mail.Read'
+    tenant_id = settings.MICROSOFT_TENANT_ID_EMAIL
+    client_id = settings.MICROSOFT_CLIENT_ID_EMAIL
+    scope = 'https://graph.microsoft.com/Mail.ReadWrite+Mail.Send'
+    # scope = 'https://graph.microsoft.com/Mail.Read'
+    authorization_url = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize?client_id={client_id}&response_type=code&redirect_uri={redirect_uri}&scope={scope}'
     return redirect(authorization_url)
 
 def get_access_token(authorization_code,full_host):
     redirect_uri = full_host +'load-mail-unread/'
-    token_url = 'https://login.microsoftonline.com/c43d3f81-f57a-48cc-8b07-74b39935d876/oauth2/v2.0/token'
+    tenant_id = settings.MICROSOFT_TENANT_ID_EMAIL
+    client_id = settings.MICROSOFT_CLIENT_ID_EMAIL
+    client_secret = settings.MICROSOFT_CLIENT_SECRET_EMAIL
+    token_url = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token'
     token_data = {
-        'grant_type': 'authorization_code',
-        'client_id': '5c17ff26-50a1-4003-bc31-f0545709c2f7',
-        'client_secret': 'EeJ8Q~ip-6TA~p1C7Y9t24l81qig0lFv1t5CPdwO',
+        # 'grant_type': 'client_credentials', #Application Permissions  (Quyền Ứng dụng)
+        'grant_type': 'authorization_code', #Delegated Permissions (Quyền Ủy quyền)
+        'client_id': client_id,
+        'client_secret': client_secret,
         'code': authorization_code,
         'redirect_uri': redirect_uri,
-        'scope': 'https://graph.microsoft.com/Mail.Read',
-        # 'scope': 'https://graph.microsoft.com/Mail.ReadWrite',
+        'scope': 'https://graph.microsoft.com/Mail.ReadWrite https://graph.microsoft.com/Mail.Send',
     }
     token_response = requests.post(token_url, data=token_data)
     access_token = token_response.json().get('access_token')
     return access_token
 
 # Sử dụng mã truy cập để gọi Microsoft Graph API
-def call_graph_api(request):
-    prefix = '[SDP]'
+def call_graph_api(request):    
+    mailid = ''
+    emails = []
     authorization_code = request.GET.get('code')
     full_host = request.build_absolute_uri('/') 
-    access_token = get_access_token(authorization_code,full_host)
 
+    session_data = request.session.get('mail_id', {})
+    if session_data:
+        mailid = session_data.get('Mail_ID')
+        access_token = session_data.get('access_token')
+    else:
+        # mailid = request.session.get('mail_id')  
+        access_token = get_access_token(authorization_code,full_host)
+    
+    if access_token == None :
+        return JsonResponse({'error': 'token is empty'}, status=400)
+    
     # Tính thời gian ngày hôm nay và ngày hôm trước
     today = datetime.datetime.utcnow().date()
     yesterday = today - timedelta(days=1)
@@ -353,13 +570,23 @@ def call_graph_api(request):
     # attachment_dir = '/static/Asset/Attachment-Upload/'
     attachment_dir = os.path.join(settings.BASE_DIR , 'static', 'Asset', 'Attachment-Upload')
     attachment_dir_img = os.path.join(settings.BASE_DIR , 'static', 'Asset', 'Attachment-Image')
-
-    response = requests.get(
-        # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
-        f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
-        headers={'Authorization': f'Bearer {access_token}'}
-    )
-    emails = response.json().get('value', [])
+    if(mailid):
+        response = requests.get(
+            # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+            f'https://graph.microsoft.com/v1.0/me/messages/{mailid}',
+            headers={'Authorization': f'Bearer {access_token}'}
+        )
+        if response.status_code == 200:
+         data_email = response.json()
+         emails.append(data_email)
+    else:
+        prefix = '[SDP]'
+        response = requests.get(
+            # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+            f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+            headers={'Authorization': f'Bearer {access_token}'}
+        )
+        emails = response.json().get('value', [])
     
     if emails:
         for email in emails:
@@ -386,7 +613,7 @@ def call_graph_api(request):
                 email_attachments = email['hasAttachments']  # Danh sách đính kèm
                 # Xử lý danh sách đính kèm
                 if email_attachments:
-                    attachment_names = []
+                    # attachment_names = []
                     attachment_url = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/attachments'
                     attachment_response = requests.get(
                         attachment_url,
@@ -452,31 +679,22 @@ def call_graph_api(request):
                                 #create attachment data
                                 create_attachment_mail(ticketID,attachment_name_full)
 
+                    # reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])             
+
                 else:
                     #gửi mail thống báo lỗi không thành công.
                     mail = "Gửi mail thông báo"
-                    
-
-            # email_read_url = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}'
-            # # update_data = {
-            # #     'isRead': True
-            # # }
-            # payload = {
-            #     "isRead": True,
-            # }
-            # update_headers = {
-            #     'Authorization': f'Bearer {access_token}',
-            #     'Content-Type': 'application/json'
-            # }
-            # # update_response = requests.patch(email_read_url, json=update_data, headers=update_headers)
-            # update_response = requests.patch(email_read_url, headers=update_headers,data=json.dumps(payload))
-
-            # if update_response.status_code == 204:
-            #     return True
-            # else:
-            #     return False
-
-    return emails
+                if(mailid):
+                    del request.session['mail_id']
+                reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])
+                send_email_new_ticket(request,email_id, email_from,Context['Ticket_ID'],Context['Slug_Title'],Context['Email_Assign'])
+                # read_email(access_token,email_id)                   
+        return JsonResponse({'success': 'Success'}, status=200)
+    else:
+        return JsonResponse({'error': 'No email data'}, status=400)
+    # time.sleep(5)
+    return JsonResponse({'success': 'Success'}, status=200)
+    # return redirect('/get-code/')
 
 def check_group_ticket(title_ticket,email_body):
     try:
@@ -589,6 +807,173 @@ def create_attachment_mail(TicketID, AttachmentUrl):
             return True
     except Exception as ex:
         return False
+
+#FUNCTION SEND EMAIL
+def send_email(Email,TicketID,Ticket_Title,slug_title,Ticket_User_Name,Ticket_Date,Ticket_Time,Ticket_Name_Asign, request):
+    try:
+        # full_host = request.get_full_host()   
+        full_host = request.build_absolute_uri('/')   
+        subject = str(TicketID) + ' - ' + Ticket_Title
+        data = {
+        'TicketID': TicketID,
+        'AssignName': Ticket_Name_Asign,
+        'Title': Ticket_Title,
+        'CreateDate': Ticket_Date + ' ' + Ticket_Time,
+        'CreateName': Ticket_User_Name,
+        'Link': full_host+'chi-tiet-yeu-cau/'+str(TicketID)+'/'+slug_title+'/',
+        }
+        message = render_to_string('Emaiil_Ticket.html', context=data)
+        
+        # message = 'This is a test email.'
+        # from_email = 'giang.llt@bamboocap.com.vn'
+        from_email = settings.MICROSOFT_EMAIL
+        recipient_list = [Email]
+        # cc_list = ['cc@example.com']
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=from_email,
+            recipient_list=recipient_list,
+            # cc=cc_list,
+            fail_silently=False,  # Thông báo lỗi nếu có vấn đề khi gửi email
+            html_message=message,  # Sử dụng nội dung HTML
+        )
+        # return HttpResponse('Email sent successfully')
+        return True
+    except Exception as ex:
+        return False
+    
+def send_email_new_ticket(request, email_id, email_from, TicketID, slug_title,email_assign):
+    try:
+        ticket = Ticket.objects.get(Ticket_ID = TicketID)
+        if ticket:
+            Ticket_Title = ticket.Ticket_Title
+            Ticket_Desc = ticket.Ticket_Desc
+            Ticket_Name_Asign = ticket.Ticket_Name_Asign
+            Ticket_Date = ticket.Ticket_Date.strftime('%d/%m/%Y')
+            Ticket_Time = ticket.Ticket_Time.strftime('%H:%M')
+            Ticket_User_Name= ticket.Ticket_User_Name 
+        full_host = request.build_absolute_uri('/')   
+        subject = str(TicketID) + ' - ' + Ticket_Title
+        data = {
+        'TicketID': TicketID,
+        'TicketDesc': Ticket_Desc,
+        'AssignName': Ticket_Name_Asign,
+        'Title': Ticket_Title,
+        'CreateDate': Ticket_Date + ' ' + Ticket_Time,
+        'CreateName': Ticket_User_Name,
+        'Link': full_host+'chi-tiet-yeu-cau/'+str(TicketID)+'/'+slug_title+'/',
+        }
+        # message = render_to_string('Emaiil_Ticket_Rep.html', context=data)
+        
+        # message = 'This is a test email.'
+        # from_email = 'giang.llt@bamboocap.com.vn'
+        from_email = settings.MICROSOFT_EMAIL
+        # recipient_list = [email_from]
+        # # cc_list = ['cc@example.com']
+        # send_mail(
+        #     subject=subject,
+        #     message=message,
+        #     from_email=from_email,
+        #     recipient_list=recipient_list,
+        #     # cc=cc_list,
+        #     fail_silently=False,  # Thông báo lỗi nếu có vấn đề khi gửi email
+        #     html_message=message,  # Sử dụng nội dung HTML
+        # )
+
+        #Assign Email
+        recipient_list_assign = [email_assign.Mail]
+        message_asign = render_to_string('Email_Ticket.html', context=data)
+        send_mail(
+            subject=subject,
+            message=message_asign,
+            from_email=from_email,
+            recipient_list=recipient_list_assign,
+            # cc=cc_list,
+            fail_silently=False,  # Thông báo lỗi nếu có vấn đề khi gửi email
+            html_message=message_asign,  # Sử dụng nội dung HTML
+        )
+        # return HttpResponse('Email sent successfully')
+        return True
+    except Exception as ex:
+        return False
+
+def reply_email(request, access_token, email_id, email_from, TicketID, slug_title):
+    try:
+        ticket = Ticket.objects.get(Ticket_ID = TicketID)
+        if ticket:
+            Ticket_Title = ticket.Ticket_Title
+            Ticket_Name_Asign = ticket.Ticket_Name_Asign
+            Ticket_Date = ticket.Ticket_Date
+            Ticket_Time = ticket.Ticket_Time
+            Ticket_User_Name= ticket.Ticket_User_Name
+            # for e in Email:
+            #     list_mail.append(e['emailAddress']['address'])
+
+        full_host = request.build_absolute_uri('/')   
+        subject = str(TicketID) + ' - ' + Ticket_Title
+        data = {
+            'TicketID': TicketID,
+            'AssignName': Ticket_Name_Asign,
+            'Title': Ticket_Title,
+            'CreateDate': Ticket_Date.strftime('%d/%m/%Y') + ' ' + Ticket_Time.strftime('%H/%M'),
+            'CreateName': Ticket_User_Name,
+            'Link': full_host + 'chi-tiet-yeu-cau/' + str(TicketID) + '/' + slug_title + '/',
+        }
+        message = render_to_string('Emaiil_Ticket_Rep.html', context=data)
+
+        # URL API của Microsoft Graph
+        reply_url = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/createReply'
+
+        # Dữ liệu để tạo nội dung reply
+        reply_data = {
+            "message": {
+                "subject":' Re: ' + subject,
+                "body": {
+                    "contentType": "html",
+                    "content": message
+                },
+                "toRecipients": [
+                    {
+                        "emailAddress": {
+                            "address": email_from
+                        }
+                    }
+                ]
+            }
+        }
+
+        # Gửi yêu cầu POST để tạo reply email
+        response = requests.post(
+            reply_url,
+            headers={'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'},
+            json=reply_data
+        )
+        # Xử lý phản hồi từ Microsoft Graph API
+        if response.status_code == 201:
+            # Sau khi tạo reply thành công, gửi email bằng cách cập nhật threadId và gửi yêu cầu POST tới /send
+            response_data = response.json()
+            thread_id = response_data.get('id')
+            send_url = f'https://graph.microsoft.com/v1.0/me/messages/{thread_id}/send'
+
+            send_response = requests.post(
+                send_url,
+                headers={'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'}
+            )
+
+            if send_response.status_code == 202:
+                return True
+            else:
+                print("Failed to send email:", send_response.content)
+                return False
+        else:
+            print("Failed to create reply email:", response.content)
+            return False
+
+    except Exception as ex:
+        return False
+
+#FUNCTION SEND EMAIL
 
 #LOGOUT 
 @csrf_exempt
@@ -1250,7 +1635,8 @@ def load_Ticket_Json(request):
                 'Ticket_ID': ticket.Ticket_ID,
                 'Ticket_Title': ticket.Ticket_Title,
                 'Ticket_Title_Slug': slug_title,
-                'Ticket_Desc': ticket.Ticket_Desc[:30] if len(ticket.Ticket_Desc) > 30 else ticket.Ticket_Desc,
+                # 'Ticket_Desc': ticket.Ticket_Desc[:30] if len(ticket.Ticket_Desc) > 30 else ticket.Ticket_Desc,
+                'Ticket_Desc': '',
                 'Ticket_Type': ticket.Ticket_Type,
                 'Company_ID': ticket.Company_ID.Company_ID,
                 'Company_Name': ticket.Company_ID.Company_Name,
@@ -1787,40 +2173,6 @@ def similar(a, b):
 
 #FUNCTION SUGGEST TICKET
 
-#FUNCTION SEND EMAIL
-def send_email(Email,TicketID,Ticket_Title,slug_title,Ticket_User_Name,Ticket_Date,Ticket_Time,Ticket_Name_Asign, request):
-    try:
-        # full_host = request.get_full_host()   
-        full_host = request.build_absolute_uri('/')   
-        subject = str(TicketID) + ' - ' + Ticket_Title
-        data = {
-        'TicketID': TicketID,
-        'AssignName': Ticket_Name_Asign,
-        'Title': Ticket_Title,
-        'CreateDate': Ticket_Date + ' ' + Ticket_Time,
-        'CreateName': Ticket_User_Name,
-        'Link': full_host+'chi-tiet-yeu-cau/'+str(TicketID)+'/'+slug_title+'/',
-        }
-        message = render_to_string('Email_Ticket.html', context=data)
-        
-        # message = 'This is a test email.'
-        from_email = 'giang.llt@bamboocap.com.vn'
-        recipient_list = [Email]
-        # cc_list = ['cc@example.com']
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=from_email,
-            recipient_list=recipient_list,
-            # cc=cc_list,
-            fail_silently=False,  # Thông báo lỗi nếu có vấn đề khi gửi email
-            html_message=message,  # Sử dụng nội dung HTML
-        )
-        # return HttpResponse('Email sent successfully')
-        return True
-    except Exception as ex:
-        return False
-#FUNCTION SEND EMAIL
 
 ################################################### PAGE TICKET DATA #######################  
 

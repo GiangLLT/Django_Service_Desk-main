@@ -131,7 +131,9 @@ ALLOWED_HOSTS = [
     'https://login.microsoftonline.com',
     'http://localhost:8000',
     'localhost',
-    'https://localhost:44386'
+    'https://localhost:44386',
+    'http://127.0.0.1:8000',
+    '127.0.0.1'
 ]
 
 TEMPLATES = [
@@ -272,10 +274,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # LOGIN_REDIRECT_URL = reverse_lazy('Home')
 
+#AUTOMATION MAIL 365
+# MICROSOFT_CLIENT_ID_EMAIL = '5c17ff26-50a1-4003-bc31-f0545709c2f7'
+# MICROSOFT_CLIENT_SECRET_EMAIL = 'EeJ8Q~ip-6TA~p1C7Y9t24l81qig0lFv1t5CPdwO'
+# MICROSOFT_TENANT_ID_EMAIL = 'c43d3f81-f57a-48cc-8b07-74b39935d876'
+# MICROSOFT_EMAIL = 'giang.llt@bamboocap.com.vn'
+
+MICROSOFT_CLIENT_ID_EMAIL = '7c30d987-4ce4-4e5e-9f95-003962116f0a'
+MICROSOFT_CLIENT_SECRET_EMAIL = 'ySx8Q~Y.q6ZlzM1WmwEijRWdvE2UnJFOD81tLbYy'
+MICROSOFT_TENANT_ID_EMAIL = 'c43d3f81-f57a-48cc-8b07-74b39935d876'
+MICROSOFT_EMAIL = 'noreply-hrm@bamboocap.com.vn'
+
 #SEND MAIL
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.office365.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'GIANG.LLT@BAMBOOCAP.COM.VN'
-EMAIL_HOST_PASSWORD = 'Gllt@1622'
+EMAIL_HOST_USER = 'noreply-hrm@bamboocap.com.vn'
+EMAIL_HOST_PASSWORD = 'TinhVan123!'
+# EMAIL_HOST_USER = 'GIANG.LLT@BAMBOOCAP.COM.VN'
+# EMAIL_HOST_PASSWORD = 'Gllt@1622'
