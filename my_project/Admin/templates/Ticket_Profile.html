@@ -1,0 +1,157 @@
+{% extends 'Admin_Helpdesk.html' %}
+
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Trang Chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Cập Nhật Thông Tin Người Dùng </span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper ">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="top-title">
+                <h4 class="card-title card-title-edit">CẬP NHẬT THÔNG TIN NGƯỜI DÙNG</h4>
+                <div>                                 
+                  {% comment %} <button type="button" class="btn btn-danger btn-icon-text addUser" id="addUser">
+                    <i class="ti-files btn-icon-prepend"></i>                                                    
+                    TẠO NGƯỜI DÙNG
+                  </button> {% endcomment %}
+                </div>
+              </div>
+              
+
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <div class="table-responsive over-flow">
+                        <form id="UpdateUserForm" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="modal-body modal-body-custom">
+                              <!-- Người dùng - line 1 -->
+                                    <div class="col-lg-12 col-md-12 col-sm-12">
+                                      <div class="row">
+                                          <div class="col-lg-6 col-md-6 col-sm-12">
+                                            <div class="form-group">
+                                                <label for="name">Mã Người Dùng<b class="require-form">*</b></label>
+                                                <input type="text" class="form-control" id="input_userid" value="{{user_profile.ID_user }}" name="id" readonly required>
+                                            </div>
+                                        </div>
+                                          <div class="col-lg-6 col-md-6 col-sm-12">
+                                              <div class="form-group">
+                                                  <label for="name">Email <b class="require-form">*</b></label>
+                                                  <input type="email" class="form-control" id="input_email" value="{{user_profile.Mail}}" name="email" readonly required>
+                                              </div>
+                                          </div>                                                       
+                                      </div>
+                                    </div>
+                              <!-- Người dùng - line 1  -->
+                              
+                              <!-- Người dùng - line 2 -->
+                                  <div class="col-lg-12 col-md-12 col-sm-12">
+                                      <div class="row">
+                                          <div class="col-lg-6 col-md-6 col-sm-12">
+                                              <div class="form-group">
+                                                  <label for="name">Tên Người Dùng <b class="require-form">*</b></label>
+                                                  <input type="text" class="form-control" id="input_name" value="{{user_profile.FullName}}" name="name" placeholder="Nhập Tên Người Dùng" required>
+                                              </div>
+                                          </div>
+                                          <div class="col-lg-6 col-md-6 col-sm-12">
+                                              <div class="form-group">
+                                                  <label for="name">Điện Thoại</label>
+                                                  <input type="text" inputmode="numeric" maxlength="10" class="form-control" id="input_phone" value="0{{user_profile.Phone}}" name="phone" placeholder="Nhập Số Điện Thoại" required>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+                              <!-- Người dùng - line 2  -->
+
+                              <!-- Người dùng - line 3 -->
+                              <div class="col-lg-12 col-md-12 col-sm-12">
+                                <div class="row">
+                                    <div class="col-lg-6 col-md-6 col-sm-12">
+                                        <div class="form-group">
+                                            <label for="name">Địa Chỉ</label>
+                                            <input type="text" class="form-control" id="input_address" value="{{user_profile.Address}}" name="address" required>
+                                        </div>
+                                    </div> 
+                                    <div class="col-lg-6 col-md-6 col-sm-12">
+                                      <div class="form-group">
+                                        <label for="name">Công Ty <b class="require-form">*</b></label>
+                                        <select class="form-select input_support db-support-ticket input_company_update" aria-label="Default select example" id="input_company" name="company" required>
+                                        {% for c in company %}
+                                            <option value="{{c.Company_ID}}" {% if user_profile.Company_ID == c.Company_ID %}selected{% endif %}>{{c.Company_Name}}</option>
+                                        {% endfor %}
+                                        </select>
+                                      </div>
+                                  </div>                                             
+                                </div>
+                              </div>
+                          <!-- Người dùng - line 3 -->
+
+                              <!-- Người dùng - line 4 -->
+                                  <div class="col-lg-12 col-md-12 col-sm-12">
+                                      <div class="row">
+                                          <div class="col-lg-6 col-md-6 col-sm-12">
+                                              <div class="form-group">
+                                                  <label for="name">Ngày Sinh</label>
+                                                  <input type="date" pattern="\d{2}/\d{2}/\d{4}" class="form-control" id="input_birthday" value="{{user_profile.Birthday}}" name="birthday" required>
+                                              </div>
+                                          </div>
+                                          <div class="col-lg-6 col-md-6 col-sm-12">
+                                              <div class="form-group">
+                                                  <label for="name">Chức Vụ</label>
+                                                  <input type="text" class="form-control" id="input_jobtitle" value="{{user_profile.Jobtitle}}" name="jobtitle" placeholder="Nhập Chức Vụ" required>
+                                              </div>
+                                          </div>                                                   
+                                      </div>
+                                  </div>
+                              <!-- Người dùng - line 4 -->
+                            
+                              <!-- Người dùng - line 5 -->
+                                  <div class="col-lg-12 col-md-12 col-sm-12">
+                                    <div class="row">
+                                      <div class="col-lg-6 col-md-6 col-sm-12">
+                                        <div class="form-group">
+                                          <label for="name">Quyền <b class="require-form">*</b></label>
+                                          <select class="form-select input_support db-support-ticket" aria-label="Default select example" id="input_role" name="role" required disabled>
+                                            <option value="2"> {% if user_profile.User_Type == 2 %}selected{% endif %}Member</option>
+                                            <option value="1" {% if user_profile.User_Type == 1 %}selected{% endif %}>Moderator</option>
+                                            <option value="0" {% if user_profile.User_Type == 0 %}selected{% endif %} class="hide-option opt-admin">Administrator</option>
+                                          </select>
+                                        </div>
+                                      </div>
+                                      <div class="col-lg-6 col-md-6 col-sm-12">
+                                        <div class="form-group">
+                                          <label for="name">Tình Trạng <b class="require-form">*</b></label>
+                                          <select class="form-select input_support" aria-label="Default select example" id="input_status" name="status" required disabled>
+                                            <option value="True" {% if user_profile.User_Status == True %}selected{% endif %}>Kích Hoạt</option>
+                                            <option value="False" {% if user_profile.User_Status == False %}selected{% endif %}>Không Kích Hoạt</option>
+                                          </select>
+                                        </div>
+                                      </div>                                             
+                                    </div>
+                                  </div>
+                            <!-- Người dùng - line 5 -->         
+                                                                                       
+                            </div>                                        
+                            <div class="modal-footer modal-footer-custom">                                         
+                              <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="Update-user-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                            </div>
+                          </form>
+
+                                        
+                    </div>                            
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+    </div>
+{% endblock %}
