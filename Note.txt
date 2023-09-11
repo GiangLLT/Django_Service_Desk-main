@@ -29,6 +29,8 @@ git pull origin main
 
 git ls-remote origin
 
+git clone -b main https://github.com/username/repository.git
+
 
 https://stackoverflow.com/questions/54824864/django-python-sql-server-pyodbc-isnt-an-available-database-backend 
 # pip uninstall django-pyodbc-azure 

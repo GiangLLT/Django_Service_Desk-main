@@ -18,6 +18,7 @@ GO
 CREATE TABLE User_System
 (
     ID_User NVARCHAR(20) PRIMARY KEY NOT NULL,
+	Company_ID	int,
     Mail NVARCHAR(200),
     Password NVARCHAR(50),
     FullName NVARCHAR(100),
@@ -34,6 +35,7 @@ CREATE TABLE User_System
 	Date_Create DATE,
 	Time_Create TIME,
     User_Status BIT
+	FOREIGN KEY (Company_ID) REFERENCES Company(Company_ID)
 );
 
 CREATE TABLE Company (

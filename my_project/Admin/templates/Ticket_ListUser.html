@@ -49,6 +49,7 @@
                                 <th>#</th>
                                 <th>EMAIL</th>                                                       
                                 <th>TÊN NGƯỜI DÙNG</th>
+                                <th>CÔNG TY</th>
                                 <th>QUYỀN</th>
                                 <th id="toggle-column" class="hidden-column">LOẠI TÀI KHOẢN</th>
                                 <th id="toggle-column" class="hidden-column">CHỨC VỤ</th>
@@ -75,7 +76,10 @@
                                 </th>
                                 <th>
                                   <input type="text" class="form-control" id="search-FullName" name="search-FullName"  placeholder="Tên Người Dùng">
-                                </th>                               
+                                </th>        
+                                <th>
+                                  <input type="text" class="form-control" id="search-Company" name="search-Company"  placeholder="Công Ty">
+                                </th>                       
                                 <th>
                                     <select class="db-User_Type">
                                         <option value="">Tất Cả</option>
@@ -179,12 +183,20 @@
                                             <!-- Người dùng - line 3 -->
                                             <div class="col-lg-12 col-md-12 col-sm-12">
                                               <div class="row">
-                                                  <div class="col-lg-12 col-md-12 col-sm-12">
+                                                  <div class="col-lg-6 col-md-6 col-sm-12">
                                                       <div class="form-group">
                                                           <label for="name">Địa Chỉ</label>
                                                           <input type="text" class="form-control" id="input_address" name="address" required>
                                                       </div>
-                                                  </div>                                              
+                                                  </div>  
+                                                  <div class="col-lg-6 col-md-6 col-sm-12">
+                                                    <div class="form-group">
+                                                      <label for="name">Công Ty <b class="require-form">*</b></label>
+                                                      <select class="form-select input_support db-support-ticket" aria-label="Default select example" id="input_company" name="company" required>
+
+                                                      </select>
+                                                    </div>
+                                                </div>                                            
                                               </div>
                                             </div>
                                         <!-- Người dùng - line 3 -->
@@ -298,12 +310,19 @@
                                             <!-- Người dùng - line 3 -->
                                             <div class="col-lg-12 col-md-12 col-sm-12">
                                               <div class="row">
-                                                  <div class="col-lg-12 col-md-12 col-sm-12">
+                                                  <div class="col-lg-6 col-md-6 col-sm-12">
                                                       <div class="form-group">
                                                           <label for="name">Địa Chỉ</label>
                                                           <input type="text" class="form-control" id="input_address" name="address" required>
                                                       </div>
-                                                  </div>                                              
+                                                  </div> 
+                                                  <div class="col-lg-6 col-md-6 col-sm-12">
+                                                    <div class="form-group">
+                                                      <label for="name">Công Ty <b class="require-form">*</b></label>
+                                                      <select class="form-select input_support db-support-ticket input_company_update" aria-label="Default select example" id="input_company" name="company" required>
+                                                      </select>
+                                                    </div>
+                                                </div>                                             
                                               </div>
                                             </div>
                                         <!-- Người dùng - line 3 -->

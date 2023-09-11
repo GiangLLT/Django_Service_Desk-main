@@ -938,7 +938,7 @@ if (window.location.pathname === '/danh-sach-yeu-cau/') {
               time: $('#search-TicketTime').val().toLowerCase().trim(),
               status: $('.db-status').val().toLowerCase().trim(),
             };
-            Load_data(context.companys, context.tgroups, context.users);
+            Load_data(context.companys, context.tgroups, context.users, context.users_company);
             display_Ticket(context.data, currentPage, itemsPerPage,filters, context.data);
             auth_role();
       },
@@ -1097,28 +1097,41 @@ if (window.location.pathname === '/danh-sach-yeu-cau/') {
     $(document).on('click', '#create-ticket-button', function() {
     // document.getElementById('create-ticket-button').addEventListener('click', function() {
       //get data from model
-      var title = document.querySelector('#input_title').value;
-      var companyOptions = document.querySelector('#input_company').value;
-      var groupOptions = document.querySelector('#input_group').value;
-      var supportOptions = document.querySelector('#input_support').value;
-      var supNameOptions = document.querySelector('#input_support option:checked').textContent.substring(12,100).trim();
-      var typeOptions = document.querySelector('#input_type').value;
-      var des = tinymce.get('tinyMceExample').getContent();
-      var detail = des.replace(/<p>\s*<img src=([^>]+)>\s*<\/p>/gi, '<a href=$1><img src=$1/></a>');
-      //get data from model
-
-      if(title && companyOptions &&  groupOptions && typeOptions && detail){
-      // if(title && companyOptions &&  groupOptions && supportOptions && typeOptions && detail){
-        var files = document.querySelector('#CreateTicketModal #file-input').files;
-        create_ticket(title,companyOptions,groupOptions,supportOptions,supNameOptions,typeOptions,detail, files);
-        //upload_Files(files);      
-      }
-      else{
+      var find = 'No Data'
+      var selectElement  = document.querySelector('#input_company');
+      var selectedOption = selectElement.options[selectElement.selectedIndex];
+      var companyNameOptions = selectedOption.text;
+      if (find.includes(companyNameOptions)){
         Swal.fire({
           icon: 'error',
           title: 'Thông Báo Lỗi', 
-          text: 'Nhập thông tin vào các trường có *',
+          text: 'Vui lòng chọn công ty.',
         })
+      }
+      else{
+        var companyOptions = document.querySelector('#input_company').value;
+        var title = document.querySelector('#input_title').value;
+        var groupOptions = document.querySelector('#input_group').value;
+        var supportOptions = document.querySelector('#input_support').value;
+        var supNameOptions = document.querySelector('#input_support option:checked').textContent.substring(12,100).trim();
+        var typeOptions = document.querySelector('#input_type').value;
+        var des = tinymce.get('tinyMceExample').getContent();
+        var detail = des.replace(/<p>\s*<img src=([^>]+)>\s*<\/p>/gi, '<a href=$1><img src=$1/></a>');
+        //get data from model
+  
+        if(title && companyOptions &&  groupOptions && typeOptions && detail){
+        // if(title && companyOptions &&  groupOptions && supportOptions && typeOptions && detail){
+          var files = document.querySelector('#CreateTicketModal #file-input').files;
+          create_ticket(title,companyOptions,groupOptions,supportOptions,supNameOptions,typeOptions,detail, files);
+          //upload_Files(files);      
+        }
+        else{
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi', 
+            text: 'Nhập thông tin vào các trường có *',
+          })
+        }
       }     
     });
 
@@ -1645,7 +1658,7 @@ function update_info_ticket(Ticket_Data){
     });
 }
 
-function Load_data(companys, Tgroups, User_support){
+function Load_data(companys, Tgroups, User_support, Users_Company){
   //load dropdown list company - Ticket
   if(companys){
     for(i=0; i< companys.length; i++){
@@ -1653,9 +1666,18 @@ function Load_data(companys, Tgroups, User_support){
       $('.db-company').append(
         '<option value="'+company.Company_ID+'">'+company.Company_Name+'</option>'
        );
-       $('.db-company-ticket').append(
-        '<option value="'+company.Company_ID+'">'+company.Company_Name+'</option>'
-       );
+
+      if (company.Company_ID == Users_Company[0].Company_ID){
+        $('.db-company-ticket').append(
+          '<option value="'+company.Company_ID+'" selected>'+company.Company_Name+'</option>'
+         );
+      }
+      else{
+        $('.db-company-ticket').append(
+          '<option value="'+company.Company_ID+'">'+company.Company_Name+'</option>'
+         );
+      }
+      
      }
   }
 
@@ -5128,6 +5150,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       success: function(context) {
           var filters = {
               id:   $('#search-ID_User').val().toLowerCase().trim(),
+              company: $('#search-Company').val().toLowerCase().trim(),
               email: $('#search-Mail').val().toLowerCase().trim(),
               name: $('#search-FullName').val().toLowerCase().trim(),
               utype: $('.db-User_Type').val().toLowerCase().trim(),
@@ -5238,6 +5261,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       $('#product-table tbody').empty();
       var filteredProducts = products.filter(function(product) {
           var IDMatch = filters.id === '' || product.ID_user.toString().toLowerCase().includes(filters.id);
+          var CompanyMatch = filters.company === '' || product.Company_Name.toLowerCase().indexOf(filters.company) > -1;
           var MailMatch = filters.email === '' || product.Mail.toLowerCase().indexOf(filters.email) > -1;
           var NameMatch = filters.name === '' || product.FullName.toLowerCase().indexOf(filters.name) > -1;
           var UtypeMatch = filters.utype === '' || product.User_Type.toString().toLowerCase().indexOf(filters.utype) > -1;
@@ -5252,7 +5276,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
           var timeMatch = filters.time === '' || product.Time_Create.toLowerCase().indexOf(filters.time) > -1;
           var statusMatch = filters.status === '' || product.User_Status.toString().toLowerCase().indexOf(filters.status) > -1;
 
-          return IDMatch && MailMatch && NameMatch && UtypeMatch && AtypeMatch && JobtitleMatch && BirthdayMatch && AddressMatch && PhoneMatch && createIDMatch && createNameMatch && dateMatch && timeMatch && statusMatch ;
+          return IDMatch&& CompanyMatch && MailMatch && NameMatch && UtypeMatch && AtypeMatch && JobtitleMatch && BirthdayMatch && AddressMatch && PhoneMatch && createIDMatch && createNameMatch && dateMatch && timeMatch && statusMatch ;
         });
 
         if(filteredProducts !== null || filteredProducts !== '')
@@ -5279,6 +5303,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
           '<td data-column="id">#' + product.ID_user + '</td>' +           
           '<td data-column="mail">' + product.Mail + '</td>' +           
           '<td data-column="name">' + product.FullName + '</td>' +           
+          '<td data-column="company">' + product.Company_Name + '</td>' +           
           '<td data-column="utype"><button data-user-id="' + product.ID_user + '" data-type-value="' + product.User_Type + '" type="button" class="btn btn-'+(product.User_Type == 0 ? 'danger' : (product.User_Type == 1 ? 'warning' : 'primary' ))+' btn-rounded btn-fw btn-user-role admin-button">'+  
           (product.User_Type == 0 ? 'Administrator' :  (product.User_Type == 1 ? 'Moderator' : 'Member'))+
           '</button></td>' +
@@ -5491,7 +5516,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       //xử lý sự kiện update status
 
       // Search data in textbox table - start     
-      $('#search-ID_User, #search-Mail, #search-FullName,.db-User_Type,#search-Acc_Type,#search-Birthday,#search-Jobtitle,#search-Address,#search-Phone,#search-ID_Create,#search-Name_Create,#search-Date_Create,#search-Time_Create,.db-status').on('keydown', function(event) {
+      $('#search-ID_User, #search-Mail, #search-FullName, #search-Company,.db-User_Type,#search-Acc_Type,#search-Birthday,#search-Jobtitle,#search-Address,#search-Phone,#search-ID_Create,#search-Name_Create,#search-Date_Create,#search-Time_Create,.db-status').on('keydown', function(event) {
         if (event.keyCode === 13) { // Nếu nhấn phím Enter
             event.preventDefault(); // Tránh việc reload lại trang
             $('#search-ID_User').blur(); // Mất focus khỏi textbox tìm kiếm
@@ -5502,6 +5527,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
             $('#search-Phone').blur();
             $('#search-ID_Create').blur();
             $('#search-Name_Create').blur();
+            $('#search-Company').blur();
             var formattedDate ="";
             var formattedDateBirth ="";
             var birth = $('#search-Birthday').val();
@@ -5517,6 +5543,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
             // Lấy giá trị của filters
             var filters = {
               id:   $('#search-ID_User').val().toLowerCase().trim(),
+              company: $('#search-Company').val().toLowerCase().trim(),
               email: $('#search-Mail').val().toLowerCase().trim(),
               name: $('#search-FullName').val().toLowerCase().trim(),
               utype: $('.db-User_Type').val().toLowerCase().trim(),
@@ -5545,6 +5572,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       $('#search-ID_User').val('');
       $('#search-Mail').val('');
       $('#search-FullName').val('');
+      $('#search-Company').val('');
       $('.db-User_Type').val('');
       $('#search-Acc_Type').val('');
       $('#search-Jobtitle').val('');
@@ -5569,6 +5597,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
           $('#search-Phone').blur();
           $('#search-ID_Create').blur();
           $('#search-Name_Create').blur();
+          $('#search-Company').blur();
           var formattedDate ="";
           var formattedDateBirth ="";
           var birth = $('#search-Birthday').val();
@@ -5584,6 +5613,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
           // Lấy giá trị của filters
           var filters = {
             id:   $('#search-ID_User').val().toLowerCase().trim(),
+            company: $('#search-Company').val().toLowerCase().trim(),
             email: $('#search-Mail').val().toLowerCase().trim(),
             name: $('#search-FullName').val().toLowerCase().trim(),
             utype: $('.db-User_Type').val().toLowerCase().trim(),
@@ -5781,8 +5811,43 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
 
     // Xử lý sự kiện khi người dùng nhấn nút Create
     $('.addUser').click(function(event) {
+      Load_Company_user();
       $('#CreateUserModal').modal('show');
     });
+    function Load_Company_user(){
+      $.ajax({
+        url: '/load-data-cong-ty/',
+        dataType: 'json',
+        method: 'POST',
+        success: function(response) {
+          if (response.success) {
+            var opt = '';
+            var cop = document.querySelectorAll('#input_company');
+            cop.forEach(item => {
+              for(i = 0 ; i < response.data.length; i++){
+                opt += '<option value="'+response.data[i].Company_ID+'">'+response.data[i].Company_Name+'</option>';
+              }
+              item.innerHTML= opt;
+              opt = '';
+            });        
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: response.message,
+            });
+          }
+        },
+        error: function(response) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi',
+            text: response.message,
+          });
+        }
+      });
+    }
+
     $('#create-user-button').click(function(event) {
       event.preventDefault(); // Prevent default form submission      
       var email = document.querySelector('#input_email').value;
@@ -5794,8 +5859,9 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       var jobtitle = document.querySelector('#input_jobtitle').value;
       var role = document.querySelector('#input_role').value;
       var status_user = document.querySelector('#input_status').value;
-      if(email && pass && fullname && role && status_user){
-        validateEmail(email,pass,fullname,phone,address,birthday,jobtitle,role,status_user);
+      var company_user = document.querySelector('#input_company').value;
+      if(email && pass && fullname && role && status_user && company_user){
+        validateEmail(email,pass,fullname,phone,address,birthday,jobtitle,role,status_user, company_user);
         // create_user(email,pass,fullname,phone,address,birthday,jobtitle,role,status_user)    
       }
       else{
@@ -5807,7 +5873,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       }
       
     });
-    function create_user(email,pass,fullname,phone,address,birthday,jobtitle,role,status_user){
+    function create_user(email,pass,fullname,phone,address,birthday,jobtitle,role,status_user,company_user){
       $.ajax({
         url: '/tao-nguoi-dung/',
         dataType: 'json',
@@ -5822,6 +5888,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
           'jobtitle'  : jobtitle,
           'role'      : role,
           'status'    : status_user,
+          'company'    : company_user,
         },
         success: function(response) {
           if (response.success) {     
@@ -5852,7 +5919,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       });
     }
 
-    function validateEmail(email,pass,fullname,phone,address,birthday,jobtitle,role,status_user) {
+    function validateEmail(email,pass,fullname,phone,address,birthday,jobtitle,role,status_user,company_user) {
       var emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;  
       if (emailRegex.test(email)) {
         $.ajax({
@@ -5864,7 +5931,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
           },
           success: function(response) {
             if (response.success) {     
-              create_user(email,pass,fullname,phone,address,birthday,jobtitle,role,status_user)
+              create_user(email,pass,fullname,phone,address,birthday,jobtitle,role,status_user,company_user)
             } else {
               Swal.fire({
                 icon: 'error',
@@ -5905,6 +5972,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       '<td data-column="id">#' + data.ID_user + '</td>' +           
       '<td data-column="mail">' + data.Mail + '</td>' +           
       '<td data-column="name">' + data.FullName + '</td>' +           
+      '<td data-column="company">' + data.Company_Name + '</td>' +           
       '<td data-column="utype"><button data-user-id="' + data.ID_user + '" data-type-value="' + data.User_Type + '" type="button" class="btn btn-'+(data.User_Type == 0 ? 'danger' : (data.User_Type == 1 ? 'warning' : 'primary' ))+' btn-rounded btn-fw btn-user-role admin-button">'+  
       (data.User_Type == 0 ? 'Administrator' :  (data.User_Type == 1 ? 'Moderator' : 'Member'))+
       '</button></td>' +
@@ -5933,7 +6001,8 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
     $(document).on('click', '.update-user', function() {
       $('#UpdateUserModal').modal('show');
       if( $('#UpdateUserModal').modal('show'))
-      {       
+      { 
+        Load_Company_user();      
         var UserID = $(this).val();
         LoadDataUpdate_User(UserID);           
       }
@@ -5967,6 +6036,17 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
 
             var input_Jobtitle = input.querySelector('#input_jobtitle');
             input_Jobtitle.value = response.Users.Jobtitle;
+
+            var input_company = input.querySelectorAll('.input_company_update option');
+            input_company.forEach(function(com){
+              var comid = com.getAttribute('value');
+              var id = response.Users.Company_ID; 
+              if(comid.toLowerCase() === String(id).toLowerCase()){
+                com.setAttribute('selected', 'selected');
+              }else {
+                com.removeAttribute('selected');
+              }
+            });
 
             var input_status = input.querySelectorAll('#input_status option');            
             input_status.forEach(function(sta){
@@ -6012,6 +6092,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       var modal = document.querySelector('#UpdateUserModal');
       var input_ID = modal.querySelector('#input_userid').value;
       var input_Name = modal.querySelector('#input_name').value;
+      var input_Company = modal.querySelector('.input_company_update').value;
       var input_Phone = modal.querySelector('#input_phone').value;
       var input_Address = modal.querySelector('#input_address').value;
       var input_Birth = modal.querySelector('#input_birthday').value;
@@ -6020,8 +6101,8 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       var input_status = modal.querySelector('#input_status').value;
     
       // if (input_ID && input_Name && input_Phone && input_Address && input_Birth && input_Jobtitle && input_Role && input_status) {
-      if (input_ID && input_Name && input_Phone  && input_Birth && input_Role && input_status) {
-        update_user(input_ID , input_Name , input_Phone , input_Address , input_Birth , input_Jobtitle , input_Role , input_status);  
+      if (input_ID && input_Name && input_Phone  && input_Birth && input_Role && input_status && input_Company) {
+        update_user(input_ID , input_Name , input_Phone , input_Address , input_Birth , input_Jobtitle , input_Role , input_status, input_Company);  
       } else {
         Swal.fire({
           icon: 'error',
@@ -6032,7 +6113,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
     });
     
 
-    function update_user(ID_user , FullName , Phone , Address , Birthday , Jobtitle , User_Type , User_Status){
+    function update_user(ID_user , FullName , Phone , Address , Birthday , Jobtitle , User_Type , User_Status, Company_ID){
       var status_new = (User_Status.toLowerCase() == "true" ? "true" : "false")
       $.ajax({
             url: '/cap-nhat-nguoi-dung/',
@@ -6041,6 +6122,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
             data: {
               'UserID' : ID_user,
               'FullName': FullName,
+              'Company_ID': Company_ID,
               'Phone'   : Phone,
               'Address' : Address,
               'Birthday': Birthday,
@@ -6098,6 +6180,8 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
             addressElement.textContent =  User_Data.Address;
             var PhoneElement = row.querySelector('[data-column="phone"]');
             PhoneElement.textContent =  User_Data.Phone;
+            var CompanyElement = row.querySelector('[data-column="company"]');
+            CompanyElement.textContent =  User_Data.Company_Name;
 
             var roleElement = row.querySelector('[data-column="utype"]');
             var htmlRole = '<button data-user-id="' + User_Data.ID_user + '" data-type-value="' + User_Data.User_Type + '" type="button" class="btn btn-'+(User_Data.User_Type == '0' ? 'danger' : (User_Data.User_Type == '1' ? 'warning' : 'primary' ))+' btn-rounded btn-fw btn-user-role">'+  
@@ -9696,5 +9780,103 @@ window.addEventListener('scroll', () => {
 
 }
 //########### Danh Sách Authorize End ########### 
+
+//########### Cập Nhật profile ###########  
+if (window.location.pathname === '/cap-nhat-thong-tin-ca-nhan/') {
+  $(document).on('click', '#Update-user-button', function() {
+    var id = document.querySelector('#input_userid').value;
+    var name = document.querySelector('#input_name').value;
+    var phone = document.querySelector('#input_phone').value;
+    var address = document.querySelector('#input_address').value;
+    var company = document.querySelector('#input_company').value;
+    var birthday = document.querySelector('#input_birthday').value;
+    var jobtitle = document.querySelector('#input_jobtitle').value;
+    var role = document.querySelector('#input_role').value;
+    var status = document.querySelector('#input_status').value;
+    if (name && company && role  && status) {
+      check_company(company, function(result) {
+        if (result.success == true) {
+          update_profile(id,name,phone,address,company,birthday,jobtitle,role,status,function(response) {
+            if (response.success == true) {
+              Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo', 
+                text: 'Cập nhật thông tin thành công',
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Thông Báo Lỗi', 
+                text: 'Cập nhật thông tin không thành công',
+              });
+            }
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi', 
+            text: 'Vui lòng chọn công ty.',
+          });
+        }
+      });  
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Thông Báo Lỗi', 
+        text: 'Nhập thông tin vào các trường có *',
+      });
+    }
+  });
+  function check_company(Company_ID,callback){
+    $.ajax({
+      url: '/kiem-tra-cong-ty/',
+      dataType: 'json',
+      method: 'POST',
+      data: { 
+        'CompanyID': Company_ID,
+      },
+      success: function(response) {   
+        callback(response);    
+      },
+      error: function(response) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: response.message,
+        });
+      }
+    });
+  }
+  function update_profile(id,name,phone,address,company,birthday,jobtitle,role,status,callback){
+    $.ajax({
+      url: '/cap-nhat-nguoi-dung/',
+      dataType: 'json',
+      method: 'POST',
+      data: { 
+        'Action'    : 'update',
+        'UserID'    : id,
+        'UserType'  : role,
+        'FullName'  : name,
+        'Company_ID': company,
+        'Phone'     : phone,
+        'Address'   : address,
+        'Birthday'  : birthday,
+        'Jobtitle'  : jobtitle,
+        'status'    : status,
+      },
+      success: function(response) {   
+        callback(response);    
+      },
+      error: function(response) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: response.message,
+        });
+      }
+    });
+  }
+}
+//########### Cập Nhật profile ###########  
 
 //################################################## PAGE TICKET HELPDESK - END ##################################################  

@@ -39,6 +39,7 @@ class MailStatus(models.Model):
 #model Helpdesk
 class Users(models.Model):
     ID_user  = models.CharField(primary_key=True, max_length=20)
+    Company_ID = models.IntegerField()
     Mail = models.EmailField(max_length=200)
     Password     = models.CharField(max_length=50)
     FullName     = models.CharField(max_length=100)

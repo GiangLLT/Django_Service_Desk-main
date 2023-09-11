@@ -83,6 +83,10 @@ urlpatterns = [
     path('xoa-nguoi-dung/', views.Delete_User, name='Delete_User'),                                     #User Delete - xóa Nhóm
     path('data-update-user/', views.Data_Update_User, name='Data_Update_User'),                         #User Update - chỉnh sửa Nhóm
     path('kiem-tra-email/', views.Check_Email, name='Check_Email'),
+    path('load-data-cong-ty/', views.Company_Json, name='Company_Json'),
+    path('page-404/', views.page_404, name='page_404'),
+    path('cap-nhat-thong-tin-ca-nhan/', views.Update_Profile, name='Update_Profile'),
+    path('kiem-tra-cong-ty/', views.Check_Company, name='Check_Company'),
     #------------- User-------------------------
 
     #------------- Comment-------------------------
@@ -160,7 +164,7 @@ urlpatterns = [
 
     path('send-mail/', views.send_email, name='send_email'),
     path('load-read-comment/', views.read_comment, name='read_comment'),
-    #------------- Ticket-----------------------
+    #------------- Function-----------------------
 
     #------------- Login------------------------
     # path('login/', views.Login_page, name='login'),

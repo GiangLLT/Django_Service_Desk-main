@@ -1230,6 +1230,10 @@ margin-left: -5px;
   max-height: 300px;
   overflow-y: scroll;
 }
+.over-flow{
+  overflow-x: visible !important
+}
+
 
 /* --------------------------------- */
 @supports (-webkit-appearance: none) or (-moz-appearance: none) {
