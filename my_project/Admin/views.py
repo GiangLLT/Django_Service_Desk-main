@@ -996,8 +996,6 @@ def reply_email(request, access_token, email_id, email_from, TicketID, slug_titl
         return False
 
 def reply_email_NoExitUser(request, access_token, email_id, email_from, subject):
-
-    
     try:
         message = render_to_string('Email_NoExit_User.html')
         # URL API của Microsoft Graph
