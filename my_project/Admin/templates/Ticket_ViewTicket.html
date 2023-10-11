@@ -66,11 +66,15 @@
                           <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon quote-comment_top" name="Update[]" value="{{ticket.Ticket_ID}}" data-user="{{ticket.Ticket_User_Name}}"><i class="ti-quote-left text-danger"></i></button>
                           {% if request.session.UserInfo.ID_user ==  user.ID_user or request.session.UserInfo.Acc_type < 2 %}
                           <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket-detail" name="Update[]" value="{{ticket.Ticket_ID}}"><i class="ti-pencil-alt text-danger"></i></button>                          
-                          <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket-cancel" name="Update[]" value="{{ticket.Ticket_ID}}"><i class="ti-close text-danger"></i></button>
+                            {% if ticket.Ticket_Status != 3 and ticket.Ticket_Status != 0 %}
+                              <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket-cancel" name="Update[]" value="{{ticket.Ticket_ID}}"><i class="ti-close text-danger"></i></button>
+                            {% endif %}
                           {% endif %}
                           {% if request.session.UserInfo.Acc_type < 2 %}
-                          <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket-complete" name="Update[]" value="{{ticket.Ticket_ID}}"><i class="ti-lock text-danger"></i></button>
-                          <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket-status" name="Update[]" value="{{ticket.Ticket_ID}}"><i class="ti-list text-danger"></i></button>
+                            {% if ticket.Ticket_Status != 0 %}
+                              <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket-complete" name="Update[]" value="{{ticket.Ticket_ID}}"><i class="ti-lock text-danger"></i></button>
+                            {% endif %}
+                              <button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket-status" name="Update[]" value="{{ticket.Ticket_ID}}"><i class="ti-list text-danger"></i></button>
                           {% endif %}
                         </div>
                       

@@ -17,10 +17,20 @@
             <div class="card-body">
               <div class="top-title">
                 <h4 class="card-title card-title-edit">DANH SÁCH CÔNG TY</h4>
-                <button type="button" class="btn btn-danger btn-icon-text addCompany disable-button" id="addCompany">
-                  <i class="ti-files btn-icon-prepend"></i>                                                    
-                  TẠO CÔNG TY
-                </button>
+                <div>
+                  <button type="button" class="btn btn-success btn-icon-text importCompany" id="import">
+                    <i class="mdi mdi-file-import btn-icon-prepend"></i> 
+                    NHẬP EXCEL                                                   
+                  </button>
+                  <button type="button" class="btn btn-success btn-icon-text exportCompany" id="export">
+                    <i class="mdi mdi-file-export btn-icon-prepend"></i>      
+                    XUẤT EXCEL                                              
+                  </button>
+                  <button type="button" class="btn btn-danger btn-icon-text addCompany disable-button" id="addCompany">
+                    <i class="ti-files btn-icon-prepend"></i>                                                    
+                    TẠO CÔNG TY
+                  </button>
+                </div>
               </div>
               
               {% comment %} <p class="card-description">A basic data list T001</p> {% endcomment %}
@@ -144,7 +154,35 @@
                                       </div>
                                     </div>
                                   </div>
-                                  <!-- Modal Update Ticket  -->                                   
+                                  <!-- Modal Update Ticket  -->   
+                                  
+                                  <!-- Modal Import Data -->
+                                  <div class="modal fade modal-hidden" id="ImportExcelModal" tabindex="-1" role="dialog" aria-labelledby="ImportExcelModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="ImportExcelLabel"><i class="ti-write"></i> NHẬP DỮ LIỆU CÔNG TY</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="UpdateRoleForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="file-upload">
+                                            <label  class='attach-file' for="file-input">Chọn tệp tin</label>
+                                            <input id="file-input" type="file" multiple>
+                                            <div id="file-display-info"></div>
+                                            <p id="file-size-info"></p>
+                                            {% comment %} <button type="button" class="btn btn-outline-primary btn-fw btn-MD" id="upload-file-button" hidden><i class="ti-cloud-down btn-icon-prepen"></i> UPLOAD FILES</button> {% endcomment %}
+                                          </div>                                  
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="Import-Excel-Company"><i class="ti-save btn-icon-prepen"></i>  NHẬP DỮ LIỆU</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!--Modal Import Data  -->
                                 </th>                                                           
                               </tr>                               
                             </thead>                          

@@ -915,6 +915,106 @@ if (window.location.pathname === '/danh-sach-yeu-cau/') {
     }
   });
 
+  function filter_data_excel(callback){
+    $.ajax({
+      url: '/danh-sach-data-ticket/',
+      dataType: 'json',
+      success: function(context) {
+        filter_excel = [];
+        var filters = {
+          id: $('#search-TicketID').val().toLowerCase().trim(),
+          title: $('#search-TicketTitle').val().toLowerCase().trim(),
+          desc: $('#search-TicketDes').val().toLowerCase().trim(),
+          company: $('.db-company').val().toLowerCase().trim(),
+          group: $('.db-group').val().toLowerCase().trim(),
+          support: $('#search-TicketSupport').val().toLowerCase().trim(),
+          type: $('.db-type').val().toLowerCase().trim(),
+          create: $('#search-TicketCreate').val().toLowerCase().trim(),
+          date: $('#search-TicketDate').val().toLowerCase().trim(),
+          time: $('#search-TicketTime').val().toLowerCase().trim(),
+          status: $('.db-status').val().toLowerCase().trim(),
+        };
+          // Load_data(context.companys, context.tgroups, context.users)
+          data_users = context.data
+          var filteredData = data_users.filter(function(product) {
+            var IDMatch = filters.id === '' || product.Ticket_ID.toString().toLowerCase().includes(filters.id);
+           //  var IDMatch = filters.id === '' || product.Ticket_ID.includes(parseID);
+            var titleMatch = filters.title === '' || product.Ticket_Title.toLowerCase().indexOf(filters.title) > -1;
+            var DescMatch = filters.desc === '' || product.Company_ID.toString().toLowerCase().indexOf(filters.desc) > -1;
+            var companyMatch = filters.company === '' || product.Company_ID.toString().toLowerCase().indexOf(filters.company) > -1;
+            var groupMatch = filters.group === '' || product.Group_ID.toString().toLowerCase().indexOf(filters.group) > -1;
+   
+            var supportMatch = filters.support === '' || (product.Ticket_Name_Asign && product.Ticket_Name_Asign.toLowerCase().indexOf(filters.support) > -1);
+            var typeMatch = filters.type === '' || product.Ticket_Type.toString().toLowerCase().indexOf(filters.type) > -1;
+            var createMatch = filters.create === '' || product.Ticket_User_Name.toString().toLowerCase().indexOf(filters.create) > -1;
+            var dateMatch = filters.date === '' || product.Ticket_Date.toString().toLowerCase().indexOf(filters.date) > -1;
+            var timeMatch = filters.time === '' || product.Ticket_Time.toLowerCase().indexOf(filters.time) > -1;
+            var statusMatch = filters.status === '' || product.Ticket_Status.toString().toLowerCase().indexOf(filters.status) > -1;
+   
+            return IDMatch && titleMatch && DescMatch && companyMatch && groupMatch && supportMatch && typeMatch && createMatch && dateMatch && timeMatch && statusMatch ;
+          });
+          filter_excel = filteredData;
+          callback(filter_excel);
+      },
+      error: function(rs, e) {
+          alert('Oops! something went wrong');
+      }
+    });
+   
+  }
+  //export excel 
+  $(document).on('click', '.exportTicket', function() {
+    var data =[];
+    filter_data_excel(function(result) {
+      data = result;
+      if (data.length === 0) {
+        // Nếu không có dữ liệu, thông báo lỗi và không gửi yêu cầu
+        Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: 'Không có dữ liệu để xuất Excel.'
+        });
+        return;
+    }
+    var jsonData = JSON.stringify(data);
+    // Tạo một yêu cầu POST đến URL export-excel
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/export_excel_ticket/', true);
+    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8'); // Thiết lập header cho yêu cầu
+    xhr.responseType = 'blob'; // Để nhận tệp Excel dưới dạng Blob
+
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            // Xử lý tệp Excel như trước
+            var blob = new Blob([xhr.response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'Ticket_data_list.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                text: 'Export Data thành công!'
+            });
+        } else {
+            // Xử lý lỗi từ phía máy chủ
+            var errorResponse = JSON.parse(xhr.response);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi',
+                text: errorResponse.message || 'Có lỗi xảy ra khi xuất Excel.'
+            });
+        }
+    };
+    xhr.send(jsonData); // Gửi dữ liệu JSON bằng phương thức POST
+   });      
+});   
+
+
   // load data product
   function Load_Ticket(isAdmin){
     $.ajax({
@@ -927,7 +1027,7 @@ if (window.location.pathname === '/danh-sach-yeu-cau/') {
       success: function(context) {
           var filters = {
               id: $('#search-TicketID').val().toLowerCase().trim(),
-              title: $('#search-TicketID').val().toLowerCase().trim(),
+              title: $('#search-TicketTitle').val().toLowerCase().trim(),
               desc: $('#search-TicketDes').val().toLowerCase().trim(),
               company: $('.db-company').val().toLowerCase().trim(),
               group: $('.db-group').val().toLowerCase().trim(),
@@ -1781,10 +1881,23 @@ function Load_data(companys, Tgroups, User_support, Users_Company){
      // Add First button
      pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="1">&laquo;</a></li>');
      
-     for (var i = 1; i <= numPages; i++) {
-       var activeClass = (i === currentPage) ? "active" : "";
-       pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
-     }
+    //  for (var i = 1; i <= numPages; i++) {
+    //    var activeClass = (i === currentPage) ? "active" : "";
+    //    pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+    //  }
+
+    for (var i = 1; i <= numPages; i++) {
+      var activeClass = (i === currentPage) ? "active" : "";
+      var pageLink = '<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+      
+      if (i <= 4 || i > numPages - 4 || (i >= currentPage - 2 && i <= currentPage + 2)) {
+          pagination.append(pageLink);
+      } else if (i === 5 && currentPage > 6) { // Hiển thị "..." trước các trang ở giữa
+          pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+      } else if (i === numPages - 4 && currentPage < numPages - 5) { // Hiển thị "..." sau các trang ở giữa
+          pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+      }
+    }
      
      // Add Last button
      pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="' + numPages + '">&raquo;</a></li>');
@@ -2429,6 +2542,210 @@ if (window.location.pathname === '/danh-sach-cong-ty/') {
     }
   });
 
+  function filter_data_excel(callback){
+    $.ajax({
+      url: '/danh-sach-data-cong-ty/',
+      dataType: 'json',
+      success: function(context) {
+        filter_excel = [];
+        var filters = {
+          id: $('#search-CompanyID').val().toLowerCase().trim(),
+          company: $('#search-CompanyName').val().toLowerCase().trim(),
+          create: $('#search-CompanyCreate').val().toLowerCase().trim(),
+          date: $('#search-CompanyDate').val().toLowerCase().trim(),
+          time: $('#search-CompanyTime').val().toLowerCase().trim(),
+          status: $('.db-status').val().toLowerCase().trim(),
+        };
+          // Load_data(context.companys, context.tgroups, context.users)
+          data_users = context.data
+          var filteredData = data_users.filter(function(product) {
+            var IDMatch = filters.id === '' || product.Company_ID.toString().toLowerCase().includes(filters.id);
+            var ComNameMatch = filters.company === '' || product.Company_Name.toLowerCase().indexOf(filters.company) > -1;
+            var createMatch = filters.create === '' || product.Company_User_Name.toString().toLowerCase().indexOf(filters.create) > -1;
+            var dateMatch = filters.date === '' || product.Company_Date.toString().toLowerCase().indexOf(filters.date) > -1;
+            var timeMatch = filters.time === '' || product.Company_Time.toLowerCase().indexOf(filters.time) > -1;
+            var statusMatch = filters.status === '' || product.Company_Status.toString().toLowerCase().indexOf(filters.status) > -1;
+  
+            return IDMatch && ComNameMatch && createMatch && dateMatch && timeMatch && statusMatch ;
+          });
+          filter_excel = filteredData;
+          callback(filter_excel);
+      },
+      error: function(rs, e) {
+          alert('Oops! something went wrong');
+      }
+    });
+   
+  }
+  //export excel 
+  $(document).on('click', '.exportCompany', function() {
+    var data =[];
+    filter_data_excel(function(result) {
+      data = result;
+      if (data.length === 0) {
+        // Nếu không có dữ liệu, thông báo lỗi và không gửi yêu cầu
+        Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: 'Không có dữ liệu để xuất Excel.'
+        });
+        return;
+    }
+    var jsonData = JSON.stringify(data);
+    // Tạo một yêu cầu POST đến URL export-excel
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/export_excel_company/', true);
+    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8'); // Thiết lập header cho yêu cầu
+    xhr.responseType = 'blob'; // Để nhận tệp Excel dưới dạng Blob
+
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            // Xử lý tệp Excel như trước
+            var blob = new Blob([xhr.response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'Company_data_list.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                text: 'Export Data thành công!'
+            });
+        } else {
+            // Xử lý lỗi từ phía máy chủ
+            var errorResponse = JSON.parse(xhr.response);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi',
+                text: errorResponse.message || 'Có lỗi xảy ra khi xuất Excel.'
+            });
+        }
+    };
+    xhr.send(jsonData); // Gửi dữ liệu JSON bằng phương thức POST
+   });     
+  }); 
+
+  //import excel
+   // Xử lý sự kiện khi người dùng nhấn nút Import
+   $(document).on('click', '.importCompany', function() {
+    $('#ImportExcelModal').modal('show');
+  });
+
+$(document).on('click', '#Import-Excel-Company', function() {
+  var files = document.getElementById('file-input').files;
+
+  if (files.length > 0) {
+    var formData = new FormData();
+    formData.append('excel_file', files[0]);
+    
+    fetch('/import_excel_company/', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // alert('Import thành công!');
+        if (data.list_data){
+          var mail = data.list_data;
+          var err = ""
+          for(i=0; i<mail.length; i++){
+            err+= mail[i] +"\n";
+           }
+          Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                text: "Công Ty đã tồn tại:" + "\n" + err,
+          });
+        }
+        else{
+          Swal.fire({
+            icon: 'success',
+            title: 'Thông Báo',
+            text: 'Import thành công!',
+          });
+          setTimeout(function() {
+            window.location.reload();
+          }, 2000);
+        }         
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: data.message,
+        });
+        // alert('Lỗi: ' + data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Lỗi:', error);
+    });
+  }
+});
+
+document.getElementById('file-input').addEventListener('change', function() {
+  var files = this.files;
+  var fileSizeLimit = 10 * 1024 * 1024; // 10MB
+  var validExtensions = ['.xlsx', '.xls']; // Các phần mở rộng tệp Excel hợp lệ
+
+  var fileSizeExceeded = false;
+  var totalFileSize = 0;
+
+  var fileDisplayInfo = document.getElementById('file-display-info');
+  fileDisplayInfo.innerHTML = '';
+
+  for (var i = 0; i < files.length; i++) {
+    var file = files[i];
+
+    var fileExtension = '.' + file.name.split('.').pop(); // Lấy phần mở rộng của tệp
+
+    if (validExtensions.indexOf(fileExtension.toLowerCase()) === -1) {
+      // Kiểm tra xem phần mở rộng có hợp lệ không
+      document.getElementById('file-size-info').textContent = '';
+      Swal.fire({
+        icon: 'error',
+        title: 'Thông Báo Lỗi',
+        text: 'Chỉ cho phép tải lên tệp Excel (.xlsx, .xls)',
+      });
+      return;
+    }
+
+  var fileItem = document.createElement('div');
+  fileItem.classList.add('attach-custom');
+  fileItem.textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+  fileDisplayInfo.appendChild(fileItem);
+
+  totalFileSize += file.size;
+
+  if (file.size > fileSizeLimit) {
+    fileSizeExceeded = true;
+    break;
+  }
+}
+
+if (fileSizeExceeded) {
+  document.getElementById('file-size-info').textContent = 'Kích thước tệp tin vượt quá giới hạn cho phép';
+} else {
+  document.getElementById('file-size-info').textContent = 'Tổng kích thước tệp tin: ' + formatFileSize(totalFileSize);
+}
+});
+
+function formatFileSize(size) {
+  var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  var unitIndex = 0;
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+
+  return size.toFixed(2) + ' ' + units[unitIndex];
+}
+
   // load data product
   function Load_Company(){
     $.ajax({
@@ -2566,9 +2883,22 @@ if (window.location.pathname === '/danh-sach-cong-ty/') {
       // Add First button
       pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="1">&laquo;</a></li>');
       
+      // for (var i = 1; i <= numPages; i++) {
+      //   var activeClass = (i === currentPage) ? "active" : "";
+      //   pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+      // }
+
       for (var i = 1; i <= numPages; i++) {
         var activeClass = (i === currentPage) ? "active" : "";
-        pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+        var pageLink = '<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+        
+        if (i <= 4 || i > numPages - 4 || (i >= currentPage - 1 && i <= currentPage + 1)) {
+            pagination.append(pageLink);
+        } else if (i === 5 && currentPage > 6) { // Hiển thị "..." trước các trang ở giữa
+            pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+        } else if (i === numPages - 4 && currentPage < numPages - 5) { // Hiển thị "..." sau các trang ở giữa
+            pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+        }
       }
       
       // Add Last button
@@ -2837,6 +3167,7 @@ if (window.location.pathname === '/danh-sach-cong-ty/') {
     $('.close').click(function(event) {
       $('#CreateCompanyModal').modal('hide');
       $('#UpdateCompanyModal').modal('hide');
+      $('#ImportExcelModal').modal('hide');
     });
     //xử lý sự kiện close modal
 
@@ -3278,9 +3609,21 @@ if (window.location.pathname === '/danh-sach-nhom/') {
         // Add First button
         pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="1">&laquo;</a></li>');
         
+        // for (var i = 1; i <= numPages; i++) {
+        //   var activeClass = (i === currentPage) ? "active" : "";
+        //   pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+        // }
         for (var i = 1; i <= numPages; i++) {
           var activeClass = (i === currentPage) ? "active" : "";
-          pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+          var pageLink = '<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+          
+          if (i <= 4 || i > numPages - 4 || (i >= currentPage - 1 && i <= currentPage + 1)) {
+              pagination.append(pageLink);
+          } else if (i === 5 && currentPage > 6) { // Hiển thị "..." trước các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          } else if (i === numPages - 4 && currentPage < numPages - 5) { // Hiển thị "..." sau các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          }
         }
         
         // Add Last button
@@ -3987,9 +4330,21 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
         // Add First button
         pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="1">&laquo;</a></li>');
         
+        // for (var i = 1; i <= numPages; i++) {
+        //   var activeClass = (i === currentPage) ? "active" : "";
+        //   pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+        // }
         for (var i = 1; i <= numPages; i++) {
           var activeClass = (i === currentPage) ? "active" : "";
-          pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+          var pageLink = '<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+          
+          if (i <= 4 || i > numPages - 4 || (i >= currentPage - 1 && i <= currentPage + 1)) {
+              pagination.append(pageLink);
+          } else if (i === 5 && currentPage > 6) { // Hiển thị "..." trước các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          } else if (i === numPages - 4 && currentPage < numPages - 5) { // Hiển thị "..." sau các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          }
         }
         
         // Add Last button
@@ -4566,7 +4921,212 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
     }
   });
 
+  function filter_data_excel(callback){
+    $.ajax({
+      url: '/danh-sach-data-phan-cong/',
+      dataType: 'json',
+      success: function(context) {
+        filter_excel = [];
+        var filters = {
+          id: $('#search-Assign_ID').val().toLowerCase().trim(),
+          user: $('#search-ID_user').val().toLowerCase().trim(),
+          name: $('#search-username').val().toLowerCase().trim(),
+          group: $('#search-TGroup_ID').val().toLowerCase().trim(),
+          create: $('#search-Assign_User_Name').val().toLowerCase().trim(),
+          date: $('#search-Assign_User_Date').val().toLowerCase().trim(),
+          time: $('#search-Assign_User_Time').val().toLowerCase().trim(),
+          status: $('.db-status').val().toLowerCase().trim(),
+        };
+          // Load_data(context.companys, context.tgroups, context.users)
+          data_assign = context.data
+          var filteredData = data_assign.filter(function(product) {
+            var IDMatch = filters.id === '' || product.Assign_ID.toString().toLowerCase().includes(filters.id);
+            var userMatch = filters.user === '' || product.ID_user.toLowerCase().indexOf(filters.user) > -1;
+            var nameMatch = filters.name === '' || product.UserName.toLowerCase().indexOf(filters.name) > -1;
+            var groupMatch = filters.group === '' || product.TGroup_ID.toLowerCase().indexOf(filters.group) > -1;
+            var createMatch = filters.create === '' || product.Assign_User_Name.toString().toLowerCase().indexOf(filters.create) > -1;
+            var dateMatch = filters.date === '' || product.Assign_User_Date.toString().toLowerCase().indexOf(filters.date) > -1;
+            var timeMatch = filters.time === '' || product.Assign_User_Time.toLowerCase().indexOf(filters.time) > -1;
+            var statusMatch = filters.status === '' || product.Assign_User_Status.toString().toLowerCase().indexOf(filters.status) > -1;
 
+            return IDMatch && userMatch && nameMatch && groupMatch && createMatch && dateMatch && timeMatch && statusMatch ;
+          });
+          filter_excel = filteredData;
+          callback(filter_excel);
+      },
+      error: function(rs, e) {
+          alert('Oops! something went wrong');
+      }
+    });
+   
+  }
+  //export excel 
+  $(document).on('click', '.exportAssign', function() {
+    var data =[];
+    filter_data_excel(function(result) {
+      data = result;
+      if (data.length === 0) {
+        // Nếu không có dữ liệu, thông báo lỗi và không gửi yêu cầu
+        Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: 'Không có dữ liệu để xuất Excel.'
+        });
+        return;
+    }
+    var jsonData = JSON.stringify(data);
+    // Tạo một yêu cầu POST đến URL export-excel
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/export_excel_assgin/', true);
+    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8'); // Thiết lập header cho yêu cầu
+    xhr.responseType = 'blob'; // Để nhận tệp Excel dưới dạng Blob
+
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            // Xử lý tệp Excel như trước
+            var blob = new Blob([xhr.response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'Assign_data_list.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                text: 'Export Data thành công!'
+            });
+        } else {
+            // Xử lý lỗi từ phía máy chủ
+            var errorResponse = JSON.parse(xhr.response);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi',
+                text: errorResponse.message || 'Có lỗi xảy ra khi xuất Excel.'
+            });
+        }
+    };
+    xhr.send(jsonData); // Gửi dữ liệu JSON bằng phương thức POST
+   });     
+  });   
+
+   // Xử lý sự kiện khi người dùng nhấn nút Import
+   $(document).on('click', '.importAssign', function() {
+    $('#ImportExcelModal').modal('show');
+  });
+
+  $(document).on('click', '#Import-Excel-Assign', function() {
+    var files = document.getElementById('file-input').files;
+  
+    if (files.length > 0) {
+      var formData = new FormData();
+      formData.append('excel_file', files[0]);
+      
+      fetch('/import_excel_assign/', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // alert('Import thành công!');
+          if (data.list_data){
+            var mail = data.list_data;
+            var err = ""
+            for(i=0; i<mail.length; i++){
+              err+= mail[i] +"\n";
+             }
+            Swal.fire({
+                  icon: 'success',
+                  title: 'Thông Báo',
+                  text: "User đã tồn tại:\n" + err,
+            });
+          }
+          else{
+            Swal.fire({
+              icon: 'success',
+              title: 'Thông Báo',
+              text: 'Import thành công!',
+            });
+            setTimeout(function() {
+              window.location.reload();
+            }, 2000);
+          }         
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi',
+            text: data.message,
+          });
+          // alert('Lỗi: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Lỗi:', error);
+      });
+    }
+  });
+
+  document.getElementById('file-input').addEventListener('change', function() {
+    var files = this.files;
+    var fileSizeLimit = 10 * 1024 * 1024; // 10MB
+    var validExtensions = ['.xlsx', '.xls']; // Các phần mở rộng tệp Excel hợp lệ
+
+    var fileSizeExceeded = false;
+    var totalFileSize = 0;
+
+    var fileDisplayInfo = document.getElementById('file-display-info');
+    fileDisplayInfo.innerHTML = '';
+
+    for (var i = 0; i < files.length; i++) {
+      var file = files[i];
+
+      var fileExtension = '.' + file.name.split('.').pop(); // Lấy phần mở rộng của tệp
+
+      if (validExtensions.indexOf(fileExtension.toLowerCase()) === -1) {
+        // Kiểm tra xem phần mở rộng có hợp lệ không
+        document.getElementById('file-size-info').textContent = '';
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: 'Chỉ cho phép tải lên tệp Excel (.xlsx, .xls)',
+        });
+        return;
+      }
+
+    var fileItem = document.createElement('div');
+    fileItem.classList.add('attach-custom');
+    fileItem.textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+    fileDisplayInfo.appendChild(fileItem);
+
+    totalFileSize += file.size;
+
+    if (file.size > fileSizeLimit) {
+      fileSizeExceeded = true;
+      break;
+    }
+  }
+
+  if (fileSizeExceeded) {
+    document.getElementById('file-size-info').textContent = 'Kích thước tệp tin vượt quá giới hạn cho phép';
+  } else {
+    document.getElementById('file-size-info').textContent = 'Tổng kích thước tệp tin: ' + formatFileSize(totalFileSize);
+  }
+  });
+
+  function formatFileSize(size) {
+    var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var unitIndex = 0;
+
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+
+    return size.toFixed(2) + ' ' + units[unitIndex];
+  }
   // load data product
   function Load_Assign(){
     $.ajax({
@@ -4711,9 +5271,21 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
         // Add First button
         pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="1">&laquo;</a></li>');
         
+        // for (var i = 1; i <= numPages; i++) {
+        //   var activeClass = (i === currentPage) ? "active" : "";
+        //   pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+        // }
         for (var i = 1; i <= numPages; i++) {
           var activeClass = (i === currentPage) ? "active" : "";
-          pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+          var pageLink = '<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+          
+          if (i <= 4 || i > numPages - 4 || (i >= currentPage - 1 && i <= currentPage + 1)) {
+              pagination.append(pageLink);
+          } else if (i === 5 && currentPage > 6) { // Hiển thị "..." trước các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          } else if (i === numPages - 4 && currentPage < numPages - 5) { // Hiển thị "..." sau các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          }
         }
         
         // Add Last button
@@ -4896,6 +5468,7 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
     //xử lý sự kiện close modal
       $('.close').click(function(event) {
         $('#CreateAssignModal').modal('hide');
+        $('#ImportExcelModal').modal('hide');
       });
     //xử lý sự kiện close modal
 
@@ -5255,6 +5828,113 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       });
     }
 
+    function filter_data_excel(callback){
+      $.ajax({
+        url: '/danh-sach-data-nguoi-dung/',
+        dataType: 'json',
+        success: function(context) {
+          filter_excel = [];
+          var filters = {
+              id:   $('#search-ID_User').val().toLowerCase().trim(),
+              company: $('#search-Company').val().toLowerCase().trim(),
+              email: $('#search-Mail').val().toLowerCase().trim(),
+              name: $('#search-FullName').val().toLowerCase().trim(),
+              utype: $('.db-User_Type').val().toLowerCase().trim(),
+              atype: $('#search-Acc_Type').val().toLowerCase().trim(),
+              jobtitle: $('#search-Jobtitle').val().toLowerCase().trim(),
+              birthday: $('#search-Birthday').val().toLowerCase().trim(),
+              address: $('#search-Address').val().toLowerCase().trim(),
+              phone: $('#search-Phone').val().toLowerCase().trim(),
+              createid: $('#search-ID_Create').val().toLowerCase().trim(),
+              createname: $('#search-Name_Create').val().toLowerCase().trim(),
+              date: $('#search-Date_Create').val().toLowerCase().trim(),
+              time: $('#search-Time_Create').val().toLowerCase().trim(),
+              status: $('.db-status').val().toLowerCase().trim(),
+            };
+            // Load_data(context.companys, context.tgroups, context.users)
+            data_users = context.data
+            var filteredData = data_users.filter(function(product) {
+                var IDMatch = filters.id === '' || product.ID_user.toString().toLowerCase().includes(filters.id);
+                var CompanyMatch = filters.company === '' || product.Company_Name.toLowerCase().indexOf(filters.company) > -1;
+                var MailMatch = filters.email === '' || product.Mail.toLowerCase().indexOf(filters.email) > -1;
+                var NameMatch = filters.name === '' || product.FullName.toLowerCase().indexOf(filters.name) > -1;
+                var UtypeMatch = filters.utype === '' || product.User_Type.toString().toLowerCase().indexOf(filters.utype) > -1;
+                var AtypeMatch = filters.atype === '' || product.Acc_Type.toLowerCase().indexOf(filters.atype) > -1;
+                var JobtitleMatch = filters.jobtitle === '' || product.Jobtitle.toLowerCase().indexOf(filters.jobtitle) > -1;
+                var BirthdayMatch = filters.birthday === '' || product.Birthday.toLowerCase().indexOf(filters.birthday) > -1;
+                var AddressMatch = filters.address === '' || product.Address.toLowerCase().indexOf(filters.address) > -1;
+                var PhoneMatch = filters.phone === '' || product.Phone.toLowerCase().indexOf(filters.phone) > -1;
+                var createIDMatch = filters.createid === '' || product.ID_Create.toString().toLowerCase().indexOf(filters.createid) > -1;
+                var createNameMatch = filters.createname === '' || product.Name_Create.toString().toLowerCase().indexOf(filters.createname) > -1;
+                var dateMatch = filters.date === '' || product.Date_Create.toString().toLowerCase().indexOf(filters.date) > -1;
+                var timeMatch = filters.time === '' || product.Time_Create.toLowerCase().indexOf(filters.time) > -1;
+                var statusMatch = filters.status === '' || product.User_Status.toString().toLowerCase().indexOf(filters.status) > -1;
+          
+                return IDMatch&& CompanyMatch && MailMatch && NameMatch && UtypeMatch && AtypeMatch && JobtitleMatch && BirthdayMatch && AddressMatch && PhoneMatch && createIDMatch && createNameMatch && dateMatch && timeMatch && statusMatch ;
+              });
+            filter_excel = filteredData;
+            callback(filter_excel);
+        },
+        error: function(rs, e) {
+            alert('Oops! something went wrong');
+        }
+      });
+     
+    }
+    //export excel 
+    $(document).on('click', '.exportUser', function() {
+      var data =[];
+      filter_data_excel(function(result) {
+        data = result;
+        if (data.length === 0) {
+          // Nếu không có dữ liệu, thông báo lỗi và không gửi yêu cầu
+          Swal.fire({
+              icon: 'error',
+              title: 'Lỗi',
+              text: 'Không có dữ liệu để xuất Excel.'
+          });
+          return;
+      }
+      var jsonData = JSON.stringify(data);
+      // Tạo một yêu cầu POST đến URL export-excel
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', '/export_excel_user/', true);
+      xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8'); // Thiết lập header cho yêu cầu
+      xhr.responseType = 'blob'; // Để nhận tệp Excel dưới dạng Blob
+  
+      xhr.onload = function () {
+          if (xhr.status === 200) {
+              // Xử lý tệp Excel như trước
+              var blob = new Blob([xhr.response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+              var url = window.URL.createObjectURL(blob);
+              var a = document.createElement('a');
+              a.href = url;
+              a.download = 'Ticket_data_list.xlsx';
+              document.body.appendChild(a);
+              a.click();
+              window.URL.revokeObjectURL(url);
+              
+              Swal.fire({
+                  icon: 'success',
+                  title: 'Thông Báo',
+                  text: 'Export Data thành công!'
+              });
+          } else {
+              // Xử lý lỗi từ phía máy chủ
+              var errorResponse = JSON.parse(xhr.response);
+              Swal.fire({
+                  icon: 'error',
+                  title: 'Lỗi',
+                  text: errorResponse.message || 'Có lỗi xảy ra khi xuất Excel.'
+              });
+          }
+      };
+      xhr.send(jsonData); // Gửi dữ liệu JSON bằng phương thức POST
+     });
+      // var data = filter_excel;
+      // var data = products;        
+}); 
+
     // Load data
     function display_User(products, currentPage, itemsPerPage, filters, data_temp) {
 
@@ -5281,7 +5961,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
 
         if(filteredProducts !== null || filteredProducts !== '')
         {
-          products = filteredProducts
+          products = filteredProducts        
         }
 
         var show_hide = '';
@@ -5333,9 +6013,21 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       // Add First button
       pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="1">&laquo;</a></li>');
       
+      // for (var i = 1; i <= numPages; i++) {
+      //   var activeClass = (i === currentPage) ? "active" : "";
+      //   pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+      // }
       for (var i = 1; i <= numPages; i++) {
         var activeClass = (i === currentPage) ? "active" : "";
-        pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+        var pageLink = '<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+        
+        if (i <= 4 || i > numPages - 4 || (i >= currentPage - 1 && i <= currentPage + 1)) {
+            pagination.append(pageLink);
+        } else if (i === 5 && currentPage > 6) { // Hiển thị "..." trước các trang ở giữa
+            pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+        } else if (i === numPages - 4 && currentPage < numPages - 5) { // Hiển thị "..." sau các trang ở giữa
+            pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+        }
       }
       
       // Add Last button
@@ -5568,73 +6260,72 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       // Search data in textbox table - end
       
       //clear data search
-    $(document).on('click', '.btn-remove-filter', function() {
-      $('#search-ID_User').val('');
-      $('#search-Mail').val('');
-      $('#search-FullName').val('');
-      $('#search-Company').val('');
-      $('.db-User_Type').val('');
-      $('#search-Acc_Type').val('');
-      $('#search-Jobtitle').val('');
-      $('#search-Birthday').val('');
-      $('#search-Address').val('');
-      $('#search-Phone').val('');
-      $('#search-ID_Create').val('');
-      $('#search-Name_Create').val('');
-      $('#search-Date_Create').val('');
-      $('#search-Time_Create').val('');
-      $('.db-status').val(''); 
-      var perPage = document.querySelector('#db-rows').value;
-      reset_data(parseInt(perPage));  
-    });
-    
-    function reset_data(itemsPerPage){
-          $('#search-ID_User').blur(); // Mất focus khỏi textbox tìm kiếm
-          $('#search-Mail').blur();
-          $('#search-FullName').blur();
-          $('#search-Jobtitle').blur();
-          $('#search-Address').blur();
-          $('#search-Phone').blur();
-          $('#search-ID_Create').blur();
-          $('#search-Name_Create').blur();
-          $('#search-Company').blur();
-          var formattedDate ="";
-          var formattedDateBirth ="";
-          var birth = $('#search-Birthday').val();
-          var date = $('#search-Date_Create').val();
-          if(date){
-            var parts = date.split("-");
-            formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0];
-          }
-          if(birth){
-            var parts = birth.split("-");
-            formattedDateBirth = parts[2] + "/" + parts[1] + "/" + parts[0];
-          }
-          // Lấy giá trị của filters
-          var filters = {
-            id:   $('#search-ID_User').val().toLowerCase().trim(),
-            company: $('#search-Company').val().toLowerCase().trim(),
-            email: $('#search-Mail').val().toLowerCase().trim(),
-            name: $('#search-FullName').val().toLowerCase().trim(),
-            utype: $('.db-User_Type').val().toLowerCase().trim(),
-            atype: $('#search-Acc_Type').val().toLowerCase().trim(),
-            jobtitle: $('#search-Jobtitle').val().toLowerCase().trim(),
-            birthday: formattedDateBirth,
-            address: $('#search-Address').val().toLowerCase().trim(),
-            phone: $('#search-Phone').val().toLowerCase().trim(),
-            createid: $('#search-ID_Create').val().toLowerCase().trim(),
-            createname: $('#search-Name_Create').val().toLowerCase().trim(),
-            date: formattedDate,
-            time: $('#search-Time_Create').val().toLowerCase().trim(),
-            status: $('.db-status').val().toLowerCase().trim(),
-          };
-          if(data_temp){
-            display_User(data_temp, currentPage, itemsPerPage, filters, data_temp);
-            auth_role();
-          }
-    }
-    //clear data search
-
+      $(document).on('click', '.btn-remove-filter', function() {
+        $('#search-ID_User').val('');
+        $('#search-Mail').val('');
+        $('#search-FullName').val('');
+        $('#search-Company').val('');
+        $('.db-User_Type').val('');
+        $('#search-Acc_Type').val('');
+        $('#search-Jobtitle').val('');
+        $('#search-Birthday').val('');
+        $('#search-Address').val('');
+        $('#search-Phone').val('');
+        $('#search-ID_Create').val('');
+        $('#search-Name_Create').val('');
+        $('#search-Date_Create').val('');
+        $('#search-Time_Create').val('');
+        $('.db-status').val(''); 
+        var perPage = document.querySelector('#db-rows').value;
+        reset_data(parseInt(perPage));  
+      });
+      
+      function reset_data(itemsPerPage){
+            $('#search-ID_User').blur(); // Mất focus khỏi textbox tìm kiếm
+            $('#search-Mail').blur();
+            $('#search-FullName').blur();
+            $('#search-Jobtitle').blur();
+            $('#search-Address').blur();
+            $('#search-Phone').blur();
+            $('#search-ID_Create').blur();
+            $('#search-Name_Create').blur();
+            $('#search-Company').blur();
+            var formattedDate ="";
+            var formattedDateBirth ="";
+            var birth = $('#search-Birthday').val();
+            var date = $('#search-Date_Create').val();
+            if(date){
+              var parts = date.split("-");
+              formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0];
+            }
+            if(birth){
+              var parts = birth.split("-");
+              formattedDateBirth = parts[2] + "/" + parts[1] + "/" + parts[0];
+            }
+            // Lấy giá trị của filters
+            var filters = {
+              id:   $('#search-ID_User').val().toLowerCase().trim(),
+              company: $('#search-Company').val().toLowerCase().trim(),
+              email: $('#search-Mail').val().toLowerCase().trim(),
+              name: $('#search-FullName').val().toLowerCase().trim(),
+              utype: $('.db-User_Type').val().toLowerCase().trim(),
+              atype: $('#search-Acc_Type').val().toLowerCase().trim(),
+              jobtitle: $('#search-Jobtitle').val().toLowerCase().trim(),
+              birthday: formattedDateBirth,
+              address: $('#search-Address').val().toLowerCase().trim(),
+              phone: $('#search-Phone').val().toLowerCase().trim(),
+              createid: $('#search-ID_Create').val().toLowerCase().trim(),
+              createname: $('#search-Name_Create').val().toLowerCase().trim(),
+              date: formattedDate,
+              time: $('#search-Time_Create').val().toLowerCase().trim(),
+              status: $('.db-status').val().toLowerCase().trim(),
+            };
+            if(data_temp){
+              display_User(data_temp, currentPage, itemsPerPage, filters, data_temp);
+              auth_role();
+            }
+      }
+      //clear data search
 
       //function button status update  - start
         var statusButtons = document.querySelectorAll('.btn-status');
@@ -5734,14 +6425,66 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
             reset_data(PerPage);
           }
         });
-        
-  }
+
+        // //export excel 
+        // $(document).on('click', '.exportUser', function() {
+        //   var data = products;
+        //   // var data = products;
+        // //   if (data.length === 0) {
+        // //     // Nếu không có dữ liệu, thông báo lỗi và không gửi yêu cầu
+        // //     Swal.fire({
+        // //         icon: 'error',
+        // //         title: 'Lỗi',
+        // //         text: 'Không có dữ liệu để xuất Excel.'
+        // //     });
+        // //     return;
+        // // }
+        //   // Chuyển mảng dữ liệu thành một chuỗi JSON
+        //   var jsonData = JSON.stringify(data);
+
+        //   // Tạo một yêu cầu GET đến URL export-excel với tham số truy vấn data
+        //   var xhr = new XMLHttpRequest();
+        //   xhr.open('GET', '/export_excel_user/?data=' + encodeURIComponent(jsonData), true);
+        //   xhr.responseType = 'blob'; // Để nhận tệp Excel dưới dạng Blob
+
+        //   xhr.onload = function () {
+        //     if (xhr.status === 200) {
+        //         // Tạo một đường dẫn tạm thời cho tệp Excel và tải về
+        //         var blob = new Blob([xhr.response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        //         var url = window.URL.createObjectURL(blob);
+        //         var a = document.createElement('a');
+        //         a.href = url;
+        //         a.download = 'User_data_list.xlsx';
+        //         document.body.appendChild(a);
+        //         a.click();
+        //         window.URL.revokeObjectURL(url);
+                
+        //         Swal.fire({
+        //             icon: 'success',
+        //             title: 'Thông Báo',
+        //             text: 'Export Data thành công!'
+        //         });
+        //     } else {
+        //         // Xử lý lỗi từ phía máy chủ
+        //         var errorResponse = JSON.parse(xhr.response);
+        //         Swal.fire({
+        //             icon: 'error',
+        //             title: 'Lỗi',
+        //             text: errorResponse.message || 'Có lỗi xảy ra khi xuất Excel.'
+        //         });
+        //     }
+        //   };
+        //   xhr.send();
+        //   return;
+        // });         
+  }   
 
     //xử lý sự kiện close modal
     $('.close').click(function(event) {
       $('#CreateUserModal').modal('hide');
       $('#UpdateRoleModal').modal('hide');
       $('#UpdateUserModal').modal('hide');
+      $('#ImportExcelModal').modal('hide');
     });
     //xử lý sự kiện close modal
 
@@ -5996,7 +6739,124 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
     }
     // Xử lý sự kiện khi người dùng nhấn nút Create
 
+     // Xử lý sự kiện khi người dùng nhấn nút Import
+     $(document).on('click', '.importUser', function() {
+      $('#ImportExcelModal').modal('show');
+    });
 
+   // event load file upload multiple
+  document.getElementById('file-input').addEventListener('change', function() {
+    var files = this.files;
+    var fileSizeLimit = 10 * 1024 * 1024; // 10MB
+    var validExtensions = ['.xlsx', '.xls']; // Các phần mở rộng tệp Excel hợp lệ
+
+    var fileSizeExceeded = false;
+    var totalFileSize = 0;
+
+    var fileDisplayInfo = document.getElementById('file-display-info');
+    fileDisplayInfo.innerHTML = '';
+
+    for (var i = 0; i < files.length; i++) {
+      var file = files[i];
+
+      var fileExtension = '.' + file.name.split('.').pop(); // Lấy phần mở rộng của tệp
+
+      if (validExtensions.indexOf(fileExtension.toLowerCase()) === -1) {
+        // Kiểm tra xem phần mở rộng có hợp lệ không
+        document.getElementById('file-size-info').textContent = '';
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: 'Chỉ cho phép tải lên tệp Excel (.xlsx, .xls)',
+        });
+        return;
+      }
+
+    var fileItem = document.createElement('div');
+    fileItem.classList.add('attach-custom');
+    fileItem.textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+    fileDisplayInfo.appendChild(fileItem);
+
+    totalFileSize += file.size;
+
+    if (file.size > fileSizeLimit) {
+      fileSizeExceeded = true;
+      break;
+    }
+  }
+
+  if (fileSizeExceeded) {
+    document.getElementById('file-size-info').textContent = 'Kích thước tệp tin vượt quá giới hạn cho phép';
+  } else {
+    document.getElementById('file-size-info').textContent = 'Tổng kích thước tệp tin: ' + formatFileSize(totalFileSize);
+  }
+  });
+
+  function formatFileSize(size) {
+    var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var unitIndex = 0;
+
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+
+    return size.toFixed(2) + ' ' + units[unitIndex];
+  }
+
+  $(document).on('click', '#Import-Excel-button', function() {
+    var files = document.getElementById('file-input').files;
+  
+    if (files.length > 0) {
+      var formData = new FormData();
+      formData.append('excel_file', files[0]);
+      
+      fetch('/import_excel_user/', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // alert('Import thành công!');
+          if (data.list_data){
+            var mail = data.list_data;
+            var err = ""
+            for(i=0; i<mail.length; i++){
+              err+= mail[i] +"\n";
+             }
+            Swal.fire({
+                  icon: 'success',
+                  title: 'Thông Báo',
+                  text: "User đã tồn tại:" + "\n" + err,
+            });
+          }
+          else{
+            Swal.fire({
+              icon: 'success',
+              title: 'Thông Báo',
+              text: 'Import thành công!',
+            });
+            setTimeout(function() {
+              window.location.reload();
+            }, 2000);
+          }         
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi',
+            text: data.message,
+          });
+          // alert('Lỗi: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Lỗi:', error);
+      });
+    }
+  });
+
+  
     // Xử lý sự kiện khi người dùng nhấn nút Update
     $(document).on('click', '.update-user', function() {
       $('#UpdateUserModal').modal('show');
@@ -6393,9 +7253,21 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
       // Add First button
       pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="1">&laquo;</a></li>');
       
+      // for (var i = 1; i <= numPages; i++) {
+      //   var activeClass = (i === currentPage) ? "active" : "";
+      //   pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+      // }
       for (var i = 1; i <= numPages; i++) {
         var activeClass = (i === currentPage) ? "active" : "";
-        pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+        var pageLink = '<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+        
+        if (i <= 4 || i > numPages - 4 || (i >= currentPage - 1 && i <= currentPage + 1)) {
+            pagination.append(pageLink);
+        } else if (i === 5 && currentPage > 6) { // Hiển thị "..." trước các trang ở giữa
+            pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+        } else if (i === numPages - 4 && currentPage < numPages - 5) { // Hiển thị "..." sau các trang ở giữa
+            pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+        }
       }
       
       // Add Last button
@@ -7179,6 +8051,21 @@ function Update_Status(ticketID, status){
         // button_status.innerHTML += button;
         h4.insertAdjacentHTML('beforebegin', button);
 
+        button_cancel = document.querySelector('.update-ticket-cancel');
+        button_complete = document.querySelector('.update-ticket-complete');
+        if(status == 3){
+          button_cancel.style.display = "none";
+          button_complete.style.display = "";
+        }
+        else if (status == 0){
+          button_cancel.style.display = "";
+          button_complete.style.display = "none";
+        }
+        else{
+          button_cancel.style.display = "";
+          button_complete.style.display = "";
+        }
+
         Swal.fire({
           icon: 'success',
           title: 'Thông Báo',
@@ -7848,6 +8735,46 @@ if (window.location.pathname === '/danh-sach-nhom-quyen/') {
     }
   });
 
+  function filter_data_excel(callback){
+    $.ajax({
+      url: '/danh-sach-data-nhom-quyen/',
+      dataType: 'json',
+      success: function(context) {
+        filter_excel = [];
+        var filters = {
+          id: $('#search-GroupRoleID').val().toLowerCase().trim(),
+          group: $('#search-GroupRoleName').val().toLowerCase().trim(),
+          menu: $('#search-MenuName').val().toLowerCase().trim(),
+          address: $('#search-MenuAddress').val().toLowerCase().trim(),
+          create: $('#search-GroupRoleCreate').val().toLowerCase().trim(),
+          date: $('#search-GroupRoleDate').val().toLowerCase().trim(),
+          time: $('#search-GroupRoleTime').val().toLowerCase().trim(),
+          status: $('.db-status').val().toLowerCase().trim(),
+        };
+          // Load_data(context.companys, context.tgroups, context.users)
+          data_grouprole = context.data
+          var filteredData = data_grouprole.filter(function(product) {
+            var IDMatch = filters.id === '' || product.Role_Group_ID.toString().toLowerCase().includes(filters.id);
+            var GroupNameMatch = filters.group === '' || product.Role_Group_Name.toLowerCase().indexOf(filters.group) > -1;
+            var MenuNameMatch = filters.menu === '' || product.Menu_Name.toLowerCase().indexOf(filters.menu) > -1;
+            var AddNameMatch = filters.address === '' || product.Role_Group_Address.toLowerCase().indexOf(filters.address) > -1;
+            var createMatch = filters.create === '' || product.Role_Group_CreateBy.toString().toLowerCase().indexOf(filters.create) > -1;
+            var dateMatch = filters.date === '' || product.Role_Group_Date.toString().toLowerCase().indexOf(filters.date) > -1;
+            var timeMatch = filters.time === '' || product.Role_Group_Time.toLowerCase().indexOf(filters.time) > -1;
+            var statusMatch = filters.status === '' || product.Role_Group_Status.toString().toLowerCase().indexOf(filters.status) > -1;
+
+            return IDMatch && GroupNameMatch && MenuNameMatch && AddNameMatch && createMatch && dateMatch && timeMatch && statusMatch ;
+          });
+          filter_excel = filteredData;
+          callback(filter_excel);
+      },
+      error: function(rs, e) {
+          alert('Oops! something went wrong');
+      }
+    });
+   
+  }
+
   // load data product
   function Load_Role_Group(){
     $.ajax({
@@ -7875,6 +8802,173 @@ if (window.location.pathname === '/danh-sach-nhom-quyen/') {
     });
   }
 
+  //export excel 
+  $(document).on('click', '.exportGroupRole', function() {
+    var data =[];
+    filter_data_excel(function(result) {
+      data = result;
+      if (data.length === 0) {
+        // Nếu không có dữ liệu, thông báo lỗi và không gửi yêu cầu
+        Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: 'Không có dữ liệu để xuất Excel.'
+        });
+        return;
+    }
+    var jsonData = JSON.stringify(data);
+    // Tạo một yêu cầu POST đến URL export-excel
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/export_excel_grouprole/', true);
+    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8'); // Thiết lập header cho yêu cầu
+    xhr.responseType = 'blob'; // Để nhận tệp Excel dưới dạng Blob
+
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            // Xử lý tệp Excel như trước
+            var blob = new Blob([xhr.response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'GroupRole_data_list.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                text: 'Export Data thành công!'
+            });
+        } else {
+            // Xử lý lỗi từ phía máy chủ
+            var errorResponse = JSON.parse(xhr.response);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi',
+                text: errorResponse.message || 'Có lỗi xảy ra khi xuất Excel.'
+            });
+        }
+    };
+    xhr.send(jsonData); // Gửi dữ liệu JSON bằng phương thức POST
+   });      
+ });  
+
+   // Xử lý sự kiện khi người dùng nhấn nút Import
+   $(document).on('click', '.importGroupRole', function() {
+    $('#ImportExcelModal').modal('show');
+  });
+
+$(document).on('click', '#Import-Excel-GroupRole', function() {
+  var files = document.getElementById('file-input').files;
+
+  if (files.length > 0) {
+    var formData = new FormData();
+    formData.append('excel_file', files[0]);
+    
+    fetch('/import_excel_grouprole/', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // alert('Import thành công!');
+        if (data.list_data){
+          var mail = data.list_data;
+          var err = ""
+          for(i=0; i<mail.length; i++){
+            err+= mail[i] +"\n";
+           }
+          Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                text: "User đã tồn tại:" + "\n" + err,
+          });
+        }
+        else{
+          Swal.fire({
+            icon: 'success',
+            title: 'Thông Báo',
+            text: 'Import thành công!',
+          });
+          setTimeout(function() {
+            window.location.reload();
+          }, 2000);
+        }         
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: data.message,
+        });
+        // alert('Lỗi: ' + data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Lỗi:', error);
+    });
+  }
+});
+
+document.getElementById('file-input').addEventListener('change', function() {
+  var files = this.files;
+  var fileSizeLimit = 10 * 1024 * 1024; // 10MB
+  var validExtensions = ['.xlsx', '.xls']; // Các phần mở rộng tệp Excel hợp lệ
+
+  var fileSizeExceeded = false;
+  var totalFileSize = 0;
+
+  var fileDisplayInfo = document.getElementById('file-display-info');
+  fileDisplayInfo.innerHTML = '';
+
+  for (var i = 0; i < files.length; i++) {
+    var file = files[i];
+
+    var fileExtension = '.' + file.name.split('.').pop(); // Lấy phần mở rộng của tệp
+
+    if (validExtensions.indexOf(fileExtension.toLowerCase()) === -1) {
+      // Kiểm tra xem phần mở rộng có hợp lệ không
+      document.getElementById('file-size-info').textContent = '';
+      Swal.fire({
+        icon: 'error',
+        title: 'Thông Báo Lỗi',
+        text: 'Chỉ cho phép tải lên tệp Excel (.xlsx, .xls)',
+      });
+      return;
+    }
+
+  var fileItem = document.createElement('div');
+  fileItem.classList.add('attach-custom');
+  fileItem.textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+  fileDisplayInfo.appendChild(fileItem);
+
+  totalFileSize += file.size;
+
+  if (file.size > fileSizeLimit) {
+    fileSizeExceeded = true;
+    break;
+  }
+}
+
+if (fileSizeExceeded) {
+  document.getElementById('file-size-info').textContent = 'Kích thước tệp tin vượt quá giới hạn cho phép';
+} else {
+  document.getElementById('file-size-info').textContent = 'Tổng kích thước tệp tin: ' + formatFileSize(totalFileSize);
+}
+});
+
+function formatFileSize(size) {
+  var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  var unitIndex = 0;
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+
+  return size.toFixed(2) + ' ' + units[unitIndex];
+}
   //authorization page
   function auth_role(){
     $.ajax({
@@ -7989,9 +9083,21 @@ if (window.location.pathname === '/danh-sach-nhom-quyen/') {
         // Add First button
         pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="1">&laquo;</a></li>');
         
+        // for (var i = 1; i <= numPages; i++) {
+        //   var activeClass = (i === currentPage) ? "active" : "";
+        //   pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+        // }
         for (var i = 1; i <= numPages; i++) {
           var activeClass = (i === currentPage) ? "active" : "";
-          pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+          var pageLink = '<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+          
+          if (i <= 4 || i > numPages - 4 || (i >= currentPage - 1 && i <= currentPage + 1)) {
+              pagination.append(pageLink);
+          } else if (i === 5 && currentPage > 6) { // Hiển thị "..." trước các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          } else if (i === numPages - 4 && currentPage < numPages - 5) { // Hiển thị "..." sau các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          }
         }
         
         // Add Last button
@@ -8291,6 +9397,7 @@ if (window.location.pathname === '/danh-sach-nhom-quyen/') {
       $('.close').click(function(event) {
         $('#CreateGroupRoleModal').modal('hide');
         $('#UpdateGroupRoleModal').modal('hide');
+        $('#ImportExcelModal').modal('hide');
       });
     //xử lý sự kiện close modal
 
@@ -8642,6 +9749,211 @@ if (window.location.pathname === '/danh-sach-quyen/') {
     }
   });
 
+  function filter_data_excel(callback){
+    $.ajax({
+      url: '/danh-sach-data-quyen/',
+      dataType: 'json',
+      success: function(context) {
+        filter_excel = [];
+        var filters = {
+          id: $('#search-RoleID').val().toLowerCase().trim(),
+          name: $('#search-RoleName').val().toLowerCase().trim(),
+          groupname: $('#search-RoleGroup').val().toLowerCase().trim(),
+          create: $('#search-RoleCreate').val().toLowerCase().trim(),
+          date: $('#search-RoleDate').val().toLowerCase().trim(),
+          time: $('#search-RoleTime').val().toLowerCase().trim(),
+          status: $('.db-status').val().toLowerCase().trim(),
+        };
+          // Load_data(context.companys, context.tgroups, context.users)
+          data_role = context.data
+          var filteredData = data_role.filter(function(product) {
+            var IDMatch = filters.id === '' || product.Role_ID.toString().toLowerCase().includes(filters.id);
+            var NameMatch = filters.name === '' || product.Role_Name.toLowerCase().indexOf(filters.name) > -1;
+            var GroupNameMatch = filters.groupname === '' || product.Role_Group_Name.toLowerCase().indexOf(filters.groupname) > -1;
+            var createMatch = filters.create === '' || product.Role_CreateBy.toString().toLowerCase().indexOf(filters.create) > -1;
+            var dateMatch = filters.date === '' || product.Role_Date.toString().toLowerCase().indexOf(filters.date) > -1;
+            var timeMatch = filters.time === '' || product.Role_Time.toLowerCase().indexOf(filters.time) > -1;
+            var statusMatch = filters.status === '' || product.Role_Status.toString().toLowerCase().indexOf(filters.status) > -1;
+
+            return IDMatch && NameMatch && GroupNameMatch && createMatch && dateMatch && timeMatch && statusMatch ;
+          });
+          filter_excel = filteredData;
+          callback(filter_excel);
+      },
+      error: function(rs, e) {
+          alert('Oops! something went wrong');
+      }
+    });
+   
+  }
+
+  //export excel 
+  $(document).on('click', '.exportRole', function() {
+    var data =[];
+    filter_data_excel(function(result) {
+      data = result;
+      if (data.length === 0) {
+        // Nếu không có dữ liệu, thông báo lỗi và không gửi yêu cầu
+        Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: 'Không có dữ liệu để xuất Excel.'
+        });
+        return;
+    }
+    var jsonData = JSON.stringify(data);
+    // Tạo một yêu cầu POST đến URL export-excel
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/export_excel_role/', true);
+    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8'); // Thiết lập header cho yêu cầu
+    xhr.responseType = 'blob'; // Để nhận tệp Excel dưới dạng Blob
+
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            // Xử lý tệp Excel như trước
+            var blob = new Blob([xhr.response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'Role_data_list.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                text: 'Export Data thành công!'
+            });
+        } else {
+            // Xử lý lỗi từ phía máy chủ
+            var errorResponse = JSON.parse(xhr.response);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi',
+                text: errorResponse.message || 'Có lỗi xảy ra khi xuất Excel.'
+            });
+        }
+    };
+    xhr.send(jsonData); // Gửi dữ liệu JSON bằng phương thức POST
+   });      
+  });
+
+  // Xử lý sự kiện khi người dùng nhấn nút Import
+  $(document).on('click', '.importRole', function() {
+    $('#ImportExcelModal').modal('show');
+  });
+
+  $(document).on('click', '#Import-Excel-Role', function() {
+    var files = document.getElementById('file-input').files;
+
+    if (files.length > 0) {
+      var formData = new FormData();
+      formData.append('excel_file', files[0]);
+      
+      fetch('/import_excel_role/', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // alert('Import thành công!');
+          if (data.list_data){
+            var mail = data.list_data;
+            var err = ""
+            for(i=0; i<mail.length; i++){
+              err+= mail[i] + "\n";
+            }
+            Swal.fire({
+                  icon: 'success',
+                  title: 'Thông Báo',
+                  text: "User đã tồn tại:" + "\n" + err,
+            });
+          }
+          else{
+            Swal.fire({
+              icon: 'success',
+              title: 'Thông Báo',
+              text: 'Import thành công!',
+            });
+            setTimeout(function() {
+              window.location.reload();
+            }, 2000);
+          }         
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi',
+            text: data.message,
+          });
+          // alert('Lỗi: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Lỗi:', error);
+      });
+    }
+  });
+  document.getElementById('file-input').addEventListener('change', function() {
+    var files = this.files;
+    var fileSizeLimit = 10 * 1024 * 1024; // 10MB
+    var validExtensions = ['.xlsx', '.xls']; // Các phần mở rộng tệp Excel hợp lệ
+
+    var fileSizeExceeded = false;
+    var totalFileSize = 0;
+
+    var fileDisplayInfo = document.getElementById('file-display-info');
+    fileDisplayInfo.innerHTML = '';
+
+    for (var i = 0; i < files.length; i++) {
+      var file = files[i];
+
+      var fileExtension = '.' + file.name.split('.').pop(); // Lấy phần mở rộng của tệp
+
+      if (validExtensions.indexOf(fileExtension.toLowerCase()) === -1) {
+        // Kiểm tra xem phần mở rộng có hợp lệ không
+        document.getElementById('file-size-info').textContent = '';
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: 'Chỉ cho phép tải lên tệp Excel (.xlsx, .xls)',
+        });
+        return;
+      }
+
+    var fileItem = document.createElement('div');
+    fileItem.classList.add('attach-custom');
+    fileItem.textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+    fileDisplayInfo.appendChild(fileItem);
+
+    totalFileSize += file.size;
+
+    if (file.size > fileSizeLimit) {
+      fileSizeExceeded = true;
+      break;
+    }
+  }
+
+  if (fileSizeExceeded) {
+    document.getElementById('file-size-info').textContent = 'Kích thước tệp tin vượt quá giới hạn cho phép';
+  } else {
+    document.getElementById('file-size-info').textContent = 'Tổng kích thước tệp tin: ' + formatFileSize(totalFileSize);
+  }
+  });
+
+  function formatFileSize(size) {
+    var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var unitIndex = 0;
+
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+
+    return size.toFixed(2) + ' ' + units[unitIndex];
+  }
+
   var group_role = [];
   // load data product
   function Load_Role(){
@@ -8781,9 +10093,21 @@ if (window.location.pathname === '/danh-sach-quyen/') {
         // Add First button
         pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="1">&laquo;</a></li>');
         
+        // for (var i = 1; i <= numPages; i++) {
+        //   var activeClass = (i === currentPage) ? "active" : "";
+        //   pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+        // }
         for (var i = 1; i <= numPages; i++) {
           var activeClass = (i === currentPage) ? "active" : "";
-          pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+          var pageLink = '<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+          
+          if (i <= 4 || i > numPages - 4 || (i >= currentPage - 1 && i <= currentPage + 1)) {
+              pagination.append(pageLink);
+          } else if (i === 5 && currentPage > 6) { // Hiển thị "..." trước các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          } else if (i === numPages - 4 && currentPage < numPages - 5) { // Hiển thị "..." sau các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          }
         }
         
         // Add Last button
@@ -9081,6 +10405,7 @@ if (window.location.pathname === '/danh-sach-quyen/') {
       $('.close').click(function(event) {
         $('#CreateRoleModal').modal('hide');
         $('#UpdateRoleModal').modal('hide');
+        $('#ImportExcelModal').modal('hide');
       });
     //xử lý sự kiện close modal
 
@@ -9427,6 +10752,201 @@ window.addEventListener('scroll', () => {
     }
   });
 
+  function filter_data_excel(callback){
+    $.ajax({
+      url: '/list-data-phan-quyen/',
+      dataType: 'json',
+      success: function(context) {
+        filter_excel = [];
+        var filters = {           
+          id: $('#search-UserID').val().toLowerCase().trim(),
+          name: $('#search-Name').val().toLowerCase().trim(),
+        };
+          // Load_data(context.companys, context.tgroups, context.users)
+          data_auth = context.data
+          var filteredData = data_auth.filter(function(product) {
+            var IDMatch = filters.id === '' || product.ID_user.toString().toLowerCase().includes(filters.id);
+            var NameMatch = filters.name === '' || product.FullName.toLowerCase().indexOf(filters.name) > -1;
+
+            return IDMatch && NameMatch;
+          });
+          filter_excel = filteredData;
+          callback(filter_excel);
+      },
+      error: function(rs, e) {
+          alert('Oops! something went wrong');
+      }
+    });
+   
+  }
+
+  //export excel 
+  $(document).on('click', '.exportAuthorize', function() {
+    var data =[];
+    filter_data_excel(function(result) {
+      data = result;
+      if (data.length === 0) {
+        // Nếu không có dữ liệu, thông báo lỗi và không gửi yêu cầu
+        Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: 'Không có dữ liệu để xuất Excel.'
+        });
+        return;
+    }
+    var jsonData = JSON.stringify(data);
+    // Tạo một yêu cầu POST đến URL export-excel
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/export_excel_authorize/', true);
+    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8'); // Thiết lập header cho yêu cầu
+    xhr.responseType = 'blob'; // Để nhận tệp Excel dưới dạng Blob
+
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            // Xử lý tệp Excel như trước
+            var blob = new Blob([xhr.response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'Authorize_data_list.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                text: 'Export Data thành công!'
+            });
+        } else {
+            // Xử lý lỗi từ phía máy chủ
+            var errorResponse = JSON.parse(xhr.response);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi',
+                text: errorResponse.message || 'Có lỗi xảy ra khi xuất Excel.'
+            });
+        }
+    };
+    xhr.send(jsonData); // Gửi dữ liệu JSON bằng phương thức POST
+   });      
+  }); 
+  
+  // Xử lý sự kiện khi người dùng nhấn nút Import
+  $(document).on('click', '.importAuthorize', function() {
+    $('#ImportExcelModal').modal('show');
+  });
+
+  $(document).on('click', '#Import-Excel-Authorize', function() {
+    var files = document.getElementById('file-input').files;
+
+    if (files.length > 0) {
+      var formData = new FormData();
+      formData.append('excel_file', files[0]);
+      
+      fetch('/import_excel_authorize/', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          if (data.list_data){
+            var mail = data.list_data;
+            var err = ""
+            for(i=0; i<mail.length; i++){
+              err+= mail[i] +"\n";
+            }
+            Swal.fire({
+                  icon: 'success',
+                  title: 'Thông Báo',
+                  text: "User đã tồn tại:" + "\n" + err,
+            });
+          }
+          else{
+            Swal.fire({
+              icon: 'success',
+              title: 'Thông Báo',
+              text: 'Import thành công!',
+            });
+            setTimeout(function() {
+              window.location.reload();
+            }, 2000);
+          }         
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi',
+            text: data.message,
+          });
+          // alert('Lỗi: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Lỗi:', error);
+      });
+    }
+  });
+   
+  document.getElementById('file-input').addEventListener('change', function() {
+    var files = this.files;
+    var fileSizeLimit = 10 * 1024 * 1024; // 10MB
+    var validExtensions = ['.xlsx', '.xls']; // Các phần mở rộng tệp Excel hợp lệ
+
+    var fileSizeExceeded = false;
+    var totalFileSize = 0;
+
+    var fileDisplayInfo = document.getElementById('file-display-info');
+    fileDisplayInfo.innerHTML = '';
+
+    for (var i = 0; i < files.length; i++) {
+      var file = files[i];
+
+      var fileExtension = '.' + file.name.split('.').pop(); // Lấy phần mở rộng của tệp
+
+      if (validExtensions.indexOf(fileExtension.toLowerCase()) === -1) {
+        // Kiểm tra xem phần mở rộng có hợp lệ không
+        document.getElementById('file-size-info').textContent = '';
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: 'Chỉ cho phép tải lên tệp Excel (.xlsx, .xls)',
+        });
+        return;
+      }
+
+    var fileItem = document.createElement('div');
+    fileItem.classList.add('attach-custom');
+    fileItem.textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+    fileDisplayInfo.appendChild(fileItem);
+
+    totalFileSize += file.size;
+
+    if (file.size > fileSizeLimit) {
+      fileSizeExceeded = true;
+      break;
+    }
+  }
+
+  if (fileSizeExceeded) {
+    document.getElementById('file-size-info').textContent = 'Kích thước tệp tin vượt quá giới hạn cho phép';
+  } else {
+    document.getElementById('file-size-info').textContent = 'Tổng kích thước tệp tin: ' + formatFileSize(totalFileSize);
+  }
+  });
+
+  function formatFileSize(size) {
+    var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var unitIndex = 0;
+
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex++;
+    }
+
+    return size.toFixed(2) + ' ' + units[unitIndex];
+  }
+
 
   var group_role = [];
   // load data product
@@ -9518,9 +11038,21 @@ window.addEventListener('scroll', () => {
         // Add First button
         pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="1">&laquo;</a></li>');
         
+        // for (var i = 1; i <= numPages; i++) {
+        //   var activeClass = (i === currentPage) ? "active" : "";
+        //   pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+        // }
         for (var i = 1; i <= numPages; i++) {
           var activeClass = (i === currentPage) ? "active" : "";
-          pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+          var pageLink = '<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+          
+          if (i <= 2 || i > numPages - 2 || (i >= currentPage - 1 && i <= currentPage + 1)) {
+              pagination.append(pageLink);
+          } else if (i === 3 && currentPage > 4) { // Hiển thị "..." trước các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          } else if (i === numPages - 2 && currentPage < numPages - 3) { // Hiển thị "..." sau các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          }
         }
         
         // Add Last button

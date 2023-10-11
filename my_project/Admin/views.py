@@ -55,6 +55,11 @@ import hashlib
 import random
 import string
 
+import pandas as pd
+from openpyxl import load_workbook
+import openpyxl
+from openpyxl.styles import Font, Border, Side
+
 # Create your views here.
 ############################################ PAGE TICKET HELPDESK - START ############################################################
 
@@ -344,13 +349,15 @@ def microsoft_login_token(request):
 
     # Exchange the authorization code for an access token and a refresh token
     token_url = 'https://login.microsoftonline.com/common/oauth2/v2.0/token'
+    MICROSOFT_CLIENT_SECRET = settings.MICROSOFT_CLIENT_SECRET
     data = {
         'grant_type': 'authorization_code',
         'code': code,
         # 'redirect_uri': 'https://localhost:8000/login/callback/',
         'redirect_uri': url_host,
         'client_id': '5c17ff26-50a1-4003-bc31-f0545709c2f7',
-        'client_secret': 'EeJ8Q~ip-6TA~p1C7Y9t24l81qig0lFv1t5CPdwO',
+        # 'client_secret': 'EeJ8Q~ip-6TA~p1C7Y9t24l81qig0lFv1t5CPdwO', 
+        'client_secret': MICROSOFT_CLIENT_SECRET, 
     }
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -493,8 +500,9 @@ def login_role(ID_user):
 
 #CHEKC MAIL OFFICE 365
 def check_emails(request):
+    MICROSOFT_CLIENT_SECRET = settings.MICROSOFT_CLIENT_SECRET
     client_id = '5c17ff26-50a1-4003-bc31-f0545709c2f7'
-    client_secret = 'EeJ8Q~ip-6TA~p1C7Y9t24l81qig0lFv1t5CPdwO'
+    client_secret = MICROSOFT_CLIENT_SECRET
     # scope = 'https://graph.microsoft.com/.default'
     scope = 'https://graph.microsoft.com/Mail.Read'
     tenant_id = 'c43d3f81-f57a-48cc-8b07-74b39935d876'
@@ -628,78 +636,78 @@ def call_graph_api(request):
                 if Context:
                     email_attachments = email['hasAttachments']  # Danh sách đính kèm
                     # Xử lý danh sách đính kèm
-                    if email_attachments:
-                        # attachment_names = []
-                        attachment_url = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/attachments'
-                        attachment_response = requests.get(
-                            attachment_url,
-                            headers={'Authorization': f'Bearer {access_token}'}
-                        )               
-                        attachments = attachment_response.json().get('value', [])
-                        if attachments:
-                            #image
-                            soup = BeautifulSoup(email_body, 'html.parser')
-                            img_tags = soup.find_all('img')
-                            for img_tag in img_tags:
-                                src = img_tag.get('src', '')
-                                if src.startswith('cid:'):
-                                    content_id = src[4:]
+                    # if email_attachments:
+                    # attachment_names = []
+                    attachment_url = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/attachments'
+                    attachment_response = requests.get(
+                        attachment_url,
+                        headers={'Authorization': f'Bearer {access_token}'}
+                    )               
+                    attachments = attachment_response.json().get('value', [])
+                    if attachments:
+                        #image
+                        soup = BeautifulSoup(email_body, 'html.parser')
+                        img_tags = soup.find_all('img')
+                        for img_tag in img_tags:
+                            src = img_tag.get('src', '')
+                            if src.startswith('cid:'):
+                                content_id = src[4:]
 
-                                    for attachment in attachments:
-                                        if attachment['contentType'].startswith('image/') and attachment['contentId'] == content_id:
-                                            img_data = attachment['contentBytes']
+                                for attachment in attachments:
+                                    if attachment['contentType'].startswith('image/') and attachment['contentId'] == content_id:
+                                        img_data = attachment['contentBytes']
 
-                                            img_filename = f'{content_id}.png'  # Tên tệp hình ảnh
-                                            img_path = os.path.join(attachment_dir_img, img_filename)  # Đường dẫn tới tệp hình ảnh trên máy chủ
+                                        img_filename = f'{content_id}.png'  # Tên tệp hình ảnh
+                                        img_path = os.path.join(attachment_dir_img, img_filename)  # Đường dẫn tới tệp hình ảnh trên máy chủ
 
-                                            with open(img_path, 'wb') as img_file:
-                                                img_file.write(base64.b64decode(img_data))
-                                            
-                                            with open(img_path, 'rb') as img_file:
-                                                img_base64 = base64.b64encode(img_file.read()).decode('utf-8')
-                                                # img_src = f'data:{attachment["contentType"]};base64,{img_base64}'
-                                                img_src = f'/static/Asset/Attachment-Image/{content_id}.png'
-                                                img_tag['src'] = img_src
-                                            break
-                            ticket = Ticket.objects.get(Ticket_ID = Context['Ticket_ID']) 
-                            if ticket:
-                                ticket.Ticket_Desc = str(soup)    
-                                ticket.save()                                   
-                            #attachment file
-                            for attachment in attachments:
-                                if not attachment['contentType'].startswith('image/'):
-                                    ticketID = Context['Ticket_ID']
-                                    attachment_id   = attachment['id']
-                                    attachment_name = attachment['name']
-                                    # attachment_type = attachment['contentType']
-                                    # attachment_size = attachment['size']
-                                    # attachment_names.append(attachment_name)
+                                        with open(img_path, 'wb') as img_file:
+                                            img_file.write(base64.b64decode(img_data))
+                                        
+                                        with open(img_path, 'rb') as img_file:
+                                            img_base64 = base64.b64encode(img_file.read()).decode('utf-8')
+                                            # img_src = f'data:{attachment["contentType"]};base64,{img_base64}'
+                                            img_src = f'/static/Asset/Attachment-Image/{content_id}.png'
+                                            img_tag['src'] = img_src
+                                        break
+                        ticket = Ticket.objects.get(Ticket_ID = Context['Ticket_ID']) 
+                        if ticket:
+                            ticket.Ticket_Desc = str(soup)    
+                            ticket.save()                                   
+                        #attachment file
+                        for attachment in attachments:
+                            if not attachment['contentType'].startswith('image/'):
+                                ticketID = Context['Ticket_ID']
+                                attachment_id   = attachment['id']
+                                attachment_name = attachment['name']
+                                # attachment_type = attachment['contentType']
+                                # attachment_size = attachment['size']
+                                # attachment_names.append(attachment_name)
 
-                                    attachment_item = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/attachments/{attachment_id}'
-                                    attachment_item_response = requests.get(
-                                        attachment_item,
-                                        headers={'Authorization': f'Bearer {access_token}'}
-                                    )
-                                    attachment_data = attachment_item_response.content
-                                    # Xây dựng đường dẫn lưu tệp trên máy chủ
-                                    current_datetime = datetime.datetime.now()
-                                    numeric_date = current_datetime.strftime('%d%m%Y')
-                                    numeric_time = current_datetime.strftime('%H%M')
-                                    attachment_name_full = str(ticketID) + '_' + numeric_date + '_' + numeric_time + '_' + attachment_name
-                                    attachment_path = os.path.join(attachment_dir, attachment_name_full)
+                                attachment_item = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/attachments/{attachment_id}'
+                                attachment_item_response = requests.get(
+                                    attachment_item,
+                                    headers={'Authorization': f'Bearer {access_token}'}
+                                )
+                                attachment_data = attachment_item_response.content
+                                # Xây dựng đường dẫn lưu tệp trên máy chủ
+                                current_datetime = datetime.datetime.now()
+                                numeric_date = current_datetime.strftime('%d%m%Y')
+                                numeric_time = current_datetime.strftime('%H%M')
+                                attachment_name_full = str(ticketID) + '_' + numeric_date + '_' + numeric_time + '_' + attachment_name
+                                attachment_path = os.path.join(attachment_dir, attachment_name_full)
 
-                                    # Lưu tệp đính kèm vào máy chủ
-                                    with open(attachment_path, 'wb') as attachment_file:
-                                        attachment_file.write(attachment_data)
-                                    
-                                    #create attachment data
-                                    create_attachment_mail(ticketID,attachment_name_full)
+                                # Lưu tệp đính kèm vào máy chủ
+                                with open(attachment_path, 'wb') as attachment_file:
+                                    attachment_file.write(attachment_data)
+                                
+                                #create attachment data
+                                create_attachment_mail(ticketID,attachment_name_full)
 
-                        # reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])             
+                    # reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])             
 
-                    else:
-                        #gửi mail thống báo lỗi không thành công.
-                        mail = "Gửi mail thông báo"
+                    # else:
+                    #     #gửi mail thống báo lỗi không thành công.
+                    #     mail = "Gửi mail thông báo"
                     if(mailid):
                         del request.session['mail_id']
                     reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])
@@ -2804,7 +2812,7 @@ def load_Assign_Json(request):
                 'ID_user':                  assign.ID_user.ID_user,
                 'UserName':                 assign.ID_user.FullName,
                 'TGroup_ID':                assign.TGroup_ID.TGroup_Name,
-                'Assign_User_Name':         assign.TGroup_ID,
+                'Assign_User_ID':           assign.Assign_User_ID,
                 'Assign_User_Name':         assign.Assign_User_Name ,
                 'Assign_User_Date':         assign.Assign_User_Date.strftime('%d/%m/%Y'),
                 'Assign_User_Time':         assign.Assign_User_Time.strftime('%H:%M'),
@@ -3390,7 +3398,1119 @@ def Check_Company(request):
             'success': False,
             'message': f'Lỗi: {str(ex)}',
         })
+
 ################################################### PAGE USERS DATA #########################
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+################################################### PAGE IMPORT - EXPORT DATA #########################
+@csrf_exempt
+def import_excel_user(request):
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+        if excel_file and excel_file.name.endswith('.xlsx'):
+            try:
+                # Đọc tệp Excel và lấy sheet đầu tiên
+                workbook = load_workbook(excel_file)
+                sheet = workbook.active
+                # combobox_column_name = 'Company'
+
+                # Lấy danh sách tên cột (header)
+                headers = [cell.value for cell in sheet[1]]
+
+                # Khởi tạo danh sách để lưu dữ liệu từ các dòng
+                data_list = []
+
+                # Bắt đầu từ dòng thứ 2 (sau header)
+                for row in sheet.iter_rows(min_row=2, values_only=True):
+                    data_dict = {}
+                    for i, value in enumerate(row):
+                        # Sử dụng tên cột từ header để làm key cho dữ liệu
+                        header = headers[i]
+                        data_dict[header] = value
+                    data_list.append(data_dict)
+
+                # Thực hiện xử lý dữ liệu ở đây, ví dụ: lưu vào cơ sở dữ liệu
+                if data_list:
+                    id_list_exits = []
+                    for data in data_list:
+                        date_birth = data['Birthday']
+                        # birth = datetime.datetime(date_birth).strptime('%Y-%m-%d')
+                        birth = datetime.datetime.strptime(date_birth, '%d/%m/%Y')
+                        new_format_str = birth.strftime('%Y/%m/%d')
+                        check_id = Users.objects.filter(Mail = data['Mail'] )
+                        if not check_id.exists():
+                            UserID = Check_IDUser()
+                            company = Company.objects.get(Company_Name = data['Company'])
+                            user = Users.objects.get(ID_user = 'U000000001')
+                            users = Users.objects.create(
+                                    ID_user         = UserID,
+                                    Mail            = data['Mail'], 
+                                    FullName        = data['Full Name'], 
+                                    Company_ID      = company.Company_ID, 
+                                    displayName     = data['Display Name'], 
+                                    Birthday        = new_format_str if new_format_str else datetime.date(1990, 1, 1), 
+                                    User_Type       = 2, 
+                                    Acc_Type        = 'System',
+                                    Address         = data['Address'], 
+                                    Jobtitle        = data['Jobtitle'], 
+                                    Phone           = data['Phone'] if data['Phone'] else 0, 
+                                    ID_Create       = user.ID_user, 
+                                    Name_Create     = user.FullName, 
+                                    Date_Create     = datetime.datetime.now().date(),
+                                    Time_Create     = datetime.datetime.now().time(),
+                                    User_Status     = True,
+                            )
+                            users.save()
+                        else:
+                            id_list_exits.append(data['Mail'])
+                        # user_data = Users.objects.filter(ID_user__in = id_list_exits)
+                    if id_list_exits:
+                         context = { 
+                            'success': True,
+                            'list_data': id_list_exits,
+                        }
+                    else:
+                        context = { 
+                            'success': True,
+                        }
+                    return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+                # return JsonResponse({'success': True})
+            except Exception as e:
+                return JsonResponse({'success': False, 'message': str(e)})
+        else:
+            return JsonResponse({'success': False, 'message': 'Chỉ cho phép tệp Excel .xlsx'})
+    return JsonResponse({'success': False, 'message': 'Phương thức không hợp lệ'})
+
+@csrf_exempt
+def export_excel_user(request):
+    try:
+        # Nhận dữ liệu từ tham số truy vấn data
+        # data_json = request.GET.get('data')
+        data_json = request.body.decode('utf-8')
+        json_user = json.loads(data_json)
+        data = []
+        # Tạo một workbook và một worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+
+        if json_user:
+            # Thiết lập độ rộng cho các cột
+            column_widths = {
+                'A': 20,
+                'B': 35,
+                'C': 20,
+                'D': 35,
+                'E': 20,
+                'F': 10,
+                'G': 30,
+                'H': 12,
+                'I': 30,
+                'J': 12,
+                'K': 20,
+                'L': 25,
+                'M': 12,
+                'N': 12,
+                'O': 10,
+            }
+            
+            for col, width in column_widths.items():
+                worksheet.column_dimensions[col].width = width
+
+            # In đậm header
+            header = ['User_ID', 'Email', 'Full Name', 'Company', 'Role', 'User Type',
+                      'Job Title', 'Birth Day', 'Address', 'Phone', 'Created ID',
+                      'Created Name', 'Created Date', 'Created Time', 'Status']
+            for col_num, header_value in enumerate(header, start=1):
+                cell = worksheet.cell(row=1, column=col_num)
+                cell.value = header_value
+                cell.font = openpyxl.styles.Font(bold=True)
+
+            for dt in json_user:
+                if dt['User_Type'] == 0:
+                    user_type = 'Administrator'
+                elif dt['User_Type'] == 1:
+                    user_type = 'Mod'
+                else:
+                    user_type = 'User Member'
+                list_data = [
+                    dt['ID_user'],
+                    dt['Mail'],
+                    dt['FullName'],
+                    dt['Company_Name'],
+                    user_type,
+                    dt['Acc_Type'],
+                    dt['Jobtitle'],
+                    dt['Birthday'],
+                    dt['Address'],
+                    dt['Phone'],
+                    dt['ID_Create'],
+                    dt['Name_Create'],
+                    dt['Date_Create'],
+                    dt['Time_Create'],
+                    dt['User_Status'],
+                ]
+                data.append(list_data)
+
+            if data:
+                # Thêm dữ liệu vào worksheet
+                for row_num, row_data in enumerate(data, start=2):
+                    for col_num, cell_value in enumerate(row_data, start=1):
+                        cell = worksheet.cell(row=row_num, column=col_num)
+                        cell.value = cell_value
+                        cell.border = openpyxl.styles.Border(
+                            left=openpyxl.styles.Side(border_style='thin'),
+                            right=openpyxl.styles.Side(border_style='thin'),
+                            top=openpyxl.styles.Side(border_style='thin'),
+                            bottom=openpyxl.styles.Side(border_style='thin')
+                        )
+
+                # Tạo tên file Excel
+                response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                response['Content-Disposition'] = 'attachment; filename=User_data_list.xlsx'
+
+                # Lưu workbook vào HttpResponse
+                workbook.save(response)
+                return response
+            else:
+                return JsonResponse({'success': False, 'message': 'No data'})
+        else:
+            return JsonResponse({'success': False, 'message': 'No data'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@csrf_exempt
+def export_excel_ticket(request):
+    try:
+        # Nhận dữ liệu từ tham số truy vấn data
+        # data_json = request.POST.get('data')
+        data_json = request.body.decode('utf-8')
+        json_ticket = json.loads(data_json)
+        data = []
+        # Tạo một workbook và một worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+
+        if json_ticket:
+            # Thiết lập độ rộng cho các cột
+            column_widths = {
+                'A': 12,
+                'B': 40,
+                'C': 12,
+                'D': 30,
+                'E': 10,
+                'F': 12,
+                'G': 20,
+                'H': 10,
+                'I': 12,
+                'J': 20,
+                'K': 12,
+                'L': 12,
+                'M': 10,
+            }
+            
+            for col, width in column_widths.items():
+                worksheet.column_dimensions[col].width = width
+
+            # In đậm header
+            header = ['Ticket_ID', 'Title', 'Company ID', 'Company', 'Group', 
+                      'User Support', 'User Support Name',
+                      'Ticket Type', 'Created ID','Created Name', 'Created Date', 'Created Time', 'Status']
+            for col_num, header_value in enumerate(header, start=1):
+                cell = worksheet.cell(row=1, column=col_num)
+                cell.value = header_value
+                cell.font = openpyxl.styles.Font(bold=True)
+
+            for dt in json_ticket:
+                if dt['Ticket_Status'] == 0:
+                    status = 'Hoàn Thành'
+                elif dt['Ticket_Status'] == 1:
+                    status = 'Đang làm'
+                elif dt['Ticket_Status'] == 2:
+                    status = 'Đang Treo'
+                else:
+                    status = 'Hủy'
+
+                if dt['Ticket_Type'] == 0:
+                    ticket_type = 'Sự Cố'
+                else:
+                    ticket_type = 'Hỗ Trợ'
+                list_data = [
+                    dt['Ticket_ID'],
+                    dt['Ticket_Title'],
+                    dt['Company_ID'],
+                    dt['Company_Name'],
+                    dt['Group_Name'],
+                    dt['Ticket_User_Asign'],
+                    dt['Ticket_Name_Asign'],
+                    ticket_type,
+                    dt['ID_user'],
+                    dt['Ticket_User_Name'],
+                    dt['Ticket_Date'],
+                    dt['Ticket_Time'],
+                    status,
+                ]
+                data.append(list_data)
+
+            if data:
+                # Thêm dữ liệu vào worksheet
+                for row_num, row_data in enumerate(data, start=2):
+                    for col_num, cell_value in enumerate(row_data, start=1):
+                        cell = worksheet.cell(row=row_num, column=col_num)
+                        cell.value = cell_value
+                        cell.border = openpyxl.styles.Border(
+                            left=openpyxl.styles.Side(border_style='thin'),
+                            right=openpyxl.styles.Side(border_style='thin'),
+                            top=openpyxl.styles.Side(border_style='thin'),
+                            bottom=openpyxl.styles.Side(border_style='thin')
+                        )
+
+                # Tạo tên file Excel
+                response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                response['Content-Disposition'] = 'attachment; filename=Ticket_data_list.xlsx'
+
+                # Lưu workbook vào HttpResponse
+                workbook.save(response)
+                return response
+            else:
+                return JsonResponse({'success': False, 'message': 'No data'})
+        else:
+            return JsonResponse({'success': False, 'message': 'No data'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@csrf_exempt
+def export_excel_company(request):
+    try:
+        # Nhận dữ liệu từ tham số truy vấn data
+        # data_json = request.POST.get('data')
+        data_json = request.body.decode('utf-8')
+        json_company = json.loads(data_json)
+        data = []
+        # Tạo một workbook và một worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+
+        if json_company:
+            # Thiết lập độ rộng cho các cột
+            column_widths = {
+                'A': 12,
+                'B': 35,
+                'C': 20,
+                'D': 12,
+                'E': 12,
+                'F': 12,
+            }
+            
+            for col, width in column_widths.items():
+                worksheet.column_dimensions[col].width = width
+
+            # In đậm header
+            header = ['Company_ID', 'Company_Name',
+                    #   'Created ID',
+                      'Created Name', 'Created Date', 'Created Time', 'Status']
+            for col_num, header_value in enumerate(header, start=1):
+                cell = worksheet.cell(row=1, column=col_num)
+                cell.value = header_value
+                cell.font = openpyxl.styles.Font(bold=True)
+
+            for dt in json_company:
+                list_data = [
+                    dt['Company_ID'],
+                    dt['Company_Name'],
+                    # dt['ID_user'],
+                    dt['Company_User_Name'],
+                    dt['Company_Date'],
+                    dt['Company_Time'],
+                     dt['Company_Status'],
+                ]
+                data.append(list_data)
+
+            if data:
+                # Thêm dữ liệu vào worksheet
+                for row_num, row_data in enumerate(data, start=2):
+                    for col_num, cell_value in enumerate(row_data, start=1):
+                        cell = worksheet.cell(row=row_num, column=col_num)
+                        cell.value = cell_value
+                        cell.border = openpyxl.styles.Border(
+                            left=openpyxl.styles.Side(border_style='thin'),
+                            right=openpyxl.styles.Side(border_style='thin'),
+                            top=openpyxl.styles.Side(border_style='thin'),
+                            bottom=openpyxl.styles.Side(border_style='thin')
+                        )
+
+                # Tạo tên file Excel
+                response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                response['Content-Disposition'] = 'attachment; filename=Company_data_list.xlsx'
+
+                # Lưu workbook vào HttpResponse
+                workbook.save(response)
+                return response
+            else:
+                return JsonResponse({'success': False, 'message': 'No data'})
+        else:
+            return JsonResponse({'success': False, 'message': 'No data'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@csrf_exempt
+def import_excel_company(request):
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+        if excel_file and excel_file.name.endswith('.xlsx'):
+            try:
+                # Đọc tệp Excel và lấy sheet đầu tiên
+                workbook = load_workbook(excel_file)
+                sheet = workbook.active
+                # combobox_column_name = 'Company'
+
+                # Lấy danh sách tên cột (header)
+                headers = [cell.value for cell in sheet[1]]
+
+                # Khởi tạo danh sách để lưu dữ liệu từ các dòng
+                data_list = []
+
+                # Bắt đầu từ dòng thứ 2 (sau header)
+                for row in sheet.iter_rows(min_row=2, values_only=True):
+                    data_dict = {}
+                    for i, value in enumerate(row):
+                        # Sử dụng tên cột từ header để làm key cho dữ liệu
+                        header = headers[i]
+                        data_dict[header] = value
+                    data_list.append(data_dict)
+
+                # Thực hiện xử lý dữ liệu ở đây, ví dụ: lưu vào cơ sở dữ liệu
+                if data_list:
+                    id_list_exits = []
+                    for data in data_list:
+                        check_company = Company.objects.filter(Company_Name = data['Company_Name'])
+                        if not check_company.exists():
+                            user = Users.objects.get(ID_user = 'U000000001')
+                            company = Company.objects.create(                                
+                                    Company_Name    = data['Company_Name'],
+                                    ID_user         = user, 
+                                    Company_User_Name     = user.FullName, 
+                                    Company_Date     = datetime.datetime.now().date(),
+                                    Company_Time     = datetime.datetime.now().time(),
+                                    Company_Status     = True,
+                            )
+                            company.save()
+                        else:
+                            id_list_exits.append( data['Company_Name'])
+                        # user_data = Users.objects.filter(ID_user__in = id_list_exits)
+                    if id_list_exits:
+                         context = { 
+                            'success': True,
+                            'list_data': id_list_exits,
+                        }
+                    else:
+                        context = { 
+                            'success': True,
+                        }
+                    return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+                # return JsonResponse({'success': True})
+            except Exception as e:
+                return JsonResponse({'success': False, 'message': str(e)})
+        else:
+            return JsonResponse({'success': False, 'message': 'Chỉ cho phép tệp Excel .xlsx'})
+    return JsonResponse({'success': False, 'message': 'Phương thức không hợp lệ'})
+
+@csrf_exempt
+def export_excel_assgin(request):
+    try:
+        # Nhận dữ liệu từ tham số truy vấn data
+        data_json = request.body.decode('utf-8')
+        json_assign = json.loads(data_json)
+        data = []
+        # Tạo một workbook và một worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+
+        if json_assign:
+            # Thiết lập độ rộng cho các cột
+            column_widths = {
+                'A': 10,
+                'B': 15,
+                'C': 25,
+                'D': 10,
+                'E': 20,
+                'F': 15,
+                'G': 20,
+                'H': 12, 
+                'I': 12, 
+                'J': 12,
+            }
+            
+            for col, width in column_widths.items():
+                worksheet.column_dimensions[col].width = width
+
+            # In đậm header
+            header = ['Assign ID', 'ID user', 'FullName',
+                     'Group ID','Group Name',
+                     'Created ID', 'Created Name', 'Created Date', 'Created Time', 'Status']
+            for col_num, header_value in enumerate(header, start=1):
+                cell = worksheet.cell(row=1, column=col_num)
+                cell.value = header_value
+                cell.font = openpyxl.styles.Font(bold=True)
+
+            for dt in json_assign:
+                group = TGroup.objects.get(TGroup_Name = dt['TGroup_ID'])
+                list_data = [
+                    dt['Assign_ID'],
+                    dt['ID_user'],
+                    dt['UserName'],
+                    group.TGroup_ID,
+                    group.TGroup_Name,
+                    dt['Assign_User_ID'],
+                    dt['Assign_User_Name'],
+                    dt['Assign_User_Date'],
+                    dt['Assign_User_Time'],
+                    dt['Assign_User_Status'],
+                ]
+                data.append(list_data)
+
+            if data:
+                # Thêm dữ liệu vào worksheet
+                for row_num, row_data in enumerate(data, start=2):
+                    for col_num, cell_value in enumerate(row_data, start=1):
+                        cell = worksheet.cell(row=row_num, column=col_num)
+                        cell.value = cell_value
+                        cell.border = openpyxl.styles.Border(
+                            left=openpyxl.styles.Side(border_style='thin'),
+                            right=openpyxl.styles.Side(border_style='thin'),
+                            top=openpyxl.styles.Side(border_style='thin'),
+                            bottom=openpyxl.styles.Side(border_style='thin')
+                        )
+
+                # Tạo tên file Excel
+                response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                response['Content-Disposition'] = 'attachment; filename=Assign_data_list.xlsx'
+
+                # Lưu workbook vào HttpResponse
+                workbook.save(response)
+                return response
+            else:
+                return JsonResponse({'success': False, 'message': 'No data'})
+        else:
+            return JsonResponse({'success': False, 'message': 'No data'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@csrf_exempt
+def import_excel_assign(request):
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+        if excel_file and excel_file.name.endswith('.xlsx'):
+            try:
+                # Đọc tệp Excel và lấy sheet đầu tiên
+                workbook = load_workbook(excel_file)
+                sheet = workbook.active
+                # combobox_column_name = 'Company'
+
+                # Lấy danh sách tên cột (header)
+                headers = [cell.value for cell in sheet[1]]
+
+                # Khởi tạo danh sách để lưu dữ liệu từ các dòng
+                data_list = []
+
+                # Bắt đầu từ dòng thứ 2 (sau header)
+                for row in sheet.iter_rows(min_row=2, values_only=True):
+                    data_dict = {}
+                    for i, value in enumerate(row):
+                        # Sử dụng tên cột từ header để làm key cho dữ liệu
+                        header = headers[i]
+                        data_dict[header] = value
+                    data_list.append(data_dict)
+
+                # Thực hiện xử lý dữ liệu ở đây, ví dụ: lưu vào cơ sở dữ liệu
+                if data_list:
+                    id_list_exits = []
+                    for data in data_list:
+                        assign_user = Users.objects.filter(ID_user = data['ID user'])
+                        if not assign_user.exists():
+                            error_user = 'MNV: ' + str(data['ID user']) + ' - Mã nhân viên không tồn tại\n'
+                            id_list_exits.append(error_user)
+                            continue
+
+                        if  data['Group ID']:
+                            # gr_id = data['Group ID']
+                            group_id = TGroup.objects.filter(TGroup_ID = data['Group ID'])
+                            if not group_id.exists():
+                                error_user = 'MN: ' + str(data['Group ID']) + ' - Mã Group không tồn tại\n'
+                                id_list_exits.append(error_user)
+                                continue
+                            assign = Assign_User.objects.filter(ID_user = data['ID user'], TGroup_ID = group_id.first().TGroup_ID)
+                        elif  data['Group Name']:
+                            GroupID = TGroup.objects.filter(TGroup_Name = data['Group Name']).first()
+                            if GroupID:
+                                # gr_id = GroupID.TGroup_ID
+                                group_id = TGroup.objects.filter(TGroup_ID = GroupID.TGroup_ID)
+                                if not group_id.exists():
+                                    error_user = 'MN: ' + str(data['Group ID']) + ' - Mã Group không tồn tại\n'
+                                    id_list_exits.append(error_user)
+                                    continue
+                                assign = Assign_User.objects.filter(ID_user = data['ID user'], TGroup_ID =  group_id.first().TGroup_ID)
+                            else:
+                                error_group = data['Group Name'] + ' - Group Name không tồn tại\n'
+                                id_list_exits.append(error_group)
+                                continue
+                        else:
+                            context = { 
+                                'success': False,
+                                'message': 'Chưa nhập đủ thông tin (Group ID hoặc Group Name)'
+                                }
+                            return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+                    
+                        if not assign.exists():
+                            user = Users.objects.get(ID_user = 'U000000001')
+                            assg = Assign_User.objects.create(                                
+                                    ID_user             = assign_user.first(),
+                                    TGroup_ID           = group_id.first(), 
+                                    Assign_User_ID      = user.ID_user, 
+                                    Assign_User_Name    = user.FullName, 
+                                    Assign_User_Date     = datetime.datetime.now().date(),
+                                    Assign_User_Time     = datetime.datetime.now().time(),
+                                    Assign_User_Status     = True,
+                            )
+                            assg.save()
+                        else:
+                            if  data['Group ID']:
+                                error_data = 'MNV: ' + str(data['ID user']) + ' - MN: ' + str(data['Group ID']) + ' Đã tồn tại\n'
+                            elif  data['Group ID']:
+                                error_data = 'MNV: ' + str(data['ID user']) + ' - TN: ' + data['Group Name'] + ' Đã tồn tại\n'
+                            else:
+                                error_data = 'MNV: ' + str(data['ID user']) + ' Đã tồn tại\n'
+                            id_list_exits.append(error_data)
+                        # user_data = Users.objects.filter(ID_user__in = id_list_exits)
+                    if id_list_exits:
+                         context = { 
+                            'success': True,
+                            'list_data': id_list_exits,
+                        }
+                    else:
+                        context = { 
+                            'success': True,
+                        }
+                    return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+                # return JsonResponse({'success': True})
+            except Exception as e:
+                return JsonResponse({'success': False, 'message': str(e)})
+        else:
+            return JsonResponse({'success': False, 'message': 'Chỉ cho phép tệp Excel .xlsx'})
+    return JsonResponse({'success': False, 'message': 'Phương thức không hợp lệ'})
+
+@csrf_exempt
+def export_excel_grouprole(request):
+    try:
+        # Nhận dữ liệu từ tham số truy vấn data
+        data_json = request.body.decode('utf-8')
+        json_grouprole = json.loads(data_json)
+        data = []
+        # Tạo một workbook và một worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+
+        if json_grouprole:
+            # Thiết lập độ rộng cho các cột
+            column_widths = {
+                'A': 10,
+                'B': 35,
+                'C': 10,
+                'D': 20,
+                'E': 25,
+                'F': 15,
+                'G': 20,
+                'H': 12, 
+                'I': 12, 
+                'J': 12, 
+            }
+            
+            for col, width in column_widths.items():
+                worksheet.column_dimensions[col].width = width
+
+            # In đậm header
+            header = ['Group ID', 'Group Name', 'Menu ID', 'Menu Name', 'Link',
+                     'Created ID', 'Created Name', 'Created Date', 'Created Time', 'Status']
+            for col_num, header_value in enumerate(header, start=1):
+                cell = worksheet.cell(row=1, column=col_num)
+                cell.value = header_value
+                cell.font = openpyxl.styles.Font(bold=True)
+
+            for dt in json_grouprole:
+                list_data = [
+                    dt['Role_Group_ID'],
+                    dt['Role_Group_Name'],
+                    dt['Menu_ID'],
+                    dt['Menu_Name'],
+                    dt['Role_Group_Address'],
+                    dt['ID_user'],
+                    dt['Role_Group_CreateBy'],
+                    dt['Role_Group_Date'],
+                    dt['Role_Group_Time'],
+                    dt['Role_Group_Status'],
+                ]
+                data.append(list_data)
+
+            if data:
+                # Thêm dữ liệu vào worksheet
+                for row_num, row_data in enumerate(data, start=2):
+                    for col_num, cell_value in enumerate(row_data, start=1):
+                        cell = worksheet.cell(row=row_num, column=col_num)
+                        cell.value = cell_value
+                        cell.border = openpyxl.styles.Border(
+                            left=openpyxl.styles.Side(border_style='thin'),
+                            right=openpyxl.styles.Side(border_style='thin'),
+                            top=openpyxl.styles.Side(border_style='thin'),
+                            bottom=openpyxl.styles.Side(border_style='thin')
+                        )
+
+                # Tạo tên file Excel
+                response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                response['Content-Disposition'] = 'attachment; filename=GroupRole_data_list.xlsx'
+
+                # Lưu workbook vào HttpResponse
+                workbook.save(response)
+                return response
+            else:
+                return JsonResponse({'success': False, 'message': 'No data'})
+        else:
+            return JsonResponse({'success': False, 'message': 'No data'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@csrf_exempt
+def import_excel_grouprole(request):
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+        if excel_file and excel_file.name.endswith('.xlsx'):
+            try:
+                # Đọc tệp Excel và lấy sheet đầu tiên
+                workbook = load_workbook(excel_file)
+                sheet = workbook.active
+                # combobox_column_name = 'Company'
+
+                # Lấy danh sách tên cột (header)
+                headers = [cell.value for cell in sheet[1]]
+
+                # Khởi tạo danh sách để lưu dữ liệu từ các dòng
+                data_list = []
+
+                # Bắt đầu từ dòng thứ 2 (sau header)
+                for row in sheet.iter_rows(min_row=2, values_only=True):
+                    data_dict = {}
+                    for i, value in enumerate(row):
+                        # Sử dụng tên cột từ header để làm key cho dữ liệu
+                        header = headers[i]
+                        data_dict[header] = value
+                    data_list.append(data_dict)
+
+                # Thực hiện xử lý dữ liệu ở đây, ví dụ: lưu vào cơ sở dữ liệu
+                if data_list:
+                    id_list_exits = []
+                    for data in data_list:
+                        menu = Menu.objects.filter(Menu_ID = data['Menu ID'])
+                        if not menu.exists():
+                            error_menu = 'MNV: ' + str(data['Menu ID']) + ' - Mã Menu không tồn tại\n'
+                            id_list_exits.append(error_menu)
+                            continue
+                        check_group = Role_Group.objects.filter(Role_Group_Name = data['Group Name'], Menu_ID = data['Menu ID'])
+                        if not check_group.exists():
+                            user = Users.objects.get(ID_user = 'U000000001')                                                    
+                            grouprole = Role_Group.objects.create(                                
+                                    ID_user             = user,
+                                    Menu_ID             = menu.first(), 
+                                    Role_Group_Name     = data['Group Name'], 
+                                    Role_Group_Address  = data['Link'], 
+                                    Role_Group_CreateBy = user.FullName, 
+                                    Role_Group_Date     = datetime.datetime.now().date(),
+                                    Role_Group_Time     = datetime.datetime.now().time(),
+                                    Role_Group_Status     = True,
+                            )
+                            grouprole.save()
+                        else:
+                            error_data = 'Group Name: ' + data['Group Name'] + ' - Menu: ' + str(data['Menu ID']) + ' Đã tồn tại\n'
+                            id_list_exits.append(error_data)
+                    if id_list_exits:
+                         context = { 
+                            'success': True,
+                            'list_data': id_list_exits,
+                        }
+                    else:
+                        context = { 
+                            'success': True,
+                        }
+                    return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+                # return JsonResponse({'success': True})
+            except Exception as e:
+                return JsonResponse({'success': False, 'message': str(e)})
+        else:
+            return JsonResponse({'success': False, 'message': 'Chỉ cho phép tệp Excel .xlsx'})
+    return JsonResponse({'success': False, 'message': 'Phương thức không hợp lệ'})
+
+@csrf_exempt
+def export_excel_role(request):
+    try:
+        # Nhận dữ liệu từ tham số truy vấn data
+        data_json = request.body.decode('utf-8')
+        json_grouprole = json.loads(data_json)
+        data = []
+        # Tạo một workbook và một worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+
+        if json_grouprole:
+            # Thiết lập độ rộng cho các cột
+            column_widths = {
+                'A': 10,
+                'B': 55,
+                'C': 10,
+                'D': 40,
+                'E': 12,
+                'F': 20,
+                'G': 20,
+                'H': 12, 
+                'I': 12, 
+            }
+            
+            for col, width in column_widths.items():
+                worksheet.column_dimensions[col].width = width
+
+            # In đậm header
+            header = ['Role ID', 'Role Name', 'Group ID', 'Group Name',
+                     'Created ID', 'Created Name', 'Created Date', 'Created Time', 'Status']
+            for col_num, header_value in enumerate(header, start=1):
+                cell = worksheet.cell(row=1, column=col_num)
+                cell.value = header_value
+                cell.font = openpyxl.styles.Font(bold=True)
+
+            for dt in json_grouprole:
+                list_data = [
+                    dt['Role_ID'],
+                    dt['Role_Name'],
+                    dt['Role_Group_ID'],
+                    dt['Role_Group_Name'],
+                    dt['ID_user'],
+                    dt['Role_CreateBy'],
+                    dt['Role_Date'],
+                    dt['Role_Time'],
+                    dt['Role_Status'],
+                ]
+                data.append(list_data)
+
+            if data:
+                # Thêm dữ liệu vào worksheet
+                for row_num, row_data in enumerate(data, start=2):
+                    for col_num, cell_value in enumerate(row_data, start=1):
+                        cell = worksheet.cell(row=row_num, column=col_num)
+                        cell.value = cell_value
+                        cell.border = openpyxl.styles.Border(
+                            left=openpyxl.styles.Side(border_style='thin'),
+                            right=openpyxl.styles.Side(border_style='thin'),
+                            top=openpyxl.styles.Side(border_style='thin'),
+                            bottom=openpyxl.styles.Side(border_style='thin')
+                        )
+
+                # Tạo tên file Excel
+                response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                response['Content-Disposition'] = 'attachment; filename=Role_data_list.xlsx'
+
+                # Lưu workbook vào HttpResponse
+                workbook.save(response)
+                return response
+            else:
+                return JsonResponse({'success': False, 'message': 'No data'})
+        else:
+            return JsonResponse({'success': False, 'message': 'No data'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+@csrf_exempt
+def import_excel_role(request):
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+        if excel_file and excel_file.name.endswith('.xlsx'):
+            try:
+                # Đọc tệp Excel và lấy sheet đầu tiên
+                workbook = load_workbook(excel_file)
+                sheet = workbook.active
+                # combobox_column_name = 'Company'
+
+                # Lấy danh sách tên cột (header)
+                headers = [cell.value for cell in sheet[1]]
+
+                # Khởi tạo danh sách để lưu dữ liệu từ các dòng
+                data_list = []
+
+                # Bắt đầu từ dòng thứ 2 (sau header)
+                for row in sheet.iter_rows(min_row=2, values_only=True):
+                    data_dict = {}
+                    for i, value in enumerate(row):
+                        # Sử dụng tên cột từ header để làm key cho dữ liệu
+                        header = headers[i]
+                        data_dict[header] = value
+                    data_list.append(data_dict)
+
+                # Thực hiện xử lý dữ liệu ở đây, ví dụ: lưu vào cơ sở dữ liệu
+                if data_list:
+                    id_list_exits = []
+                    for data in data_list:
+                        group = Role_Group.objects.filter(Role_Group_ID = data['Group ID'])
+                        if not group.exists():
+                            error_menu = 'Group: ' + str(data['Group ID']) + ' - Mã Group không tồn tại\n'
+                            id_list_exits.append(error_menu)
+                            continue
+                        check_role = Role_Single.objects.filter(Role_Name = data['Role Name'], Role_Group_ID = data['Group ID'])
+                        if not check_role.exists():
+                            user = Users.objects.get(ID_user = 'U000000001')                                                    
+                            role = Role_Single.objects.create(                                
+                                    ID_user             = user,
+                                    Role_Group_ID       = group.first(), 
+                                    Role_Name           = data['Role Name'], 
+                                    Role_CreateBy       = user.FullName, 
+                                    Role_Date           = datetime.datetime.now().date(),
+                                    Role_Time           = datetime.datetime.now().time(),
+                                    Role_Status         = True,
+                            )
+                            role.save()
+                        else:
+                            error_data = 'Role Name: ' + data['Role Name'] + ' - Group: ' + str(data['Group ID']) + ' Đã tồn tại\n'
+                            id_list_exits.append(error_data)
+                    if id_list_exits:
+                         context = { 
+                            'success': True,
+                            'list_data': id_list_exits,
+                        }
+                    else:
+                        context = { 
+                            'success': True,
+                        }
+                    return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+                # return JsonResponse({'success': True})
+            except Exception as e:
+                return JsonResponse({'success': False, 'message': str(e)})
+        else:
+            return JsonResponse({'success': False, 'message': 'Chỉ cho phép tệp Excel .xlsx'})
+    return JsonResponse({'success': False, 'message': 'Phương thức không hợp lệ'})
+
+@csrf_exempt
+def export_excel_authorize(request):
+    try:
+        # Nhận dữ liệu từ tham số truy vấn data
+        data_json = request.body.decode('utf-8')
+        json_grouprole = json.loads(data_json)
+        data = []
+        # Tạo một workbook và một worksheet
+        workbook = openpyxl.Workbook()
+        worksheet = workbook.active
+
+        if json_grouprole:
+            # Thiết lập độ rộng cho các cột
+            column_widths = {
+                'A': 15,
+                'B': 12,
+                'C': 25,
+                'D': 10,
+                'E': 55,
+                'F': 18,
+                'G': 15,
+                'H': 12, 
+                'I': 20, 
+                'J': 12, 
+                'K': 15, 
+                'L': 12, 
+            }
+            
+            for col, width in column_widths.items():
+                worksheet.column_dimensions[col].width = width
+
+            # In đậm header
+            header = ['Authorization ID', 'User ID', 'FullName', 'Role ID', 'Role Name', 'Authorization From','Authorization To', 
+                      'Created ID', 'Created Name', 'Created Date', 'Created Time', 'Status']
+            for col_num, header_value in enumerate(header, start=1):
+                cell = worksheet.cell(row=1, column=col_num)
+                cell.value = header_value
+                cell.font = openpyxl.styles.Font(bold=True)
+
+            for dt in json_grouprole:
+                list_data = [
+                    dt['Authorization_ID'],
+                    dt['ID_user'],
+                    dt['FullName'],
+                    dt['Role_ID'],
+                    dt['Role_Name'],
+                    dt['Authorization_From'],
+                    dt['Authorization_To'],
+                    dt['Authorization_CreateID'],
+                    dt['Authorization_CreateBy'],
+                    dt['Authorization_Date'],
+                    dt['Authorization_Time'],
+                    dt['Authorization_Status'],
+                ]
+                data.append(list_data)
+
+            if data:
+                # Thêm dữ liệu vào worksheet
+                for row_num, row_data in enumerate(data, start=2):
+                    for col_num, cell_value in enumerate(row_data, start=1):
+                        cell = worksheet.cell(row=row_num, column=col_num)
+                        cell.value = cell_value
+                        cell.border = openpyxl.styles.Border(
+                            left=openpyxl.styles.Side(border_style='thin'),
+                            right=openpyxl.styles.Side(border_style='thin'),
+                            top=openpyxl.styles.Side(border_style='thin'),
+                            bottom=openpyxl.styles.Side(border_style='thin')
+                        )
+
+                # Tạo tên file Excel
+                response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+                response['Content-Disposition'] = 'attachment; filename=Authorize_data_list.xlsx'
+
+                # Lưu workbook vào HttpResponse
+                workbook.save(response)
+                return response
+            else:
+                return JsonResponse({'success': False, 'message': 'No data'})
+        else:
+            return JsonResponse({'success': False, 'message': 'No data'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
+
+def load_Data_Authorize_Json(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        ########################### USERS DATA###########################   
+        # users = Users.objects.all().filter(User_Status = True).order_by('-ID_user')
+        auth = Authorization_User.objects.all().order_by('-Authorization_ID')
+        list_auth = []
+        for au in auth:
+            auth_data = {
+                'Authorization_ID':         au.Authorization_ID,
+                'ID_user':                  au.ID_user.ID_user,
+                'FullName':                 au.ID_user.FullName,
+                'Role_ID':                  au.Role_ID.Role_ID,
+                'Role_Name':                au.Role_ID.Role_Name,
+                'Authorization_From':       au.Authorization_From,
+                'Authorization_To':         au.Authorization_To,
+                'Authorization_CreateID':   au.Authorization_CreateID,
+                'Authorization_CreateBy':   au.Authorization_CreateBy,
+                'Authorization_Date':       au.Authorization_Date,
+                'Authorization_Date':       au.Authorization_Date.strftime('%d/%m/%Y'),
+                'Authorization_Time':       au.Authorization_Time.strftime('%H:%M'),
+                'Authorization_Status':     au.Authorization_Status
+            }
+            list_auth.append(auth_data)      
+        # ########################### GROUP ROLE DATA###########################
+        # groups = Role_Group.objects.all().filter(Role_Group_Status = True)      
+        # list_group = [{'Role_Group_ID': group.Role_Group_ID, 'Role_Group_Name': group.Role_Group_Name} for group in groups]
+        # ########################### ROLE DATA###########################
+        # roles = Role_Single.objects.all().filter(Role_Status =  True)       
+        # list_role = [{'Role_ID': role.Role_ID, 'Role_Name': role.Role_Name, 'Role_Group_ID': role.Role_Group_ID.Role_Group_ID } for role in roles]
+
+        context = { 
+            'data': list_auth,
+            # 'groups': list_group,
+            # 'roles': list_role,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    else:
+        return redirect('')
+
+@csrf_exempt
+def import_excel_authorize(request):
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+        if excel_file and excel_file.name.endswith('.xlsx'):
+            try:
+                # Đọc tệp Excel và lấy sheet đầu tiên
+                workbook = load_workbook(excel_file)
+                sheet = workbook.active
+                # combobox_column_name = 'Company'
+
+                # Lấy danh sách tên cột (header)
+                headers = [cell.value for cell in sheet[1]]
+
+                # Khởi tạo danh sách để lưu dữ liệu từ các dòng
+                data_list = []
+
+                # Bắt đầu từ dòng thứ 2 (sau header)
+                for row in sheet.iter_rows(min_row=2, values_only=True):
+                    data_dict = {}
+                    for i, value in enumerate(row):
+                        # Sử dụng tên cột từ header để làm key cho dữ liệu
+                        header = headers[i]
+                        data_dict[header] = value
+                    data_list.append(data_dict)
+
+                # Thực hiện xử lý dữ liệu ở đây, ví dụ: lưu vào cơ sở dữ liệu
+                if data_list:
+                    id_list_exits = []
+                    for data in data_list:
+                        UID = Users.objects.filter(ID_user = data['User ID'])
+                        if not UID.exists():
+                            error_user = 'User ID: ' + str(data['User ID']) + ' - Mã NV không tồn tại\n'
+                            id_list_exits.append(error_user)
+                            continue
+
+                        RID = Role_Single.objects.filter(Role_ID = data['Role ID'])
+                        if not RID.exists():
+                            error_role = 'Role ID: ' + str(data['Role ID']) + ' - Mã Role không tồn tại\n'
+                            id_list_exits.append(error_role)
+                            continue
+
+                        if data['Authorization From'] and data['Authorization To']:
+                            to_date = datetime.datetime.strptime(data['Authorization To'], '%Y-%m-%d').date() 
+                            from_date = datetime.datetime.strptime(data['Authorization From'], '%Y-%m-%d').date() 
+                            if to_date > from_date:
+                                today_date = datetime.datetime.now().date()
+                                if from_date < today_date:
+                                    error_date = 'Authorization From phải lớn hơn ngày hiện tại\n'
+                                    id_list_exits.append(error_date)
+                                    continue
+                            else:
+                                error_date = 'Authorization To phải lớn hơn  Authorization From\n'
+                                id_list_exits.append(error_date)
+                                continue
+                        else:
+                            error_date = 'Authorization To và  Authorization From không được trống\n'
+                            id_list_exits.append(error_date)
+                            continue
+
+                        check_auth = Authorization_User.objects.filter(ID_user = data['User ID'], Role_ID = data['Role ID'])
+                        if not check_auth.exists():
+                            user = Users.objects.get(ID_user = 'U000000001')                                                    
+                            auth = Authorization_User.objects.create(                                
+                                    ID_user                     = UID.first(),
+                                    Role_ID                     = RID.first(), 
+                                    Authorization_From          = from_date, 
+                                    Authorization_To            = to_date, 
+                                    Authorization_CreateID      = user.ID_user, 
+                                    Authorization_CreateBy      = user.FullName, 
+                                    Authorization_Date          = datetime.datetime.now().date(),
+                                    Authorization_Time          = datetime.datetime.now().time(),
+                                    Authorization_Status        = True,
+                            )
+                            auth.save()
+                        else:
+                            error_data = 'User ID: ' + str(data['User ID']) + ' - Role ID: ' + str(data['Role ID']) + ' Đã tồn tại\n'
+                            id_list_exits.append(error_data)
+                    if id_list_exits:
+                         context = { 
+                            'success': True,
+                            'list_data': id_list_exits,
+                        }
+                    else:
+                        context = { 
+                            'success': True,
+                        }
+                    return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+                # return JsonResponse({'success': True})
+            except Exception as e:
+                return JsonResponse({'success': False, 'message': str(e)})
+        else:
+            return JsonResponse({'success': False, 'message': 'Chỉ cho phép tệp Excel .xlsx'})
+    return JsonResponse({'success': False, 'message': 'Phương thức không hợp lệ'})
+
+################################################### PAGE IMPORT - EXPORT DATA #########################
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -3943,8 +5063,10 @@ def load_Group_Role_Json(request):
             group_role_data = {
                 'Role_Group_ID':           group.Role_Group_ID,
                 'Role_Group_Name':         group.Role_Group_Name,
+                'Menu_ID':                 group.Menu_ID.Menu_ID ,
                 'Menu_Name':               group.Menu_ID.Menu_Name if group.Menu_ID.Menu_Name else "No Data",
                 'Role_Group_Address':      group.Role_Group_Address if group.Role_Group_Address else "No Data",
+                'ID_user':                 group.ID_user.ID_user,
                 'Role_Group_CreateBy':     group.Role_Group_CreateBy,
                 'Role_Group_Date':         group.Role_Group_Date.strftime('%d/%m/%Y'),
                 'Role_Group_Time':         group.Role_Group_Time.strftime('%H:%M'),
@@ -4187,6 +5309,7 @@ def load_Role_Json(request):
                 'Role_Name':         group.Role_Name,
                 'Role_Group_ID':     group.Role_Group_ID.Role_Group_ID,
                 'Role_Group_Name':   group.Role_Group_ID.Role_Group_Name,
+                'ID_user':           group.ID_user.ID_user,
                 'Role_CreateBy':     group.Role_CreateBy,
                 'Role_Date':         group.Role_Date.strftime('%d/%m/%Y'),
                 'Role_Time':         group.Role_Time.strftime('%H:%M'),
@@ -5849,6 +6972,7 @@ def login_system_1(request):
 # Page Login account office 365
 def microsoft_login_token_1(request):
     code = request.GET.get('code')
+    MICROSOFT_CLIENT_SECRET = settings.MICROSOFT_CLIENT_SECRET
 
     if code is None:
         # Redirect to the Microsoft login page
@@ -5869,7 +6993,8 @@ def microsoft_login_token_1(request):
         'code': code,
         'redirect_uri': 'https://localhost:8000/login/callback/',
         'client_id': '5c17ff26-50a1-4003-bc31-f0545709c2f7',
-        'client_secret': 'EeJ8Q~ip-6TA~p1C7Y9t24l81qig0lFv1t5CPdwO',
+        # 'client_secret': 'EeJ8Q~ip-6TA~p1C7Y9t24l81qig0lFv1t5CPdwO',
+        'client_secret': MICROSOFT_CLIENT_SECRET,
     }
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded',

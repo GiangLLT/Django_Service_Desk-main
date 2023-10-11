@@ -87,6 +87,25 @@ urlpatterns = [
     path('page-404/', views.page_404, name='page_404'),
     path('cap-nhat-thong-tin-ca-nhan/', views.Update_Profile, name='Update_Profile'),
     path('kiem-tra-cong-ty/', views.Check_Company, name='Check_Company'),
+    # path('import_excel_user/', views.import_excel_user, name='import_excel_user'),
+    # path('export_excel_user/', views.export_excel_user, name='export_excel_user'),
+    #------------- User-------------------------
+
+    #------------- User-------------------------
+    path('import_excel_user/', views.import_excel_user, name='import_excel_user'),
+    path('export_excel_user/', views.export_excel_user, name='export_excel_user'),
+    path('export_excel_ticket/', views.export_excel_ticket, name='export_excel_ticket'),
+    path('export_excel_company/', views.export_excel_company, name='export_excel_company'),
+    path('import_excel_company/', views.import_excel_company, name='import_excel_company'),
+    path('export_excel_assgin/', views.export_excel_assgin, name='export_excel_assgin'),
+    path('import_excel_assign/', views.import_excel_assign, name='import_excel_assign'),
+    path('export_excel_grouprole/', views.export_excel_grouprole, name='export_excel_grouprole'),
+    path('import_excel_grouprole/', views.import_excel_grouprole, name='import_excel_grouprole'),
+    path('export_excel_role/', views.export_excel_role, name='export_excel_role'),
+    path('import_excel_role/', views.import_excel_role, name='import_excel_role'),
+    path('list-data-phan-quyen/', views.load_Data_Authorize_Json, name='load_Data_Authorize_Json'),
+    path('export_excel_authorize/', views.export_excel_authorize, name='export_excel_authorize'),
+    path('import_excel_authorize/', views.import_excel_authorize, name='import_excel_authorize'),
     #------------- User-------------------------
 
     #------------- Comment-------------------------

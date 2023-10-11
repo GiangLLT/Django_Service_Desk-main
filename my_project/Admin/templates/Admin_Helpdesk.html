@@ -85,11 +85,12 @@
           </button>
         </div>
         <div>
-          <a class="navbar-brand brand-logo" href="index.html">
-            <img src="{% static 'star_admin/images/logo.svg' %}" alt="logo" />
+          <a class="navbar-brand brand-logo" href="/dashboard/">
+            {% comment %} <img src="{% static 'star_admin/images/logo.svg' %}" alt="logo" /> {% endcomment %}
+            <img class="custom_logo" src="{% static 'Asset/img/logo-bcg.png' %}" alt="logo" />
           </a>
-          <a class="navbar-brand brand-logo-mini" href="index.html">
-            <img src="{% static 'star_admin/images/logo-mini.svg' %}" alt="logo" />
+          <a class="navbar-brand brand-logo-mini" href="/dashboard/">
+            {% comment %} <img  src="{% static 'star_admin/images/logo-mini.svg' %}" alt="logo" /> {% endcomment %}
           </a>
         </div>
       </div>
@@ -150,7 +151,7 @@
               <input type="search" class="form-control" placeholder="Search Here" title="Search here">
             </form>
           </li>
-          <li class="nav-item dropdown">
+          {% comment %} <li class="nav-item dropdown">
             <a class="nav-link count-indicator" id="notificationDropdown" href="#" data-bs-toggle="dropdown">
               <i class="icon-mail icon-lg"></i>
             </a>
@@ -187,7 +188,7 @@
                 </div>
               </a>
             </div>
-          </li>
+          </li> {% endcomment %}
           <li class="nav-item dropdown"> 
             <a class="nav-link count-indicator" id="countDropdown" href="#" data-bs-toggle="dropdown" aria-expanded="false">
               <i class="icon-bell"></i>

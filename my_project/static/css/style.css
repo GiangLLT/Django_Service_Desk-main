@@ -15,7 +15,9 @@
 /* @media (min-width: 992px){
 
 } */
-
+.custom_logo{
+  height: auto !important;
+}
 .card-title-edit{
     /* color: #2C46B7 !important; */
     color: #C82A2E !important;
@@ -604,7 +606,9 @@
 #search-Time_Create{
   max-width: 130px;
 }
-.addUser,.btn-remove-filter,.showUser{
+.addUser,.btn-remove-filter,.showUser,.importUser, .exportUser, .exportTicket, 
+.importCompany, .exportCompany, .importAssign, .exportAssign ,
+.importGroupRole, .exportGroupRole, .importRole, .exportRole,.importAuthorize, .exportAuthorize {
     margin-bottom: 15px;
     margin-top: -10px;
     border-radius: 0 !important;
