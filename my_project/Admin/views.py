@@ -1761,14 +1761,15 @@ def load_Ticket_Json(request):
         return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
         # return HttpResponse(data, content_type='application/json')
     else:
-        return redirect('')
+        return redirect('/')
 
 def load_Ticket(request):
     cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
     # cookie_facebook_data   = GetCookie(request, 'cookie_facebook_data')
     # cookie_google_data     = GetCookie(request, 'cookie_google_data')
-    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
         return render(request, 'Ticket_ListTicket.html')
     else:
         return redirect('/')
@@ -2302,7 +2303,8 @@ def load_Company_Json(request):
 def load_company(request):
     cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
-    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
         return render(request, 'Ticket_ListCompany.html')
     else:
         return redirect('/')
@@ -2486,12 +2488,13 @@ def load_Group_Json(request):
             'users': list_users,}
         return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
     else:
-        return redirect('')
+        return redirect('/')
 
 def load_group(request):
     cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
-    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
         return render(request, 'Ticket_ListGroup.html')
     else:
         return redirect('/')
@@ -2677,7 +2680,8 @@ def load_Attachment_Json(request):
 def load_attachment(request):
     cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
-    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
         return render(request, 'Ticket_ListFiles.html')
     else:
         return redirect('/')
@@ -2829,12 +2833,13 @@ def load_Assign_Json(request):
         }
         return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
     else:
-        return redirect('')
+        return redirect('/')
 
 def load_assign(request):
     cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
-    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
         return render(request, 'Ticket_ListAssign.html')
     else:
         return redirect('/')
@@ -3052,12 +3057,13 @@ def load_User_Json(request):
             }
             return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
     else:
-        return redirect('')
+        return redirect('/')
     
 def load_User(request):
     cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
-    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
         return render(request, 'Ticket_ListUser.html')
     else:
         return redirect('/')
@@ -4545,7 +4551,7 @@ def load_Ticket_Detail_Json(request,title, ticketID):
             return redirect('/danh-sach-yeu-cau/')
         # return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
     else:
-        return redirect('')
+        return redirect('/')
 #FUNCTION LOAD AND PROCESS DATA TICKET DETAIL
 
 #FUNCTION UPDATE STATUS TICKET 
@@ -4858,12 +4864,13 @@ def load_Comment_Json(request):
             }
         return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
     else:
-        return redirect('')
+        return redirect('/')
 
 def load_comment(request):
     cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
-    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
         return render(request, 'Ticket_ListComment.html')
     else:
         return redirect('/')
@@ -5083,12 +5090,13 @@ def load_Group_Role_Json(request):
             'users': list_users,}
         return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
     else:
-        return redirect('')
+        return redirect('/')
 
 def load_group_role(request):
     cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
-    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
         return render(request, 'Ticket_RoleGroup.html')
     else:
         return redirect('/')
@@ -5330,12 +5338,13 @@ def load_Role_Json(request):
             'groups': list_group,}
         return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
     else:
-        return redirect('')
+        return redirect('/')
 
 def load_role(request):
     cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
-    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
         return render(request, 'Ticket_Role.html')
     else:
         return redirect('/')
@@ -5530,12 +5539,13 @@ def load_Authorize_Json(request):
             }
         return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
     else:
-        return redirect('')
+        return redirect('/')
 
 def load_authorize(request):
     cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
-    if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
         return render(request, 'Ticket_Authorize.html')
     else:
         return redirect('/')

@@ -125,6 +125,11 @@ CREATE TABLE Attachment (
 );
 GO
 
+INSERT INTO User_System (ID_User, Company_ID , Mail, Password,  FullName, displayName,Birthday,Acc_Type,User_Type,Address,Jobtitle,Phone,Avatar,ID_Create,Name_Create,Date_Create,Time_Create,User_Status)
+VALUES ('U000000001', '1', 'system@bamboocap.com.vn', 'Abc@123','System' , 'System', '', 'System', '0', '', '', '', '', 'U000000001',N'Lê Lộc Trường Giang','2023-10-17','14:00:00' , 1)
+INSERT INTO User_System (ID_User, Company_ID , Mail, Password,  FullName, displayName,Birthday,Acc_Type,User_Type,Address,Jobtitle,Phone,Avatar,ID_Create,Name_Create,Date_Create,Time_Create,User_Status)
+VALUES ('U000000002', '1', 'giang.llt@bamboocap.com.vn', '','System' , 'System', '', 'System', '0', '', '', '', '', 'U000000001',N'Lê Lộc Trường Giang','2023-10-17','14:00:00' , 1)
+
 CREATE TABLE Comment (
     Comment_ID		int PRIMARY KEY IDENTITY(1,1) NOT NULL ,
     Ticket_ID	int,
