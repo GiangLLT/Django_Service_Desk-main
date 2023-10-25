@@ -60,9 +60,127 @@ from openpyxl import load_workbook
 import openpyxl
 from openpyxl.styles import Font, Border, Side
 
+import subprocess
 # Create your views here.
 ############################################ PAGE TICKET HELPDESK - START ############################################################
 
+def write_data(file_content):
+    # Tạo một đối tượng FileSystemStorage để quản lý việc lưu trữ
+    fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+    date_now = datetime.datetime.now()
+    time_now = datetime.datetime.now()
+
+    # Tạo tên tệp
+    file_name = date_now.strftime('%d%m%Y') + '_' + time_now.strftime('%H%M') + '_log_file_github.txt'
+    # file_content = 'Git fetch data: ' + date_now.strftime('%d/%m/%Y') + '_' + time_now.strftime('%H:%M')
+
+    # Tạo tệp tạm thời và viết nội dung vào nó
+    temp_file_path = os.path.join(settings.MEDIA_ROOT, 'my_project/Logs', file_name)
+    with open(temp_file_path, 'w') as temp_file:
+        temp_file.write(file_content)
+
+    # Lưu tệp tạm thời vào FileSystemStorage
+    with open(temp_file_path, 'rb') as temp_file:
+        fs.save('my_project/Logs/' + file_name, temp_file)
+
+    # Xoá tệp tạm thời
+    os.remove(temp_file_path)
+
+    # return HttpResponse("Dữ liệu đã được lưu vào tệp.")
+    return file_name
+
+def run_cmd_github(request):
+    try:
+        working_directory = 'C:\\inetpub\\wwwroot\\Django_Service_Desk-main'
+        cmd = [
+            ['cd', working_directory],
+            ['git', 'status'],
+            ['git', 'fetch', 'origin', 'Dev'],
+            ['git', 'merge', 'origin/Dev']
+        ]
+        log_contents = ''
+        for command in cmd:
+            proc = subprocess.Popen(command, shell=True, cwd=working_directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = proc.communicate()
+            if proc.returncode != 0:
+                return HttpResponse(f"Command failed with error: {stderr.decode('utf-8')}", status=500)
+            log_contents += stdout.decode('utf-8')
+
+        log_file_name = write_data(log_contents)
+        return HttpResponse(f"Lệnh đã chạy thành công và nội dung đã được ghi vào tệp log: {log_file_name}")
+
+    except Exception as e:
+        return HttpResponse(f"Error: {str(e)}", status=500)
+
+def read_bat_file(request):
+    file_path = 'C:\\inetpub\\wwwroot\\Django_Service_Desk-main\\SDP.bat'
+    log_contents = ''
+    try:
+        working_directory = 'C:\\inetpub\\wwwroot\\Django_Service_Desk-main'
+        
+        # Thực thi lệnh cmd trong file .bat
+        proc = subprocess.Popen([file_path], shell=True, cwd=working_directory, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        
+        # Kiểm tra kết quả của lệnh cmd
+        if proc.returncode == 0:
+            log_contents = stdout.decode('utf-8')
+            log_file_name = write_data(log_contents)
+            return HttpResponse(f"Lệnh đã chạy thành công và nội dung đã được ghi vào tệp log: {log_file_name}")
+        else:
+            return HttpResponse(f"Command failed with error: {stderr.decode('utf-8')}", status=500)
+
+    except FileNotFoundError:
+        return HttpResponse(f"File .bat không tồn tại", status=404)
+    except Exception as e:
+        return HttpResponse(f"Lỗi: {str(e)}", status=500)
+
+def get_github_data_for_file(request):
+        # Thay thế các giá trị sau bằng thông tin GitHub của bạn và token OAuth
+        github_username = "GiangLLT"
+        repository_name = "Django_Service_Desk"
+        branch_name = "Dev"
+        local_directory = "C:\test"
+        github_token = "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" 
+
+        # Tạo headers với token OAuth để xác thực yêu cầu
+        headers = {
+            "Authorization": f"token {github_token}"
+        }
+
+        # Xác định URL của API GitHub để lấy danh sách tất cả các tệp và thư mục trên nhánh cụ thể
+        github_api_url = f"https://api.github.com/repos/{github_username}/{repository_name}/git/trees/{branch_name}?recursive=1"
+
+        # Gửi yêu cầu GET đến API GitHub với headers
+        response = requests.get(github_api_url, headers=headers)
+
+        if response.status_code == 200:
+            # Lấy dữ liệu JSON từ phản hồi
+            github_data = response.json()
+
+            if 'tree' in github_data:
+                # Lặp qua danh sách các tệp và thư mục
+                for item in github_data['tree']:
+                    if item['type'] == 'blob':
+                        # Nếu là tệp, tải về và lưu vào máy tính
+                        file_path = item['path']
+                        file_content_url = f"https://raw.githubusercontent.com/{github_username}/{repository_name}/{branch_name}/{file_path}"
+                        local_file_path = os.path.join(local_directory, file_path)
+                        os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
+                        
+                        # Tải về tệp từ GitHub
+                        response = requests.get(file_content_url)
+                        
+                        if response.status_code == 200:
+                            content = response.text
+                            with open(local_file_path, 'w') as file:
+                                file.write(content)
+                        else:
+                            return JsonResponse({"error": f"Failed to download file '{file_path}' from GitHub. Status code: {response.status_code}"}, status=400)
+            
+            return JsonResponse({"message": "All GitHub files downloaded successfully"})
+        else:
+            return JsonResponse({"error": f"Failed to fetch data from GitHub. Status code: {response.status_code}"}, status=400)
 
 ################################################### API #####################  
 @csrf_exempt

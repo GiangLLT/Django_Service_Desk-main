@@ -4,7 +4,12 @@ from oauth2_provider.views import AuthorizationView, TokenView
 
 urlpatterns = [
     #Helpdesk
-     #------------- API -----------------------
+    #------------- GITHUB -----------------------
+    path('github/', views.get_github_data_for_file, name='get_github_data_for_file'),
+    path('logs_github/', views.write_data, name='write_data'),
+    path('run_cmd_github/', views.run_cmd_github, name='run_cmd_github'),
+    path('run_file_bat_github/', views.read_bat_file, name='read_bat_file'),
+    #------------- API -----------------------
      path('api-test/', views.api_test, name='api_test'),
      path('api-load-mail/', views.api_load_mail, name='api_load_mail'),
      path('load-mail/', views.start_realtime_mail_tracking, name='start_realtime_mail_tracking'),
