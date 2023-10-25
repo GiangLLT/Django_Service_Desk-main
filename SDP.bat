@@ -8,3 +8,7 @@ git merge origin/Dev
 
 echo Done
 pause
+
+git stash
+git stash drop
+git pull
