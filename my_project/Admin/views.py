@@ -64,18 +64,20 @@ import subprocess
 # Create your views here.
 ############################################ PAGE TICKET HELPDESK - START ############################################################
 
-def write_data(file_content):
+def write_data(file_content,file_name,file_path):
     # Tạo một đối tượng FileSystemStorage để quản lý việc lưu trữ
     fs = FileSystemStorage(location=settings.MEDIA_ROOT)
     date_now = datetime.datetime.now()
     time_now = datetime.datetime.now()
 
     # Tạo tên tệp
-    file_name = date_now.strftime('%d%m%Y') + '_' + time_now.strftime('%H%M') + '_log_file_github.txt'
+    file_name = date_now.strftime('%d%m%Y') + '_' + time_now.strftime('%H%M') + file_name
+    # file_name = date_now.strftime('%d%m%Y') + '_' + time_now.strftime('%H%M') + '_log_file_github.txt'
     # file_content = 'Git fetch data: ' + date_now.strftime('%d/%m/%Y') + '_' + time_now.strftime('%H:%M')
 
     # Tạo tệp tạm thời và viết nội dung vào nó
-    temp_file_path = os.path.join(settings.MEDIA_ROOT, 'my_project/Logs', file_name)
+    # temp_file_path = os.path.join(settings.MEDIA_ROOT, 'my_project/Logs', file_name)
+    temp_file_path = os.path.join(settings.MEDIA_ROOT, file_path , file_name)
     with open(temp_file_path, 'w') as temp_file:
         temp_file.write(file_content)
 
@@ -86,7 +88,6 @@ def write_data(file_content):
     # Xoá tệp tạm thời
     os.remove(temp_file_path)
 
-    # return HttpResponse("Dữ liệu đã được lưu vào tệp.")
     return file_name
 
 def run_cmd_github(request):
@@ -106,7 +107,9 @@ def run_cmd_github(request):
                 return HttpResponse(f"Command failed with error: {stderr.decode('utf-8')}", status=500)
             log_contents += stdout.decode('utf-8')
 
-        log_file_name = write_data(log_contents)
+        file_name = '_log_file_github.txt'
+        file_path = 'my_project/Logs'
+        log_file_name = write_data(log_contents,file_name,file_path)
         return HttpResponse(f"Lệnh đã chạy thành công và nội dung đã được ghi vào tệp log: {log_file_name}")
 
     except Exception as e:

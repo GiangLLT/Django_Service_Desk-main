@@ -48,7 +48,7 @@ class Users(models.Model):
     Acc_Type     = models.CharField(max_length=50)
     Address      = models.CharField(max_length=50)
     Jobtitle     = models.CharField(max_length=50)
-    Phone = models.IntegerField(validators=[MaxValueValidator(9999999999)])
+    Phone        = models.IntegerField(validators=[MaxValueValidator(9999999999)])
     Avatar       = models.CharField(max_length=1000)
     ID_Create    = models.CharField(max_length=20)
     Name_Create  = models.CharField(max_length=100)
