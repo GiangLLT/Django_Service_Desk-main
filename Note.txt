@@ -37,3 +37,11 @@ https://stackoverflow.com/questions/54824864/django-python-sql-server-pyodbc-isn
 # pip uninstall django-mssql-backend 
 # pip install mssql-django
 
+Lỗi khi khôn thể push github lên server
+takeown /F C:\inetpub\wwwroot\Django_Service_Desk-main /R /D Y
+
+git config --global core.safecrlf false
+
+git config --global --add safe.directory C:/inetpub/wwwroot/Django_Service_Desk-main
+
+

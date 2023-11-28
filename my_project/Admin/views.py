@@ -100,8 +100,8 @@ def run_cmd_github(request):
         cmd = [
             ['cd', working_directory],
             ['git', 'status'],
-            ['git', 'fetch', 'origin', 'Dev'],
-            ['git', 'merge', 'origin/Dev']
+            ['git', 'fetch', 'origin', 'main'],
+            ['git', 'merge', 'origin/main']
         ]
         log_contents = ''
         for command in cmd:
