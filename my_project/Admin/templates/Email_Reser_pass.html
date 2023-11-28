@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Content</title>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          margin: 0;
+          padding: 0;
+      }
+      .container {
+          width: 500px;
+          margin: 0 auto;
+          padding: 10px;
+          {% comment %} border: 4px solid #F15A24; {% endcomment %}
+      }
+      .row {
+          display: flex;
+          justify-content: space-between;
+          padding: 5px 0;
+          border-bottom: 1px dashed #F15A24;
+          margin-top: 5px;
+          margin-bottom: 5px;
+      }
+      .row:last-child {
+          border-bottom: none;
+      }
+      .label {
+          {% comment %} font-weight: bold; {% endcomment %}
+          font-size: 14px;
+          font-weight: 100;
+      }
+      .label img {
+        margin-right:5px;
+    }
+    .hr-custom{
+        color: #F15A24;
+    }
+      .label:before {     
+        content: '';
+        width: 10px;
+        height: 10px;
+        position: absolute;
+        background-image: url("../static/Asset/img/cirle.png")
+        background-size: cover;
+        background-position: center;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+      .value {
+          font-size: 15px;
+          flex-grow: 1;
+          margin-left: 10px;
+      }
+      .value a {
+          color: #0563C1;
+          text-decoration: none;        
+      }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3 style="font-weight: 100;">Xin Chào, {{ FullName }}!</h3>
+        <P>ID người dùng <b>#{{ ID_user }}</b> đã được reset password.</p>
+        <hr class="hr-custom" style="color: #F15A24">
+        <div class="row">
+            <div class="label"><img style="margin-right:5px;" src="https://img.upanh.tv/2023/11/10/rsz_cirle.png" alt="rsz_cirle.png" border="0" /> ID Người Dùng: #{{ ID_user }}</div> 
+            {% comment %} <div class="value">#{{ TicketID }}</div> {% endcomment %}
+        </div>
+        <div class="row">
+            <div class="label"><img style="margin-right:5px;" src="https://img.upanh.tv/2023/11/10/rsz_cirle.png" alt="rsz_cirle.png" border="0" /> Họ và Tên: {{ FullName }}</div>
+        </div>
+        <div class="row">
+            <div class="label"><img style="margin-right:5px;" src="https://img.upanh.tv/2023/11/10/rsz_cirle.png" alt="rsz_cirle.png" border="0" />  Mật khẩu mới: <b>{{ Password }}</b></div>
+        </div>
+        {% comment %} <div class="row">
+          <div class="value">{{ TicketDesc }}</div>
+      </div> {% endcomment %}
+    </div>
+    <p style="font-weight: 100; font-size: 15px;">Best regards,</p>
+    <hr class="hr-custom" style="color: #F15A24">
+    <footer>
+        <span style="font-family: Arial; font-size: 10px">
+            Nội dung được gửi tự động từ hệ thống hỗ trợ người dùng / Email sent automatic from Service Desk System<br>
+            Phát triển bởi (Developed by): IT - Bamboo Capotal Group
+        </span>
+    </footer>
+</body>
+</html>

@@ -32,8 +32,19 @@
 .btn-rounded{
   margin-right: 5px;
 }
+.content-ticket .MsoNormal span img{
+  width: 98% !important;
+}
+.container-comment-content  .MsoNormal span img{
+  width: 98% !important;
+}
+.MsoNormal span img{
+  width: auto !important;
+}
 
-
+.sidebar a:link, .sidebar span.MsoHyperlink, .user-dropdown a:link, .attachs-file-item a:link{
+  text-decoration: none !important;
+}
 /* #price-format{
     text-align: right;
 } */
@@ -128,7 +139,8 @@
     border-radius: 100%;
 }
 .background-img{
-  background: url("../Asset/img/SAP-background.jpg") !important;
+  /* background: url("../Asset/img/SAP-background.jpg") !important; */
+  background: url("../Asset/logo/bcg2.jpg") !important;
   background-size: cover !important; /* Hiển thị hình ảnh vừa khung */
   background-position: center center !important; /* Căn giữa hình ảnh */
   max-width: 100% !important;
@@ -345,6 +357,13 @@
 .update-hidden{
   display: none;
 }
+.href-ticket{
+  text-decoration: none;
+  color: black;
+}
+.href-ticket:hover{
+  color: #F15A24;
+}
 /* #################### Model Ticket ####################*/
 
 
@@ -410,16 +429,18 @@
     margin-top: -10px;
     border-radius: 0 !important;
 }
-#create-ticket-button,#create-group-button, #Update-group-button{
+#create-ticket-button,#create-group-button, #Update-group-button,#create-menu-button{
   border-radius: 0 !important;
   margin-bottom: 10px;
 }
-.update-group,.delete-group{
+.update-group,.delete-group,
+.update-menu,.delete-menu{
   border-radius: 0 !important;
     border: none !important;
     padding: 10px !important;
 }
-.update-group i ,.delete-group i{
+.update-group i ,.delete-group i,
+.update-menu i ,.delete-menu i{
   font-size: 20px !important;
 }
 /* ########### Css List ###########*/
@@ -582,7 +603,8 @@
 
 /* ########### Css List ###########*/
 #CreateUserModal input, #CreateUserModal select,
-#UpdateUserModal input, #UpdateUserModal select{
+#UpdateUserModal input, #UpdateUserModal select,
+#ChangePassModal input{
   border-radius: 0px;
   height: 50px;
   font-size: 18px;
@@ -622,12 +644,12 @@
   border-radius: 0 !important;
   margin-bottom: 10px;
 }
-.update-user,.delete-user{
+.update-user,.delete-user,.change-pass-user{
   border-radius: 0 !important;
     border: none !important;
     padding: 10px !important;
 }
-.update-user i ,.delete-user i{
+.update-user i ,.delete-user i, .change-pass-user i{
   font-size: 20px !important;
 }
 /* ########### Css List ###########*/
@@ -897,7 +919,7 @@ margin-left: -5px;
 /* #################### Css Page Comment ####################*/
 
 /* #################### Css Page Group Role ####################*/
-.addGroupRole,.btn-remove-filter{
+.addGroupRole,.btn-remove-filter, .addMenu{
   margin-bottom: 15px;
   margin-top: -10px;
   border-radius: 0 !important;
@@ -1018,6 +1040,16 @@ margin-left: -5px;
     margin-bottom: 10px;
     margin-top: -10px;
     margin-right: 5px;
+}
+.role-name-style{
+  width: 70% !important;
+}
+.role-date-style{
+  width: 15% !important;
+  text-align: right;
+}
+.func-auth{
+  text-align: right;
 }
 /* #################### Css Page Authorize ####################*/
 
@@ -1156,6 +1188,22 @@ margin-left: -5px;
 .disable-report{
   display: none !important;
 }
+.avatar-title-remind {
+  width: 50px;
+  height: 50px;
+  left: 40%;
+  border: 1px solid white;
+  background-color: #1F3BB3;
+  text-align: center;
+  color: white;
+  font-weight: bolder;
+  font-size: 25px;
+  border-radius: 100%;
+  padding-top: 10px;
+}
+.comment_list_unread a:link {
+  text-decoration: none !important;
+}
 /* #################### Css Dashboard Comment ####################*/
 
 .quote {
@@ -1210,7 +1258,9 @@ margin-left: -5px;
 
 
 .disable-button{
-  opacity: 0.5;
+  /* opacity: 0.5; */
+  /* visibility: hidden; */
+  display: none !important;
   pointer-events: none;
 }
 .admin-button{
@@ -1362,3 +1412,97 @@ margin-left: -5px;
 .checkbox-wrapper-14 *:after {
   box-sizing: inherit;
 }
+
+.label_old_pass, #input_old_pass{
+  display: none;
+}
+
+.modal-content_spinners {
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity 0.3s, transform 0.3s;
+  position: fixed !important;
+  top: 50%;
+  left: 40%;
+  transform: translate(-50%, -50%);
+}
+
+.modal.show .modal-content_spinners {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.modal-content_spinners {
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.modal-body_spinners {
+  text-align: center;
+}
+
+.spinner-grow {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  vertical-align: text-bottom;
+  border: .25em solid currentColor;
+  border-right: .25em solid transparent;
+  border-radius: 50%;
+  animation: spinner-border .75s linear infinite;
+}
+
+@keyframes spinner-border {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* #################### Css Menu Page Menu ####################*/
+.addMenu{
+  margin-bottom: 15px;
+  margin-top: -10px;
+  border-radius: 0 !important;
+}
+.btn-menu-status{
+  font-size: 10px !important;
+  padding: 10px 20px 10px 20px !important;
+}
+#search-MenuID{
+  width: 80px !important;
+  max-width: 120px;
+}
+ #search-MenuName{
+  width: 120px !important;
+  max-width: 150px;
+}
+#search-MenuAddress{
+  width: 100px !important;
+  max-width: 120px;
+}
+#search-MenuIcon{
+  width: 200px;
+  max-width: 200px;
+}
+#search-MenuLevel{
+  width: 80px;
+  max-width: 120px;
+}
+#search-MenuCreate{
+  width: 120px;
+  max-width: 200px;
+}
+#search-MenuCreateName{
+  width: 150px;
+  max-width: 200px;
+}
+#search-MenuDate{
+  width: 140px;
+  max-width: 200px;
+} 
+#search-MenuTime{
+  width: 140px;
+  max-width: 200px;
+} 
+
+/* #################### Css Menu Page Menu ####################*/

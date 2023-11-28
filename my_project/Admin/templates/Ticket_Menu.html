@@ -1,0 +1,299 @@
+{% extends 'Admin_Helpdesk.html' %}
+
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Trang Chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Danh Sách Menu </span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper ">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="top-title">
+                <h4 class="card-title card-title-edit">DANH SÁCH MENU</h4>
+                {% comment %} <button type="button" class="btn btn-danger btn-icon-text addMenu" id="addMenu">
+                  <i class="ti-files btn-icon-prepend"></i>                                                    
+                  TẠO MENU
+                </button> {% endcomment %}
+              </div>
+              
+              {% comment %} <p class="card-description">A basic data list T001</p> {% endcomment %}
+              {% comment %} <div id="js-grid" class="pt-3"></div> {% endcomment %}
+
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    {% comment %} <h4 class="card-title">Hoverable Table</h4>
+                    <p class="card-description">
+                      Add class <code>.table-hover</code>
+                    </p> {% endcomment %}
+                    <div class="table-responsive">
+
+                        <table id="product-table" class="table table-hover">
+                            <thead>
+                              <tr class="tr-table">
+                                <th>#</th>
+                                <th>TÊN MENU</th>                                                       
+                                <th>ĐƯỜNG DẪN</th>
+                                <th>ICON</th>
+                                <th>CẤP MENU</th>
+                                <th>ID NGƯỜI TẠO</th>
+                                <th>TÊN NGƯỜI TẠO</th>
+                                <th>NGÀY TẠO</th>
+                                <th>GIỜ TẠO</th>
+                                <th>TRẠNG THÁI</th>
+                                <th>CHỨC NĂNG</th>
+                              </tr>
+                              <tr>
+                                {% comment %} Search box {% endcomment %}
+                                <th>
+                                  <input type="text" class="form-control" id="search-MenuID" name="search-MenuID" placeholder="#">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-MenuName" name="search-MenuName"  placeholder="Tên Menu">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-MenuAddress" name="search-MenuAddress"  placeholder="Tên Menu">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-MenuIcon" name="search-MenuIcon"  placeholder="Menu Icon">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-MenuLevel" name="search-MenuLevel"  placeholder="Cấp Menu">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-MenuCreate" name="search-MenuCreate"  placeholder="Người Tạo">
+                                </th>  
+                                <th>
+                                  <input type="text" class="form-control" id="search-MenuCreateName" name="search-MenuCreateName"  placeholder="Tên Người Tạo">
+                                </th>                             
+                                <th>
+                                  <input type="date" class="form-control" id="search-MenuDate" name="search-MenuDate" >
+                                </th>
+                                <th>
+                                  <input type="time" class="form-control" id="search-MenuTime" name="search-MenuTime">
+                                </th>
+                                <th>
+                                  <select class="db-status">
+                                    <option value="">Tất Cả</option>
+                                    <option value="true">Kích Hoạt</option>
+                                    <option value="false">Không Kích Hoạt</option>
+                                  </select>
+                                </th>
+                                {% comment %} Search box {% endcomment %}
+                                <th>
+                                  <button type="button" class="btn btn-danger btn-icon-text btn-remove-filter" id="">
+                                    <i class="ti-files btn-icon-prepend"></i>                                                    
+                                    XÓA FILTER
+                                  </button>                              
+
+                                  <!-- Modal Create Menu -->
+                                  <div class="modal fade modal-hidden" id="CreatMenuModal" tabindex="-1" role="dialog" aria-labelledby="CreatMenuModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog modal-dialog-create-user" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="CreatMenuModalLabel"><i class="ti-write"></i> TẠO MỚI MENU</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="CreatMenuForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                            <!-- Người dùng - line 1 -->
+                                                  <div class="col-lg-12 col-md-12 col-sm-12">
+                                                    <div class="row">
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Tên Menu <b class="require-form">*</b></label>
+                                                                <input type="text" class="form-control" id="input_name" name="name" placeholder="Nhập Tên Menu" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Đường Dẫn</label>
+                                                                <input type="text" minlength="6" class="form-control" id="input_address" name="address" placeholder="Nhập Đường Dẫn" required>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                  </div>
+                                            <!-- Người dùng - line 1  -->
+                                            
+                                            <!-- Người dùng - line 2 -->
+                                                <div class="col-lg-12 col-md-12 col-sm-12">
+                                                    <div class="row">
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Menu Icon <b class="require-form">*</b></label>
+                                                                <input type="text" class="form-control" id="input_icon" name="icon" placeholder="Nhập Icon" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Cấp Menu <b class="require-form">*</b></label>
+                                                                <input type="text" inputmode="numeric" maxlength="5" class="form-control" id="input_level" name="level" placeholder="Nhập Cấp Menu" required>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <!-- Người dùng - line 2  -->
+                                         
+                                          
+                                            <!-- Người dùng - line 5 -->
+                                                <div class="col-lg-12 col-md-12 col-sm-12">
+                                                  <div class="row">                                                
+                                                    <div class="col-lg-12 col-md-12 col-sm-12">
+                                                      <div class="form-group">
+                                                        <label for="name">Tình Trạng <b class="require-form">*</b></label>
+                                                        <select class="form-select input_support" aria-label="Default select example" id="input_status" name="status" required>
+                                                          <option value="True">Kích Hoạt</option>
+                                                          <option value="False">Không Kích Hoạt</option>
+                                                        </select>
+                                                      </div>
+                                                    </div>                                             
+                                                  </div>
+                                                </div>
+                                          <!-- Người dùng - line 5 -->
+                                                                              
+                                          </div>                                         
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="create-menu-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal Create Menu  -->  
+                                  
+                                  <!-- Modal Update Menu -->
+                                  <div class="modal fade modal-hidden" id="UpdateMenuModal" tabindex="-1" role="dialog" aria-labelledby="UpdateMenuModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog modal-dialog-create-user" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="UpdateMenuModalLabel"><i class="ti-write"></i> CẬP NHẬT MENU</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="UpdateMenuForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                             <!-- Người dùng - line 1 -->
+                                             <div class="col-lg-12 col-md-12 col-sm-12">
+                                              <div class="row">
+                                                  <div class="col-lg-12 col-md-12 col-sm-12">
+                                                      <div class="form-group">
+                                                          <label for="name">Menu ID <b class="require-form">*</b></label>
+                                                          <input type="text" class="form-control" id="input_ID" name="id" placeholder="" required readonly>
+                                                      </div>
+                                                  </div>
+                                              </div>
+                                            </div>
+                                      <!-- Người dùng - line 1  -->
+
+                                            <!-- Người dùng - line 1 -->
+                                                  <div class="col-lg-12 col-md-12 col-sm-12">
+                                                    <div class="row">
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Tên Menu <b class="require-form">*</b></label>
+                                                                <input type="text" class="form-control" id="input_name" name="name" placeholder="Nhập Tên Menu" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Đường Dẫn</label>
+                                                                <input type="text" minlength="6" class="form-control" id="input_address" name="address" placeholder="Nhập Đường Dẫn" required>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                  </div>
+                                            <!-- Người dùng - line 1  -->
+                                            
+                                            <!-- Người dùng - line 2 -->
+                                                <div class="col-lg-12 col-md-12 col-sm-12">
+                                                    <div class="row">
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Menu Icon <b class="require-form">*</b></label>
+                                                                <input type="text" class="form-control" id="input_icon" name="icon" placeholder="Nhập Icon" required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-6 col-md-6 col-sm-12">
+                                                            <div class="form-group">
+                                                                <label for="name">Cấp Menu <b class="require-form">*</b></label>
+                                                                <input type="text" inputmode="numeric" maxlength="5" class="form-control" id="input_level" name="level" placeholder="Nhập Cấp Menu" required>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <!-- Người dùng - line 2  -->
+                                         
+                                          
+                                            <!-- Người dùng - line 5 -->
+                                                <div class="col-lg-12 col-md-12 col-sm-12">
+                                                  <div class="row">                                                
+                                                    <div class="col-lg-12 col-md-12 col-sm-12">
+                                                      <div class="form-group">
+                                                        <label for="name">Tình Trạng <b class="require-form">*</b></label>
+                                                        <select class="form-select input_support" aria-label="Default select example" id="input_status" name="status" required>
+                                                          <option value="True">Kích Hoạt</option>
+                                                          <option value="False">Không Kích Hoạt</option>
+                                                        </select>
+                                                      </div>
+                                                    </div>                                             
+                                                  </div>
+                                                </div>
+                                          <!-- Người dùng - line 5 -->
+                                                                              
+                                          </div>                                         
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="update-menu-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal Update Menu  -->                               
+                                </th>                                                           
+                              </tr>                               
+                            </thead>                          
+                            <tbody>
+                            </tbody>                          
+                          </table>                    
+                    </div>
+                    <ul class="pagination" id="pagination"></ul>    
+                    <!-- Modal spinners -->
+                    <div class="modal fade" id="spinnersModal" tabindex="-1" role="dialog" aria-labelledby="spinnersModallabel">
+                      <div class="modal-dialog" role="document">
+                        <div class="modal-content_spinners">
+                          
+                          <div class="modal-body_spinners">
+                            <div class="spinner-grow text-muted"></div>
+                            <div class="spinner-grow text-primary"></div>
+                            <div class="spinner-grow text-success"></div>
+                            <div class="spinner-grow text-info"></div>
+                            <div class="spinner-grow text-warning"></div>
+                            <div class="spinner-grow text-danger"></div>
+                            <div class="spinner-grow text-secondary"></div>
+                            <div class="spinner-grow text-dark"></div>
+                            <div class="spinner-grow text-light"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  <!-- Modal spinners -->                                 
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+    </div>
+
+{% endblock %}

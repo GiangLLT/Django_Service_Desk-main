@@ -14,7 +14,6 @@ CREATE TABLE django_session (
 );
 GO
 
-
 CREATE TABLE User_System
 (
     ID_User NVARCHAR(20) PRIMARY KEY NOT NULL,
@@ -37,6 +36,7 @@ CREATE TABLE User_System
     User_Status BIT
 	FOREIGN KEY (Company_ID) REFERENCES Company(Company_ID)
 );
+GO
 
 CREATE TABLE Company (
     Company_ID		int PRIMARY KEY IDENTITY(1,1) NOT NULL ,
@@ -124,7 +124,6 @@ CREATE TABLE Attachment (
 	FOREIGN KEY (Ticket_ID) REFERENCES Ticket(Ticket_ID)
 );
 GO
-
 INSERT INTO User_System (ID_User, Company_ID , Mail, Password,  FullName, displayName,Birthday,Acc_Type,User_Type,Address,Jobtitle,Phone,Avatar,ID_Create,Name_Create,Date_Create,Time_Create,User_Status)
 VALUES ('U000000001', '1', 'system@bamboocap.com.vn', 'Abc@123','System' , 'System', '', 'System', '0', '', '', '', '', 'U000000001',N'Lê Lộc Trường Giang','2023-10-17','14:00:00' , 1)
 INSERT INTO User_System (ID_User, Company_ID , Mail, Password,  FullName, displayName,Birthday,Acc_Type,User_Type,Address,Jobtitle,Phone,Avatar,ID_Create,Name_Create,Date_Create,Time_Create,User_Status)
@@ -209,6 +208,8 @@ INSERT INTO Menu (Menu_Name , Menu_Adress, Menu_Icon,Menu_Level, Menu_CreateID, 
 VALUES (N'Quản Lý Quyền','','mdi mdi-account-key' ,4 ,'U000000001', N'Lê Lộc Trường Giang', '2023-07-26','10:00:00' , 1)
 INSERT INTO Menu (Menu_Name , Menu_Adress, Menu_Icon,Menu_Level, Menu_CreateID, Menu_CreateBy , Menu_Date,  Menu_Time, Menu_Status)
 VALUES (N'Báo Cáo - Thống Kê','','mdi mdi-chart-line' ,5 ,'U000000001', N'Lê Lộc Trường Giang', '2023-07-26','10:00:00' , 1)
+insert into Menu(Menu_Name,Menu_Adress,Menu_Icon,Menu_Level,Menu_CreateID,Menu_CreateBy,Menu_Date,Menu_Time,Menu_Status) 
+values ('Tài Liệu - Template','', 'mdi mdi-book-open-page-variant', 6, 'U000000001', 'Lê Lộc Trường Giang','2023-11-16','10:00',1)
 
 CREATE TABLE Role_Group (
     Role_Group_ID		int PRIMARY KEY IDENTITY(1,1) NOT NULL ,
@@ -264,4 +265,12 @@ GO
 INSERT INTO Authorization_User (ID_User , Role_ID,Authorization_From,Authorization_To, Authorization_CreateID, Authorization_CreateBy , Authorization_Date,  Authorization_Time, Authorization_Status)
 VALUES ('U000000001',5,'2023-07-01' ,'9999-12-31' ,'U000000001', N'Lê Lộc Trường Giang', '2023-07-19','10:00:00' , 1)
 
-
+CREATE TABLE Ticket_Mapping (
+    Ticket_Mapping_ID		int PRIMARY KEY IDENTITY(1,1) NOT NULL ,
+	Ticket_ID				int,
+	Email_ID				nvarchar(Max),
+	Comment_ID				int,
+	Ticket_Mapping_Status	bit,
+	FOREIGN KEY (Ticket_ID) REFERENCES Ticket(Ticket_ID),
+);
+GO

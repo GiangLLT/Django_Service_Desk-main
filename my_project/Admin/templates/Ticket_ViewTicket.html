@@ -27,7 +27,7 @@
                       <img class="img-xs-view rounded-circle" src="{{ user.Avata }}" alt="Profile image">
                       {% else %}
                         <div class="avatar-container">
-                          <div class="avatar-title-view">{{ user.FullName | first }}{{ user.displayName | first }}</div>         
+                          <div class="avatar-title-view">{{ user.displayName | first }}{{ user.FullName | first }}</div>         
                         </div>
                       {% endif %}
                     </div>
@@ -95,13 +95,13 @@
                                 <div class="attachs-file-item"><a class="attachment-download" href="/static/Asset/Attachment-Upload/{{attach.Attachment_Url}}" download>{{attach.Attachment_Url}}</a></div>
                               </div>
                               {% endfor %}
-                              {% if attachs %}
+                              {% if attachs.count > 1 %}
                                 <button type="button" class="btn btn-outline-primary btn-fw btn-MD" id="down-files-button"><i class="ti-cloud-down btn-icon-prepen"></i> LƯU TẤT CẢ FILE</button>
                               {% endif %}
                             </div>
 
                             {% comment %} <label for="name">File Đính Kèm</label> {% endcomment %}
-                            {% if request.session.UserInfo.ID_user ==  user.ID_user or request.session.UserInfo.Acc_type < 2 %}
+                            {% comment %} {% if request.session.UserInfo.ID_user ==  user.ID_user or request.session.UserInfo.Acc_type < 2 %} {% endcomment %}
                               <div class="file-upload">
                                 <label  class='attach-file' for="file-input">Chọn tệp tin</label>
                                 <input id="file-input" type="file" multiple>
@@ -109,7 +109,7 @@
                                 <p id="file-size-info"></p>
                                 <button type="button" class="btn btn-outline-primary btn-fw btn-MD" id="upload-file-button" hidden><i class="ti-cloud-down btn-icon-prepen"></i> UPLOAD FILES</button>
                               </div>
-                            {% endif %}
+                            {% comment %} {% endif %} {% endcomment %}
                            </div>
                         </div>
                     </div>  

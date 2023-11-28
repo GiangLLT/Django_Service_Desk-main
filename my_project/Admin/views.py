@@ -8,7 +8,7 @@ from oauth2_provider.views.generic import ProtectedResourceView
 
 from django.core.paginator import Paginator
 from django.db.models import Count
-from .models import Product, Category, Users, Ticket, Company, TGroup, Comment, Attachment, TImage, Assign_User, Role_Group, Role_Single, Authorization_User, Menu, ReadComment
+from .models import Product, Category, Users, Ticket, Company, TGroup, Comment, Attachment, TImage, Assign_User, Role_Group, Role_Single, Authorization_User, Menu, ReadComment, Ticket_Mapping
 
 from django.shortcuts import render, redirect
 from django.conf import settings
@@ -61,6 +61,10 @@ import openpyxl
 from openpyxl.styles import Font, Border, Side
 
 import subprocess
+from functools import reduce
+
+from django.contrib.auth.decorators import login_required
+
 # Create your views here.
 ############################################ PAGE TICKET HELPDESK - START ############################################################
 
@@ -383,8 +387,9 @@ def Login_function(request):
         }
         return redirect('/dashboard/')
     else:
-        template =  loader.get_template('Login.html')
-        return HttpResponse(template.render())
+        return render(request, 'Login.html')
+        # template =  loader.get_template('Login.html')
+        # return HttpResponse(template.render())
     
     # return redirect('/')
 
@@ -591,23 +596,22 @@ def microsoft_login_token(request):
 def login_role(ID_user):
     user_create = Users.objects.get(ID_user = 'U000000001')
     assign = Users.objects.get(ID_user = ID_user)
-    role_view = Role_Single.objects.filter(Q(Role_Name__contains = 'ZTC_View')).first()
-    role_create = Role_Single.objects.filter(Q(Role_Name__contains = 'ZTC_Add')).first()
-    if role_view or role_create:
+    role_include = [
+        'ZTC_View',
+        'ZTC_Add',
+        'ZDC_View',
+    ]
+    # Tạo điều kiện Q động cho mỗi giá trị trong role_mod_exclude
+    conditions = [Q(Role_Name__icontains=value) for value in role_include]
+    # Kết hợp các điều kiện bằng toán tử OR
+    combined_condition = reduce(lambda x, y: x | y, conditions)
+    # Loại bỏ các bản ghi thỏa mãn điều kiện
+    list_role = Role_Single.objects.filter(combined_condition)
+    b = list(list_role)
+    for role in list_role:
         auth_role = Authorization_User(
             ID_user = assign,
-            Role_ID = role_view,
-            Authorization_From = datetime.datetime.now().date(),
-            Authorization_To = datetime.date(9999, 12, 31),
-            Authorization_CreateID = user_create.ID_user,
-            Authorization_CreateBy = user_create.FullName,
-            Authorization_Date = datetime.datetime.now().date(),
-            Authorization_Time = datetime.datetime.now().time(),
-            Authorization_Status = 1
-        )
-        auth_create = Authorization_User(
-            ID_user = assign,
-            Role_ID = role_create,
+            Role_ID = role,
             Authorization_From = datetime.datetime.now().date(),
             Authorization_To = datetime.date(9999, 12, 31),
             Authorization_CreateID = user_create.ID_user,
@@ -617,7 +621,6 @@ def login_role(ID_user):
             Authorization_Status = 1
         )
         auth_role.save()
-        auth_create.save()
 
 #CHEKC MAIL OFFICE 365
 def check_emails(request):
@@ -734,6 +737,7 @@ def call_graph_api(request):
     
     if emails:
         for email in emails:
+            Mail_status = ''
             email_from = email['from']['emailAddress']['address']  # Địa chỉ email người gửi
             user = Users.objects.filter(Mail = email_from, User_Status = True).first()
             if user:
@@ -752,8 +756,20 @@ def call_graph_api(request):
                 #function create Ticket by mail 
                 email_group_ticket = check_group_ticket(email_subject,email_body)           
                 email_type_ticket = 1 #Type Hỗ Trợ
-                email_company_ticket = user.Company_ID    
-                Context = Create_Ticket_Mail(request,email_id, email_subject, email_body,email_type_ticket,email_company_ticket,email_group_ticket,email_from,recipients)
+                email_company_ticket = user.Company_ID  
+                
+                # if isinstance(email['conversationId'], dict):
+                    # Lấy email ID của email gốc                   
+                    # conversation_Id = email['conversationId']['id'] 
+                conversation_Id = email['conversationId']
+                Context = Ticket_Mapping.objects.filter(Email_ID = conversation_Id).first()
+                if Context:
+                    Mail_status = 'Reply'
+                else:
+                    Context = Create_Ticket_Mail(request,email_id, email_subject, email_body,email_type_ticket,email_company_ticket,email_group_ticket,email_from,recipients)
+                # else:
+                #     Context = Create_Ticket_Mail(request,email_id, email_subject, email_body,email_type_ticket,email_company_ticket,email_group_ticket,email_from,recipients)
+
                 if Context:
                     email_attachments = email['hasAttachments']  # Danh sách đính kèm
                     # Xử lý danh sách đính kèm
@@ -790,14 +806,27 @@ def call_graph_api(request):
                                             img_src = f'/static/Asset/Attachment-Image/{content_id}.png'
                                             img_tag['src'] = img_src
                                         break
-                        ticket = Ticket.objects.get(Ticket_ID = Context['Ticket_ID']) 
-                        if ticket:
-                            ticket.Ticket_Desc = str(soup)    
-                            ticket.save()                                   
+
+                        if Mail_status: #emailID original is exit
+                            body_email = str(soup)
+                            ticketid = Context.Ticket_ID.Ticket_ID
+                            commentID = Create_Comment_Mail(ticketid,user,body_email)
+                            if commentID:
+                                Update_Unread_Comment(commentID,ticketid,user.ID_user)
+                            # if commentID:
+                            #     Create_Mapping_Mail(Context,original_email_id, commentID)
+                        else: #emailID original is not exit
+                            ticket = Ticket.objects.get(Ticket_ID = Context['Ticket_ID']) 
+                            if ticket:
+                                ticketid = ticket.Ticket_ID
+                                ticket.Ticket_Desc = str(soup)    
+                                ticket.save() 
+                                Create_Mapping_Mail(ticket.Ticket_ID,conversation_Id,'0')                                  
                         #attachment file
                         for attachment in attachments:
                             if not attachment['contentType'].startswith('image/'):
-                                ticketID = Context['Ticket_ID']
+                                ticketID = ticketid
+                                # ticketID = Context['Ticket_ID']
                                 attachment_id   = attachment['id']
                                 attachment_name = attachment['name']
                                 # attachment_type = attachment['contentType']
@@ -814,7 +843,7 @@ def call_graph_api(request):
                                 current_datetime = datetime.datetime.now()
                                 numeric_date = current_datetime.strftime('%d%m%Y')
                                 numeric_time = current_datetime.strftime('%H%M')
-                                attachment_name_full = str(ticketID) + '_' + numeric_date + '_' + numeric_time + '_' + attachment_name
+                                attachment_name_full = str(ticketID) + '_' + numeric_date + '_' + numeric_time + '_'+ user.ID_user +'_'+ attachment_name
                                 attachment_path = os.path.join(attachment_dir, attachment_name_full)
 
                                 # Lưu tệp đính kèm vào máy chủ
@@ -822,7 +851,7 @@ def call_graph_api(request):
                                     attachment_file.write(attachment_data)
                                 
                                 #create attachment data
-                                create_attachment_mail(ticketID,attachment_name_full)
+                                create_attachment_mail(ticketID,attachment_name_full,user.ID_user)
 
                     # reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])             
 
@@ -831,9 +860,10 @@ def call_graph_api(request):
                     #     mail = "Gửi mail thông báo"
                     if(mailid):
                         del request.session['mail_id']
-                    reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])
-                    send_email_new_ticket(request,email_id, email_from,Context['Ticket_ID'],Context['Slug_Title'],Context['Email_Assign'])
-                    # read_email(access_token,email_id)  
+                    if Mail_status == '':
+                        reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])
+                        send_email_new_ticket(request,email_id, email_from,Context['Ticket_ID'],Context['Slug_Title'],Context['Email_Assign'],email_body)
+                    read_email(access_token,email_id)  
             else:
                 if(mailid):
                     del request.session['mail_id']
@@ -846,6 +876,168 @@ def call_graph_api(request):
     # time.sleep(5)
     return JsonResponse({'success': 'Success'}, status=200)
     # return redirect('/get-code/')
+
+# def call_graph_api(request):    
+#     mailid = ''
+#     emails = []
+#     authorization_code = request.GET.get('code')
+#     full_host = request.build_absolute_uri('/') 
+
+#     session_data = request.session.get('mail_id', {})
+#     if session_data:
+#         mailid = session_data.get('Mail_ID')
+#         access_token = session_data.get('access_token')
+#     else:
+#         # mailid = request.session.get('mail_id')  
+#         access_token = get_access_token(authorization_code,full_host)
+    
+#     if access_token == None :
+#         return JsonResponse({'error': 'token is empty'}, status=400)
+    
+#     # Tính thời gian ngày hôm nay và ngày hôm trước
+#     today = datetime.datetime.utcnow().date()
+#     yesterday = today - timedelta(days=1)
+
+#     # Đường dẫn thư mục trên máy chủ để lưu các tệp đính kèm
+#     # attachment_dir = '/static/Asset/Attachment-Upload/'
+#     attachment_dir = os.path.join(settings.BASE_DIR , 'static', 'Asset', 'Attachment-Upload')
+#     attachment_dir_img = os.path.join(settings.BASE_DIR , 'static', 'Asset', 'Attachment-Image')
+#     if(mailid):
+#         response = requests.get(
+#             # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+#             f'https://graph.microsoft.com/v1.0/me/messages/{mailid}',
+#             headers={'Authorization': f'Bearer {access_token}'}
+#         )
+#         if response.status_code == 200:
+#          data_email = response.json()
+#          emails.append(data_email)
+#     else:
+#         prefix = '[SDP]'
+#         response = requests.get(
+#             # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+#             f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+#             headers={'Authorization': f'Bearer {access_token}'}
+#         )
+#         emails = response.json().get('value', [])
+    
+#     if emails:
+#         for email in emails:
+#             email_from = email['from']['emailAddress']['address']  # Địa chỉ email người gửi
+#             user = Users.objects.filter(Mail = email_from, User_Status = True).first()
+#             if user:
+#                 email_id = email['id']  # ID của email
+#                 email_subject = email['subject']  # Tiêu đề email          
+#                 # Lấy danh sách người nhận
+#                 recipients = email['toRecipients']
+#                 recipient_addresses = [recipient['emailAddress']['address'] for recipient in recipients]
+
+#                 # Lấy danh sách người được CC
+#                 cc_recipients = email.get('ccRecipients', [])
+#                 cc_addresses = [cc['emailAddress']['address'] for cc in cc_recipients]
+
+#                 email_body = email['body']['content']  # Nội dung email
+
+#                 #function create Ticket by mail 
+#                 email_group_ticket = check_group_ticket(email_subject,email_body)           
+#                 email_type_ticket = 1 #Type Hỗ Trợ
+#                 email_company_ticket = user.Company_ID  
+
+#                 # if 'inReplyTo' in email:
+#                 #     # Lấy email ID của email gốc
+#                 #     original_email_id = email['inReplyTo']['id']  
+#                 Context = Create_Ticket_Mail(request,email_id, email_subject, email_body,email_type_ticket,email_company_ticket,email_group_ticket,email_from,recipients)
+#                 if Context:
+#                     email_attachments = email['hasAttachments']  # Danh sách đính kèm
+#                     # Xử lý danh sách đính kèm
+#                     # if email_attachments:
+#                     # attachment_names = []
+#                     attachment_url = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/attachments'
+#                     attachment_response = requests.get(
+#                         attachment_url,
+#                         headers={'Authorization': f'Bearer {access_token}'}
+#                     )               
+#                     attachments = attachment_response.json().get('value', [])
+#                     if attachments:
+#                         #image
+#                         soup = BeautifulSoup(email_body, 'html.parser')
+#                         img_tags = soup.find_all('img')
+#                         for img_tag in img_tags:
+#                             src = img_tag.get('src', '')
+#                             if src.startswith('cid:'):
+#                                 content_id = src[4:]
+
+#                                 for attachment in attachments:
+#                                     if attachment['contentType'].startswith('image/') and attachment['contentId'] == content_id:
+#                                         img_data = attachment['contentBytes']
+
+#                                         img_filename = f'{content_id}.png'  # Tên tệp hình ảnh
+#                                         img_path = os.path.join(attachment_dir_img, img_filename)  # Đường dẫn tới tệp hình ảnh trên máy chủ
+
+#                                         with open(img_path, 'wb') as img_file:
+#                                             img_file.write(base64.b64decode(img_data))
+                                        
+#                                         with open(img_path, 'rb') as img_file:
+#                                             img_base64 = base64.b64encode(img_file.read()).decode('utf-8')
+#                                             # img_src = f'data:{attachment["contentType"]};base64,{img_base64}'
+#                                             img_src = f'/static/Asset/Attachment-Image/{content_id}.png'
+#                                             img_tag['src'] = img_src
+#                                         break
+#                         ticket = Ticket.objects.get(Ticket_ID = Context['Ticket_ID']) 
+#                         if ticket:
+#                             ticket.Ticket_Desc = str(soup)    
+#                             ticket.save()                                   
+#                         #attachment file
+#                         for attachment in attachments:
+#                             if not attachment['contentType'].startswith('image/'):
+#                                 ticketID = Context['Ticket_ID']
+#                                 attachment_id   = attachment['id']
+#                                 attachment_name = attachment['name']
+#                                 # attachment_type = attachment['contentType']
+#                                 # attachment_size = attachment['size']
+#                                 # attachment_names.append(attachment_name)
+
+#                                 attachment_item = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/attachments/{attachment_id}'
+#                                 attachment_item_response = requests.get(
+#                                     attachment_item,
+#                                     headers={'Authorization': f'Bearer {access_token}'}
+#                                 )
+#                                 attachment_data = attachment_item_response.content
+#                                 # Xây dựng đường dẫn lưu tệp trên máy chủ
+#                                 current_datetime = datetime.datetime.now()
+#                                 numeric_date = current_datetime.strftime('%d%m%Y')
+#                                 numeric_time = current_datetime.strftime('%H%M')
+#                                 attachment_name_full = str(ticketID) + '_' + numeric_date + '_' + numeric_time + '_' + attachment_name
+#                                 attachment_path = os.path.join(attachment_dir, attachment_name_full)
+
+#                                 # Lưu tệp đính kèm vào máy chủ
+#                                 with open(attachment_path, 'wb') as attachment_file:
+#                                     attachment_file.write(attachment_data)
+                                
+#                                 #create attachment data
+#                                 create_attachment_mail(ticketID,attachment_name_full)
+
+#                     # reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])             
+
+#                     # else:
+#                     #     #gửi mail thống báo lỗi không thành công.
+#                     #     mail = "Gửi mail thông báo"
+#                     if(mailid):
+#                         del request.session['mail_id']
+#                     reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])
+#                     send_email_new_ticket(request,email_id, email_from,Context['Ticket_ID'],Context['Slug_Title'],Context['Email_Assign'])
+#                     # read_email(access_token,email_id)  
+#             else:
+#                 if(mailid):
+#                     del request.session['mail_id']
+#                 email_id = email['id']  # ID của email
+#                 subject = "[SDP] Thông báo lỗi - User Chưa có trên hệ thống"    
+#                 reply_email_NoExitUser(request, access_token, email_id, email_from, subject)           
+#         return JsonResponse({'success': 'Success'}, status=200)
+#     else:
+#         return JsonResponse({'error': 'No email data'}, status=400)
+#     # time.sleep(5)
+#     return JsonResponse({'success': 'Success'}, status=200)
+#     # return redirect('/get-code/')
 
 def check_group_ticket(title_ticket,email_body):
     try:
@@ -940,16 +1132,64 @@ def Create_Ticket_Mail(request,email_id, email_subject, email_body,email_type_ti
         # })
 #FUNCTION CREATE TICKET 
 
-def create_attachment_mail(TicketID, AttachmentUrl):
+#FUNCTION CREATE COMMENT 
+def Create_Comment_Mail(TicketID,User, email_body):
     try:
-        user = Users.objects.get(ID_user = 'U000000001')
+        if User:
+            ticket = Ticket.objects.get(Ticket_ID = TicketID)
+            #create Comment
+            comment = Comment.objects.create(
+                Ticket_ID = ticket, 
+                ID_user  = User, 
+                Comment_Desc  = email_body, 
+                Comment_level   = 0,
+                Comment_User_Name    = User.FullName, 
+                Comment_Date  = datetime.datetime.now().date(),
+                Comment_Time  = datetime.datetime.now().time(),
+                Comment_Status = 1,
+            )
+            comment.save()
+            CommentID = comment.Comment_ID
+            return CommentID
+    except Exception as ex:
+        return ''
+        # return JsonResponse({
+        #     'success': False,
+        #     'message': f'Lỗi: {str(ex)}',
+        # })
+#FUNCTION CREATE COMMENT 
+
+#FUNCTION CREATE MAPPING 
+def Create_Mapping_Mail(TicketID,EmailID, CommentID):
+    try:
+        if TicketID:
+            ticketid = Ticket.objects.get(Ticket_ID = TicketID)
+            mapping = Ticket_Mapping.objects.create(
+                Ticket_ID = ticketid, 
+                Email_ID  = EmailID, 
+                Comment_ID  = CommentID, 
+                Ticket_Mapping_Status = 1,
+            )
+            mapping.save()
+            mappingID = mapping.Ticket_Mapping_ID
+            data = {
+                'Mapping_ID': mappingID,
+            }
+            return data
+    except Exception as ex:
+        return ''
+#FUNCTION CREATE MAPPING 
+
+def create_attachment_mail(TicketID, AttachmentUrl,UserID):
+    try:
+        user = Users.objects.get(ID_user = UserID)
         ticket = Ticket.objects.get(Ticket_ID = TicketID)
         if ticket and user:
             attach = Attachment.objects.create(
                 Ticket_ID =  ticket,
                 ID_user   = user,
                 Attachment_Url = AttachmentUrl,
-                Attachment_User_Name = 'Auto System',
+                Attachment_User_Name = user.FullName,
                 Attachment_Date = datetime.datetime.now().date(),
                 Attachment_Time = datetime.datetime.now().time(),
                 Attachment_Status = 1
@@ -994,12 +1234,13 @@ def send_email(Email,TicketID,Ticket_Title,slug_title,Ticket_User_Name,Ticket_Da
     except Exception as ex:
         return False
     
-def send_email_new_ticket(request, email_id, email_from, TicketID, slug_title,email_assign):
+def send_email_new_ticket(request, email_id, email_from, TicketID, slug_title,email_assign,email_body):
     try:
         ticket = Ticket.objects.get(Ticket_ID = TicketID)
         if ticket:
             Ticket_Title = ticket.Ticket_Title
-            Ticket_Desc = ticket.Ticket_Desc
+            # Ticket_Desc = ticket.Ticket_Desc
+            Ticket_Desc = email_body
             Ticket_Name_Asign = ticket.Ticket_Name_Asign
             Ticket_Date = ticket.Ticket_Date.strftime('%d/%m/%Y')
             Ticket_Time = ticket.Ticket_Time.strftime('%H:%M')
@@ -1035,6 +1276,7 @@ def send_email_new_ticket(request, email_id, email_from, TicketID, slug_title,em
         #Assign Email
         recipient_list_assign = [email_assign.Mail]
         message_asign = render_to_string('Email_Ticket.html', context=data)
+        # message_asign = render_to_string('Email_Ticket_Custom.html', context=data)
         send_mail(
             subject=subject,
             message=message_asign,
@@ -1067,7 +1309,7 @@ def reply_email(request, access_token, email_id, email_from, TicketID, slug_titl
             'TicketID': TicketID,
             'AssignName': Ticket_Name_Asign,
             'Title': Ticket_Title,
-            'CreateDate': Ticket_Date.strftime('%d/%m/%Y') + ' ' + Ticket_Time.strftime('%H/%M'),
+            'CreateDate': Ticket_Date.strftime('%d/%m/%Y') + ' ' + Ticket_Time.strftime('%H:%M'),
             'CreateName': Ticket_User_Name,
             'Link': full_host + 'chi-tiet-yeu-cau/' + str(TicketID) + '/' + slug_title + '/',
         }
@@ -1177,8 +1419,6 @@ def reply_email_NoExitUser(request, access_token, email_id, email_from, subject)
 
     except Exception as ex:
         return False
-
-#FUNCTION SEND EMAIL
 #FUNCTION SEND EMAIL
 
 #LOGOUT 
@@ -1199,6 +1439,39 @@ def logout(request):
         # return HttpResponse("Không tìm thấy cookie để xóa.")
         return HttpResponseRedirect('/')
 #LOGOUT 
+
+#FORGOT PASSWORD
+def forgot_pass(request):
+    # Load template in folder templates
+    template = loader.get_template('Login_Reset_pass.html')
+    return HttpResponse(template.render(request=request))
+
+@csrf_exempt
+def Reset_Pass(request):
+    try:
+        if request.method == 'POST':
+            email = request.POST.get('email')
+            user = Users.objects.filter(Mail = email)
+            if user:
+                NewPass = generate_random_string()
+                user.Password = NewPass
+                user.save()                               
+                send_email_reset_pass(user, NewPass)
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Cập nhật mật khẩu thành công.'
+                }) 
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Email Không tồn tại trên hệ thống.'
+                })          
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FORGOT PASSWORD
 
 ################################################### Login O365, system #####################  
 
@@ -1282,7 +1555,7 @@ def role_menu(request):
             AccType = userinfo['Acc_type']
             list_group_data = []
             list_menu_data = []
-            if AccType  == 0:
+            if AccType == 0:
                 menus =  Menu.objects.filter(Menu_Status = True).order_by('Menu_Level')
                 for menu in menus:
                     menu_data = {
@@ -1364,12 +1637,14 @@ def read_comment(request):
             #     & Q(ReadComment__ReadComment_Isread=True)  # Lọc theo trạng thái isread               
             # )
             IsRead = ReadComment.objects.filter(
-                Q(Comment_ID__Ticket_ID__ID_User=IDuser) | Q(Comment_ID__Ticket_ID__Ticket_User_Asign=IDuser) & Q(Comment_ID__Comment_Status = True),
-                # Comment_ID__Comment_Status = True,
+                # Q(Comment_ID__Ticket_ID__ID_User=IDuser) | Q(Comment_ID__Ticket_ID__Ticket_User_Asign=IDuser) & Q(Comment_ID__Comment_Status = True),
+                Comment_ID__Comment_Status = True,
                 ReadComment_Isread=False, 
                 ID_user = IDuser       
             ).order_by('-ReadComment_ID')
+            a = list(IsRead)
             if IsRead:
+                #  user = Users.objects.get(ID_user = IsRead.Id_user.ID_create)                  
                  list_comment = [{
                      'ReadComment_ID': r.ReadComment_ID, 
                      'TicketID': r.Comment_ID.Ticket_ID.Ticket_ID, 
@@ -1381,6 +1656,8 @@ def read_comment(request):
                      'Comment_User': r.Comment_ID.ID_user.ID_user,
                      'Comment_UserName': r.Comment_ID.ID_user.FullName,
                      'Isread': r.ReadComment_Isread,
+                     'Avatar':   r.Comment_ID.ID_user.Avatar if r.Comment_ID.ID_user.Avatar else 'Null',
+                     'img'   :   r.Comment_ID.ID_user.displayName[0] + r.Comment_ID.ID_user.FullName[0],
                      } for r in IsRead]
                  context = { 
                 'success': True,
@@ -1825,7 +2102,7 @@ def Dashboard(request):
 ################################################### PAGE TICKET DATA #######################  
 #FUNCTION LOAD AND PROCESS DATA TICKET
 @csrf_exempt
-def load_Ticket_Json(request):
+def load_Ticket_Json_Test(request):
     userinfo = request.session.get('UserInfo')
     if userinfo:
         ########################### TICKET DATA###########################   
@@ -1835,31 +2112,119 @@ def load_Ticket_Json(request):
         else:
             tickets = Ticket.objects.filter(ID_User = userinfo['ID_user']).order_by('-Ticket_ID')
 
+        a= list(tickets)
+
+        # list_ticket = []
+        # for ticket in tickets:
+        #     slug_title =  convert_title_to_slug(ticket.Ticket_Title)
+        #     ticket_data = {
+        #         'Ticket_ID': ticket.Ticket_ID,
+        #         'Ticket_Title': ticket.Ticket_Title,
+        #         'Ticket_Title_Slug': slug_title,
+        #         # 'Ticket_Desc': ticket.Ticket_Desc[:30] if len(ticket.Ticket_Desc) > 30 else ticket.Ticket_Desc,
+        #         'Ticket_Desc': '',
+        #         'Ticket_Type': ticket.Ticket_Type,
+        #         'Company_ID': ticket.Company_ID.Company_ID,
+        #         'Company_Name': ticket.Company_ID.Company_Name,
+        #         'Group_ID': ticket.TGroup_ID.TGroup_ID,
+        #         'Group_Name': ticket.TGroup_ID.TGroup_Name,
+        #         'ID_user': ticket.ID_User.ID_user,
+        #         'Ticket_User_Name': ticket.Ticket_User_Name,
+        #         # 'Ticket_Date': ticket.Ticket_Date.strftime('%Y-%m-%d'),
+        #         'Ticket_Date': ticket.Ticket_Date.strftime('%d/%m/%Y'),
+        #         'Ticket_Time': ticket.Ticket_Time.strftime('%H:%M'),
+        #         'Ticket_User_Asign': ticket.Ticket_User_Asign,
+        #         'Ticket_Name_Asign': ticket.Ticket_Name_Asign,
+        #         'Ticket_Status': ticket.Ticket_Status,
+        #     }
+        #     list_ticket.append(ticket_data)       
+        # data = json.dumps(list_ticket, default=date_handler, ensure_ascii=False)
+
+         
+        list_ticket = [{
+            'Ticket_ID': ticket.Ticket_ID,
+            'Ticket_Title': ticket.Ticket_Title,
+            'Ticket_Title_Slug': convert_title_to_slug(ticket.Ticket_Title),
+            'Ticket_Desc': '',
+            'Ticket_Type': ticket.Ticket_Type,
+            'Company_ID': ticket.Company_ID.Company_ID,
+            'Company_Name': ticket.Company_ID.Company_Name,
+            'Group_ID': ticket.TGroup_ID.TGroup_ID,
+            'Group_Name': ticket.TGroup_ID.TGroup_Name,
+            'ID_user': ticket.ID_User.ID_user,
+            'Ticket_User_Name': ticket.Ticket_User_Name,
+            'Ticket_Date': ticket.Ticket_Date.strftime('%d/%m/%Y'),
+            'Ticket_Time': ticket.Ticket_Time.strftime('%H:%M'),
+            'Ticket_User_Asign': ticket.Ticket_User_Asign,
+            'Ticket_Name_Asign': ticket.Ticket_Name_Asign,
+            'Ticket_Status': ticket.Ticket_Status,
+        }for ticket in tickets]
+        ########################### COMPANY DATA###########################
+        companys = Company.objects.filter(Company_Status = True)
+        list_companys = [{'Company_ID': company.Company_ID, 'Company_Name': company.Company_Name} for company in companys]
+        ########################### TGROUP DATA###########################
+        tgroups = TGroup.objects.filter(TGroup_Status = True)
+        list_tgroups = [{'TGroup_ID': tgroup.TGroup_ID, 'TGroup_Name': tgroup.TGroup_Name} for tgroup in tgroups]
+        ########################### SUPPORT DATA###########################
+        users = Users.objects.filter(User_Status = True, User_Type__lt = 2)
+        list_users = [{'ID_user': user.ID_user, 'FullName': user.FullName} for user in users]
+        ########################### COMPANY USER DATA###########################
+        # id_user = userinfo['ID_user']
+        comp_user = Users.objects.filter(ID_user = userinfo['ID_user'])
+        list_user_company = [{'Company_ID': uc.Company_ID} for uc in comp_user]
+        context = { 
+            'data': list_ticket,
+            'companys': list_companys,
+            'tgroups': list_tgroups,
+            'users': list_users,
+            'users_company': list_user_company}
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+        # return HttpResponse(data, content_type='application/json')
+    else:
+        return redirect('/')
+
+@csrf_exempt
+def load_Ticket_Json(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        ########################### TICKET DATA###########################   
+        isAdmin = request.POST.get('isAdmin') 
+        if(isAdmin == 'true'):
+            # tickets = Ticket.objects.all().order_by('-Ticket_ID')
+            tickets = Ticket.objects.values(
+                'Ticket_ID', 'Ticket_Title', 'Ticket_Type', 'Company_ID__Company_ID', 'Company_ID__Company_Name', 
+                'TGroup_ID__TGroup_ID','TGroup_ID__TGroup_Name', 'ID_User__ID_user', 'Ticket_User_Name', 
+                'Ticket_Date', 'Ticket_Time', 'Ticket_User_Asign', 'Ticket_Name_Asign', 'Ticket_Status'
+            ).all().order_by('-Ticket_ID')
+        else:
+            tickets = Ticket.objects.filter(ID_User = userinfo['ID_user']).values(
+                'Ticket_ID', 'Ticket_Title', 'Ticket_Type', 'Company_ID__Company_ID', 'Company_ID__Company_Name', 
+                'TGroup_ID__TGroup_ID','TGroup_ID__TGroup_Name', 'ID_User__ID_user', 'Ticket_User_Name', 
+                'Ticket_Date', 'Ticket_Time', 'Ticket_User_Asign', 'Ticket_Name_Asign', 'Ticket_Status'
+            ).order_by('-Ticket_ID')
+
         list_ticket = []
         for ticket in tickets:
-            slug_title =  convert_title_to_slug(ticket.Ticket_Title)
-            ticket_data = {
-                'Ticket_ID': ticket.Ticket_ID,
-                'Ticket_Title': ticket.Ticket_Title,
-                'Ticket_Title_Slug': slug_title,
-                # 'Ticket_Desc': ticket.Ticket_Desc[:30] if len(ticket.Ticket_Desc) > 30 else ticket.Ticket_Desc,
-                'Ticket_Desc': '',
-                'Ticket_Type': ticket.Ticket_Type,
-                'Company_ID': ticket.Company_ID.Company_ID,
-                'Company_Name': ticket.Company_ID.Company_Name,
-                'Group_ID': ticket.TGroup_ID.TGroup_ID,
-                'Group_Name': ticket.TGroup_ID.TGroup_Name,
-                'ID_user': ticket.ID_User.ID_user,
-                'Ticket_User_Name': ticket.Ticket_User_Name,
-                # 'Ticket_Date': ticket.Ticket_Date.strftime('%Y-%m-%d'),
-                'Ticket_Date': ticket.Ticket_Date.strftime('%d/%m/%Y'),
-                'Ticket_Time': ticket.Ticket_Time.strftime('%H:%M'),
-                'Ticket_User_Asign': ticket.Ticket_User_Asign,
-                'Ticket_Name_Asign': ticket.Ticket_Name_Asign,
-                'Ticket_Status': ticket.Ticket_Status,
-            }
-            list_ticket.append(ticket_data)       
-        # data = json.dumps(list_ticket, default=date_handler, ensure_ascii=False)
+            if isinstance(ticket, dict):  # Kiểm tra nếu ticket là một từ điển
+                ticket_data = {
+                    'Ticket_ID': ticket.get('Ticket_ID'),
+                    'Ticket_Title': ticket.get('Ticket_Title'),
+                    'Ticket_Title_Slug': convert_title_to_slug(ticket.get('Ticket_Title')),
+                    'Ticket_Desc': '',
+                    'Ticket_Type': ticket.get('Ticket_Type'),
+                    'Company_ID': ticket.get('Company_ID__Company_ID'),
+                    'Company_Name': ticket.get('Company_ID__Company_Name'),
+                    'Group_ID': ticket.get('TGroup_ID__TGroup_ID'),
+                    'Group_Name': ticket.get('TGroup_ID__TGroup_Name'),
+                    'ID_user': ticket.get('ID_User__ID_user'),
+                    'Ticket_User_Name': ticket.get('Ticket_User_Name'),
+                    'Ticket_Date': ticket.get('Ticket_Date').strftime('%d/%m/%Y') if ticket.get('Ticket_Date') else None,
+                    'Ticket_Time': ticket.get('Ticket_Time').strftime('%H:%M') if ticket.get('Ticket_Time') else None,
+                    'Ticket_User_Asign': ticket.get('Ticket_User_Asign'),
+                    'Ticket_Name_Asign': ticket.get('Ticket_Name_Asign'),
+                    'Ticket_Status': ticket.get('Ticket_Status'),
+                }
+                list_ticket.append(ticket_data)
         ########################### COMPANY DATA###########################
         companys = Company.objects.filter(Company_Status = True)
         list_companys = [{'Company_ID': company.Company_ID, 'Company_Name': company.Company_Name} for company in companys]
@@ -1916,6 +2281,10 @@ def Ticket_Status_Update(request):
             if(ticket):
                 ticket.Ticket_Status = new_status
                 ticket.save()
+                # Status Done -  Send Mail
+                if new_status == '0': 
+                    FullNamesession =  request.session['UserInfo']['FullName'] 
+                    send_email_Done(request,FullNamesession,ticket)
                 return JsonResponse({'success': True, 'message': 'Cập nhật status thành công!',}) 
             else:
                 return JsonResponse({'success': False, 'message': 'ID ' + ticket_id +' không tồn tại'})
@@ -2197,7 +2566,7 @@ def upload_files(request):
                 for file in files:
                     date = datetime.datetime.now().date()
                     time = datetime.datetime.now().time()
-                    file_name = ticketID + '_' + date.strftime('%d%m%Y') + '_' + time.strftime('%H%M') + '_' + file.name
+                    file_name = ticketID + '_' + date.strftime('%d%m%Y') + '_' + time.strftime('%H%M') + '_'+userID+'_' + file.name
                     fs.save(file_name, file)
 
                     attach = Attachment.objects.create(
@@ -2920,7 +3289,7 @@ def Data_Update_Attachment(request):
 ################################################### PAGE ATTACHMENT DATA #########################
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#---------------------------------------------------------------------tao-phan-cong/---------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 ################################################### PAGE ASSIGN DATA #######################  
@@ -3127,7 +3496,227 @@ def user_autocomplete(request):
 #FUNCTION AUTOCOMPLETE
 
 ################################################### PAGE ASSIGN DATA #######################  
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
+################################################### PAGE MENU DATA #######################  
+#FUNCTION LOAD AND PROCESS DATA MENU
+def load_Menu_Json(request):
+    userinfo = request.session.get('UserInfo')
+    if userinfo:
+        ########################### COMPANY DATA###########################    
+        menus = Menu.objects.all().order_by('-Menu_ID')
+        list_menu = []
+        for menu in menus:
+            menu_data = {
+                'Menu_ID':                  menu.Menu_ID,
+                'Menu_Name':                menu.Menu_Name,
+                'Menu_Adress':              menu.Menu_Adress,
+                'Menu_Icon':                menu.Menu_Icon,
+                'Menu_Level':               menu.Menu_Level,
+                'Menu_CreateID':            menu.Menu_CreateID,
+                'Menu_CreateBy':            menu.Menu_CreateBy ,
+                'Menu_Date':                menu.Menu_Date.strftime('%d/%m/%Y'),
+                'Menu_Time':                menu.Menu_Time.strftime('%H:%M'),
+                'Menu_Status':              menu.Menu_Status,
+            }
+            list_menu.append(menu_data)       
+        context = { 
+            'data': list_menu,
+        }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    else:
+        return redirect('/')
+
+def load_menu(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
+        return render(request, 'Ticket_Menu.html')
+    else:
+        return redirect('/')
+#FUNCTION LOAD AND PROCESS DATA MENU
+
+#FUNCTION CREATE MENU 
+@csrf_exempt
+def Create_Menu(request):
+    try:
+        if request.method == 'POST':           
+            Menu_Name = request.POST.get('Menu_Name')
+            Menu_Adress = request.POST.get('Menu_Adress')
+            Menu_Icon = request.POST.get('Menu_Icon')
+            Menu_Level = request.POST.get('Menu_Level')
+            Menu_status = request.POST.get('Menu_status')
+
+            userID =  request.session['UserInfo']['ID_user']
+            Name =  request.session['UserInfo']['FullName']
+
+            menu = Menu.objects.create(
+                        Menu_Name  = Menu_Name, 
+                        Menu_Adress  = Menu_Adress, 
+                        Menu_Icon = Menu_Icon,
+                        Menu_Level  = Menu_Level, 
+                        Menu_CreateID  = userID, 
+                        Menu_CreateBy  = Name, 
+                        Menu_Date  = datetime.datetime.now().date(),
+                        Menu_Time  = datetime.datetime.now().time(),
+                        Menu_Status = Menu_status,
+                    )
+            menu.save()    
+            Menu_ID = menu.Menu_ID
+            return JsonResponse({
+                    'success': True,
+                    'message': 'Menu Tạo Thành Công!',
+                    'Menu_ID':             Menu_ID,
+                    'Menu_Name':           menu.Menu_Name,
+                    'Menu_Adress':         menu.Menu_Adress,
+                    'Menu_Icon':           menu.Menu_Icon,
+                    'Menu_Level':          menu.Menu_Level,
+                    'Menu_CreateID':       menu.Menu_CreateID,
+                    'Menu_CreateBy':       menu.Menu_CreateBy,
+                    'Menu_Date':           menu.Menu_Date.strftime('%d/%m/%Y'),
+                    'Menu_Time':           menu.Menu_Time.strftime('%H:%M'),
+                    'Menu_Status':         menu.Menu_Status,
+                })          
+            # context = {
+            #     'success': True,
+            #     'message': 'Menu Tạo Thành Công!',
+            #     'menu': menu
+            # }
+            # return JsonResponse(context)
+        else:
+            # response = {'success': False, 'message': 'Invalid request method'}
+            # return JsonResponse(response, status=405)
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CREATE ASSIGN 
+
+#FUNCTION DELETE MENU 
+@csrf_exempt
+def Delete_Menu(request):
+    try:
+        if request.method == 'POST':
+            MenuID = request.POST.get('MenuID')
+            try:
+                menu = Menu.objects.get(Menu_ID = MenuID)
+                if(menu):
+                    menu.delete()
+                    return JsonResponse({'success': True,'message': 'Xóa thành công!' })
+                else:
+                    return JsonResponse({'success': False, 'message': 'Menu ID ' + MenuID +' Không tôn tại'})
+            except Exception as ex:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Lỗi: {str(ex)}',
+                })
+            except Ticket.DoesNotExist:
+                return JsonResponse({'success': False, 'message': 'ID ' + MenuID +' Không tôn tại'})
+        else:
+            return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION DELETE USERS 
+
+#FUNCTION UPDATE GROUP 
+@csrf_exempt
+def Update_Menu(request):
+    try:
+        if request.method == 'POST':
+            status = request.POST.get('status')       
+            MenuID = request.POST.get('MenuID')       
+            MenuName = request.POST.get('MenuName')       
+            MenuAdress = request.POST.get('MenuAdress')       
+            MenuIcon = request.POST.get('MenuIcon')       
+            MenuLevel = request.POST.get('MenuLevel')       
+            menu = Menu.objects.get(Menu_ID = MenuID)
+            if menu:
+                if MenuName:
+                    menu.Menu_Name = MenuName
+                    menu.Menu_Adress = MenuAdress
+                    menu.Menu_Icon   = MenuIcon
+                    menu.Menu_Level  = MenuLevel
+                    menu.Menu_Status = status
+                    menu.save()
+                else:
+                    menu.Menu_Name   = menu.Menu_Name
+                    menu.Menu_Adress = menu.Menu_Adress
+                    menu.Menu_Icon   = menu.Menu_Icon
+                    menu.Menu_Level  = menu.Menu_Level
+                    menu.Menu_Status = status
+                    menu.save()
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Yêu Cầu Thành Công!',
+                    'Menu_ID':             menu.Menu_ID,
+                    'Menu_Name':           menu.Menu_Name,
+                    'Menu_Adress':         menu.Menu_Adress,
+                    'Menu_Icon':           menu.Menu_Icon,
+                    'Menu_Level':          menu.Menu_Level,
+                })
+            else:
+                return JsonResponse({
+                'success': False,
+                'message': 'Mã Nhóm Không Tồn Tại',
+                })
+
+        else:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid request method'
+                })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE GROUP 
+
+#FUNCTION UPDATE DATA GROUP 
+@csrf_exempt
+def Data_Update_Menu(request):
+       try:
+        if request.method == 'POST':
+            MenuID = request.POST.get('MenuID')
+            menu = Menu.objects.filter(Menu_ID = MenuID)
+            if menu:
+                list_menu = [{
+                        'Menu_ID':             p.Menu_ID,
+                        'Menu_Name':           p.Menu_Name,
+                        'Menu_Adress':         p.Menu_Adress,
+                        'Menu_Icon':           p.Menu_Icon,
+                        'Menu_Level':          p.Menu_Level,
+                        'Menu_CreateID':       p.Menu_CreateID,
+                        'Menu_Status':         p.Menu_Status,
+                        } for p in menu]
+                context = { 
+                    'success': True,
+                    'message': 'Lấy Data Thành Công',
+                    'Menus': list_menu,}
+                data = json.dumps(context, ensure_ascii=False)
+                return HttpResponse(data, content_type='application/json')
+        else:
+           return JsonResponse({'success': False,'message': 'Group ID Không Tồn Tại.'}) 
+       except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION UPDATE DATA GROUP 
+
+################################################### PAGE MENU DATA ####################### 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -3257,10 +3846,15 @@ def Create_User(request):
                 User_Status     = status_user,
             )
             user.save()
+            id_user = user.ID_user
+            if user.User_Type == '2':
+                login_role(id_user)
+            elif user.User_Type == '1':
+                login_role_mod(id_user)
             cop = Company.objects.get(Company_ID = company)
             return JsonResponse({
                     'success'           : True,
-                    'message'           : 'Công Ty Tạo Thành Công!',
+                    'message'           : 'Người dùng được tạo thành công!',
                     'ID_user'           : UserID,
                     'Avatar'            : user.Avatar,
                     'Mail'              : user.Mail,
@@ -3293,6 +3887,41 @@ def Create_User(request):
         })
 #FUNCTION CREATE USERS 
 
+def login_role_mod(IDUser):
+    try:
+        user_create = Users.objects.get(ID_user = 'U000000001')
+        assign = Users.objects.get(ID_user = IDUser)
+        role_mod_exclude=[
+            'ZRG',
+            'ZRL',
+            'ZAU',
+        ]
+        # Tạo điều kiện Q động cho mỗi giá trị trong role_mod_exclude
+        conditions = [Q(Role_Name__icontains=value) for value in role_mod_exclude]
+        # Kết hợp các điều kiện bằng toán tử OR
+        combined_condition = reduce(lambda x, y: x | y, conditions)
+        # Loại bỏ các bản ghi thỏa mãn điều kiện
+        list_role = Role_Single.objects.exclude(combined_condition)
+        # list_role = Role_Single.objects.exclude(Role_Name__in=role_mod_exclude)
+        for role in list_role:
+            auth_role = Authorization_User(
+                ID_user = assign,
+                Role_ID = role,
+                Authorization_From = datetime.datetime.now().date(),
+                Authorization_To = datetime.date(9999, 12, 31),
+                Authorization_CreateID = user_create.ID_user,
+                Authorization_CreateBy = user_create.FullName,
+                Authorization_Date = datetime.datetime.now().date(),
+                Authorization_Time = datetime.datetime.now().time(),
+                Authorization_Status = 1
+            )
+            auth_role.save()
+        return True
+    except Exception as ex:
+            return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+            })
 #FUNCTION DELETE USERS 
 @csrf_exempt
 def Delete_User(request):
@@ -3451,7 +4080,7 @@ def Data_Update_User(request):
                      'ID_user':           user.ID_user, 
                      'Mail':              user.Mail, 
                      'FullName':          user.FullName,
-                     'Company_ID':         user.Company_ID,
+                     'Company_ID':        user.Company_ID,
                      'Phone':             user.Phone,
                      'Address':           user.Address,
                      'Birthday':          user.Birthday.strftime('%Y-%m-%d'),
@@ -3526,6 +4155,136 @@ def Check_Company(request):
             'message': f'Lỗi: {str(ex)}',
         })
 
+def generate_random_string():
+    # Sử dụng module string để lấy tất cả các ký tự chữ và số
+    characters = string.ascii_letters + string.digits
+    # Sử dụng hàm random.choice để chọn ngẫu nhiên 10 ký tự từ danh sách
+    random_string = ''.join(random.choice(characters) for i in range(20))
+    return random_string
+
+def send_email_reset_pass(User, New_pass):
+    try:
+        subject = '[SDP] Reset password Account' 
+        data = {
+        'ID_user': User.ID_user,
+        'FullName': User.FullName,
+        'Password': New_pass,       
+        }
+        message = render_to_string('Email_Reser_pass.html', context=data)
+        
+        from_email = settings.MICROSOFT_EMAIL
+        recipient_list = [User.Mail]
+        # cc_list = ['cc@example.com']
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=from_email,
+            recipient_list=recipient_list,
+            # cc=cc_list,
+            fail_silently=False,  # Thông báo lỗi nếu có vấn đề khi gửi email
+            html_message=message,  # Sử dụng nội dung HTML
+        )
+        return True
+    except Exception as ex:
+        return False
+
+@csrf_exempt
+def Reset_pass_User(request):
+    try:
+        if request.method == 'POST':
+            IDUser = request.POST.get('ID_User')
+            New_Pass = request.POST.get('New_Pass')
+            user = Users.objects.get(ID_user = IDUser)
+            if user:
+                if New_Pass:
+                    pass_new = New_Pass
+                else:
+                    pass_new = generate_random_string()
+                if pass_new:
+                    user.Password = pass_new
+                    user.save()
+                    send_email_reset_pass(user, pass_new)
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Reset Password thành công',
+                    })            
+                else:
+                   return JsonResponse({
+                        'success': False,
+                        'message': 'Lỗi Không xin được password random',
+                    })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+
+@csrf_exempt
+def Check_Status_User(request):
+    try:
+        if request.method == 'POST':
+            IDUser = request.session.get('UserInfo')['ID_user']
+            user = Users.objects.get(ID_user = IDUser)
+            if user:
+                if user.Password:
+                    return JsonResponse({
+                        'success': True,
+                    })            
+                else:
+                   return JsonResponse({
+                        'success': False,
+                    })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+    
+@csrf_exempt
+def Update_Pass_By_User(request):
+    try:
+        if request.method == 'POST':
+            IDUser = request.session.get('UserInfo')['ID_user']
+            Status = request.POST.get('Status')
+            OldPass = request.POST.get('OldPass')
+            NewPass = request.POST.get('NewPass')
+            user = Users.objects.get(ID_user = IDUser)
+            if user:
+                if Status == 'True':
+                    if user.Password == OldPass:
+                        user.Password = NewPass
+                        user.save()
+                        return JsonResponse({
+                            'success': True,
+                            'message': 'Cập nhật mật khẩu thành công.'
+                        })            
+                    else:
+                        return JsonResponse({
+                                'success': False,
+                                'message': 'Mật Khẩu cũ chưa đúng, vui lòng kiểm tra lại.'
+                            })
+                else:
+                    user.Password = NewPass
+                    user.save()
+                    return JsonResponse({
+                        'success': True,
+                        'message': 'Cập nhật mật khẩu thành công.'
+                    })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+
+def Update_Pass_User(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
+        return render(request, 'Ticket_Change_Pass.html')
+    else:
+        return redirect('/')
+#FUNCTION LOAD AND PROCESS DATA USERS
 ################################################### PAGE USERS DATA #########################
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -3564,7 +4323,7 @@ def import_excel_user(request):
                         date_birth = data['Birthday']
                         # birth = datetime.datetime(date_birth).strptime('%Y-%m-%d')
                         birth = datetime.datetime.strptime(date_birth, '%d/%m/%Y')
-                        new_format_str = birth.strftime('%Y/%m/%d')
+                        new_format_str = birth.strftime('%Y-%m-%d')
                         check_id = Users.objects.filter(Mail = data['Mail'] )
                         if not check_id.exists():
                             UserID = Check_IDUser()
@@ -3589,6 +4348,11 @@ def import_excel_user(request):
                                     User_Status     = True,
                             )
                             users.save()
+                            id_user = users.ID_user
+                            if users.User_Type == 2:
+                                login_role(id_user)
+                            elif users.User_Type == 1:
+                                login_role_mod(id_user)
                         else:
                             id_list_exits.append(data['Mail'])
                         # user_data = Users.objects.filter(ID_user__in = id_list_exits)
@@ -4687,6 +5451,9 @@ def Update_Status_Ticket(request):
             if ticket:
                 ticket.Ticket_Status = status
                 ticket.save()
+                if status == '0': 
+                    FullNamesession =  request.session['UserInfo']['FullName']              
+                    send_email_Done(request,FullNamesession,ticket)
 
                 return JsonResponse({
                     'success': True,
@@ -4709,6 +5476,44 @@ def Update_Status_Ticket(request):
             'success': False,
             'message': f'Lỗi: {str(ex)}',
         })
+    
+def send_email_Done(request,Fullname,ticket):
+    try:
+        # full_host = request.get_full_host() 
+        slug_title =  convert_title_to_slug(ticket.Ticket_Title)  
+        full_host = request.build_absolute_uri('/') 
+        subject = str(ticket.Ticket_ID) + ' - ' + ticket.Ticket_Title
+        data = {
+        'TicketID': ticket.Ticket_ID,
+        'AssignName': ticket.Ticket_Name_Asign,
+        'UserDone': Fullname,
+        'Title': ticket.Ticket_Title,
+        'CreateDate': str(ticket.Ticket_Date) + ' ' + ticket.Ticket_Time.strftime('%H:%M'),
+        'CreateName': ticket.Ticket_User_Name,
+        'Link': full_host+'chi-tiet-yeu-cau/'+str(ticket.Ticket_ID)+'/'+ slug_title +'/',
+        }
+        message = render_to_string('Email_Ticket_Done.html', context=data)
+        user = Users.objects.filter(ID_user = ticket.ID_User.ID_user).first()
+        if user:
+            recipient_list = [user.Mail]
+            # message = 'This is a test email.'
+            # from_email = 'giang.llt@bamboocap.com.vn'
+            from_email = settings.MICROSOFT_EMAIL
+            
+            # cc_list = ['cc@example.com']
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=from_email,
+                recipient_list=recipient_list,
+                # cc=cc_list,
+                fail_silently=False,  # Thông báo lỗi nếu có vấn đề khi gửi email
+                html_message=message,  # Sử dụng nội dung HTML
+            )
+            return True
+    except Exception as ex:
+        return False
+
 #FUNCTION UPDATE STATUS TICKET 
 
 #FUNCTION UPDATE UNREAD COMMENT
@@ -4821,9 +5626,11 @@ def Update_Unread_Comment(CommnetID,TicketID,userID):
                 if user_exists == False:
                     list_user.append({'UserID': u['ID_user']})
 
-        if list_user:
+        unique_list = []
+        [unique_list.append(item) for item in list_user if item not in unique_list]
+        if unique_list:
             ID_Comment = Comment.objects.get(Comment_ID = CommnetID)
-            for l in list_user: 
+            for l in unique_list: 
                 if l['UserID'] != userID:
                     ID = Users.objects.get(ID_user = l['UserID'])             
                     Rcomment = ReadComment.objects.create(
@@ -5251,7 +6058,7 @@ def Create_Group_Role(request):
             GroupID = group.Role_Group_ID
             return JsonResponse({
                     'success': True,
-                    'message': 'Công Ty Tạo Thành Công!',
+                    'message': 'Nhóm Quyền Tạo Thành Công!',
                     'Role_Group_ID':           GroupID,
                     'Role_Group_Name':         group.Role_Group_Name,
                     'ID_user':                 user.ID_user,
@@ -6863,11 +7670,201 @@ def check_authorize(request):
                 'message': f'Lỗi: {str(ex)}',
         })
 #FUNCTION CHECK AUTHORIZE
+
+#FUNCTION CHECK AUTHORIZE
+@csrf_exempt
+def Auth_Menu(request):
+    try:
+        if request.method == 'POST':
+            userinfo =  request.session['UserInfo']
+            ID_user  =  userinfo['ID_user']
+            if int(userinfo['Acc_type']) < 2:
+                IsAdmin = True
+            else:
+                IsAdmin = False
+            
+            current_date = datetime.datetime.now()
+            Dash_Role_Data = [
+                {'TCode': 'ZMN_View','Role': 'View','Status': 'False'},
+                {'TCode': 'ZMN_Edit','Role': 'View','Status': 'False'},
+                {'TCode': 'ZMN_Add','Role': 'View','Status': 'False'},
+                {'TCode': 'ZMN_Del','Role': 'View','Status': 'False'},
+            ]
+            Sing_Role = Role_Single.objects.filter(Role_Group_ID = 19, Role_Status = True)
+            if Sing_Role:
+                for s in Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                        ID_user =  ID_user, 
+                        Role_ID = s.Role_ID,
+                        Authorization_From__lte=current_date,
+                        Authorization_To__gte=current_date, 
+                        Authorization_Status = True).order_by('-Authorization_To').first() 
+                    if auth:
+                        for item_role in Dash_Role_Data:
+                            tcode = item_role['TCode']
+                            if tcode in auth.Role_ID.Role_Name:
+                                item_role['Status'] = 'True'
+            context = { 
+                'success': True,
+                'IsAdmin': IsAdmin,
+                'Roles': Dash_Role_Data,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+    
+def check_menu(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            idUser = userinfo['ID_user']
+            typeUser = userinfo['Acc_type']
+            if typeUser > 0:
+                current_date = datetime.datetime.now()
+                Sing_Role = Role_Single.objects.filter(Role_Group_ID = 19, Role_Status = True).values('Role_ID')
+                if Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                                ID_user =  idUser, 
+                                Role_ID__in = Sing_Role.values('Role_ID'),
+                                Authorization_From__lte=current_date,
+                                Authorization_To__gte=current_date, 
+                                Authorization_Status = True) 
+                    if auth:
+                         return JsonResponse({
+                            'success': True,
+                            # 'Status':  True,
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                            # 'Status':  False,
+                        })     
+            else:
+                 return JsonResponse({
+                        'success': True,
+                        # 'Status':  True,
+                })
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK AUTHORIZE
+
+#FUNCTION CHECK DOCUMENT TEMPLATE
+def check_template(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            idUser = userinfo['ID_user']
+            typeUser = userinfo['Acc_type']
+            if typeUser > 0:
+                current_date = datetime.datetime.now()
+                Dash_Role_Data = [
+                {'TCode': 'ZTP_View','Role': 'View','Status': 'False'},
+                ]
+                Sing_Role = Role_Single.objects.filter(Role_Group_ID = 17,Role_Name__contains= Dash_Role_Data[0]['TCode'], Role_Status = True).values('Role_ID')
+                if Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                                ID_user =  idUser, 
+                                Role_ID__in = Sing_Role.values('Role_ID'),
+                                Authorization_From__lte=current_date,
+                                Authorization_To__gte=current_date, 
+                                Authorization_Status = True) 
+                    if auth:
+                        return True
+                    else:
+                        return False 
+                else:
+                    return False  
+            else:
+                return True
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+
+def check_document(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            idUser = userinfo['ID_user']
+            typeUser = userinfo['Acc_type']
+            if typeUser > 0:
+                current_date = datetime.datetime.now()
+                Dash_Role_Data = [
+                {'TCode': 'ZDC_View','Role': 'View','Status': 'False'},
+                ]
+                Sing_Role = Role_Single.objects.filter(Role_Group_ID = 18,Role_Name__contains= Dash_Role_Data[0]['TCode'], Role_Status = True).values('Role_ID')
+                if Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                                ID_user =  idUser, 
+                                Role_ID__in = Sing_Role.values('Role_ID'),
+                                Authorization_From__lte=current_date,
+                                Authorization_To__gte=current_date, 
+                                Authorization_Status = True) 
+                    if auth:
+                        return True
+                    else:
+                        return False 
+                else:
+                    return False  
+            else:
+                return True
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK DOCUMENT TEMPLATE
 ################################################### PAGE AUTHORIZE ROLE #######################
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+################################################### PAGE TEMPLATE #######################
+def Template(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+    if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
+        status = check_template(request)
+        if status == True:
+            return render(request, 'Ticket_Template.html')
+        else:
+            return redirect('/dashboard/')
+    else:
+        return redirect('/')
+
+def Document(request):
+    try:
+        cookie_system_data     = GetCookie(request, 'cookie_system_data')
+        cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+        # if(cookie_microsoft_data or cookie_system_data or request.session['UserInfo']):
+        if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
+            status = check_document(request)
+            if status == True:
+                return render(request, 'Ticket_Document.html')
+            else:
+                return redirect('/dashboard/')
+        else:
+            return redirect('/')
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+
+    
+################################################### PAGE TEMPLATE #######################
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 ############################################ PAGE TICKET HELPDESK - END ############################################################
-
-
 
 
 

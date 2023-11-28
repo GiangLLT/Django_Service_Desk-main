@@ -1,4 +1,3 @@
-
 $(document).ready(function() {
     
     // Load data
@@ -627,7 +626,6 @@ function statusChangeCallback(response) {
         }
       });
  
- 
       var data = {
         // Dữ liệu gửi đi trong yêu cầu POST
         // Ví dụ:
@@ -696,7 +694,7 @@ function statusChangeCallback(response) {
 //################################################## PAGE TICKET HELPDESK - START ##################################################  
 
 //########### Menu Function ########### 
-if (window.location.pathname != '/'){ //function run if different homepage
+if (!(window.location.pathname === '/' || window.location.pathname === '/reset-pass/')) { //function run if different homepage
   function Load_Menu_Master() {
     // Thực hiện các tác vụ cần thực hiện khi trang vừa tải xong
     $.ajax({
@@ -867,9 +865,10 @@ if (window.location.pathname != '/'){ //function run if different homepage
     var count = document.querySelector('.comment_count');
     count.textContent = 'Bạn Có ' + count_num + ' Comment Chưa Đọc';
     for(i=0 ; i < data.length; i++){
+      var a = data[i].Avatar;
       $('.comment_list_unread').append('<a data-unread="'+data[i].ReadComment_ID+'" class="dropdown-item preview-item unread-list" href="/cap-nhat-comment-unread/'+data[i].TicketID+'/'+data[i].Ticket_Slug+'/'+data[i].ReadComment_ID+'">'+
       '<div class="preview-thumbnail">'+
-      '<img src="/static/Asset/img/ava.png" alt="image" class="img-sm profile-pic">'+
+      (data[i].Avatar !== 'Null' ? '<img src="'+data[i].Avatar+'" alt="image" class="img-sm profile-pic">': '<div class="avatar-container"> <div class="avatar-title-remind">'+data[i].img+'</div></div>')+
       '</div>'+
       '<div class="preview-item-content flex-grow py-2">'+
       '<p class="preview-subject ellipsis font-weight-medium text-dark">'+data[i].TicketID +' - '+ data[i].Ticket_Title+'</p>'+
@@ -879,28 +878,78 @@ if (window.location.pathname != '/'){ //function run if different homepage
       '</a>');
     }; 
   }
+
+  // Gọi hàm myFunction khi trang vừa tải xong
+  document.addEventListener('DOMContentLoaded', function() {
+    Load_Menu_Master();
+    load_unread_comment()
+  });
+  //########### Menu Function ########### 
 }
 
-// Gọi hàm myFunction khi trang vừa tải xong
-document.addEventListener('DOMContentLoaded', function() {
-  Load_Menu_Master();
-  load_unread_comment()
-});
-
-//########### Menu Function ########### 
-
+if (window.location.pathname === '/reset-pass/') {
+  $(document).on('click', '#reset-pass', function() {
+    var email = document.querySelector('#InputEmail').value;
+    if(email){
+      //xử lý cập nhật mật khẩu
+      $.ajax({
+        url: '/change-pass_login/',
+        dataType: 'json',
+        method: 'POST',
+        data: {
+          'email': email,
+        },
+        success: function(response) {   
+          if(response.success){
+            Swal.fire({
+              icon: 'success',
+              title: 'Thông Báo',
+              text: response.message,
+            });
+            setTimeout(function() {
+              window.location.href = "/";
+            }, 1000);
+          }
+          else{
+            Swal.fire({
+              icon: 'error',
+              title: 'Thông Báo Lỗi',
+              text: response.message,
+            });
+          }
+        },
+        error: function(response) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi',
+            text: response.message,
+          });
+        }
+      });
+    }
+    else{
+      Swal.fire({
+        icon: 'error',
+        title: 'Thông Báo Lỗi',
+        text: 'Chưa nhật thông tin Email',
+      });
+    }
+  });
+}
 //########### Danh Sách Ticket Start ###########  
 if (window.location.pathname === '/danh-sach-yeu-cau/') {
   var currentPage = 1;
   var itemsPerPage = 10;
+  var IsAdmin = '';
+  var Dash_Role_Data =[];
+
   //Check Role
   $.ajax({
     url: '/role-ticket/',
     dataType: 'json',
     success: function(response) {
-      if(response.success){
-        Load_Ticket(response.isAdmin);
-        // auth_role();
+      if(response.success){       
+        Load_Ticket(response.isAdmin);      
       }
       else{
         window.location.href = '/dashboard/';
@@ -1014,9 +1063,8 @@ if (window.location.pathname === '/danh-sach-yeu-cau/') {
    });      
 });   
 
-
   // load data product
-  function Load_Ticket(isAdmin){
+  function Load_Ticket(isAdmin){ 
     $.ajax({
       url: '/danh-sach-data-ticket/',
       dataType: 'json',
@@ -1037,76 +1085,32 @@ if (window.location.pathname === '/danh-sach-yeu-cau/') {
               date: $('#search-TicketDate').val().toLowerCase().trim(),
               time: $('#search-TicketTime').val().toLowerCase().trim(),
               status: $('.db-status').val().toLowerCase().trim(),
-            };
+            };                      
             Load_data(context.companys, context.tgroups, context.users, context.users_company);
-            display_Ticket(context.data, currentPage, itemsPerPage,filters, context.data);
-            auth_role();
+            // display_Ticket(context.data, currentPage, itemsPerPage,filters, context.data);
+            auth_role(context.data, currentPage, itemsPerPage,filters, context.data);
+            setTimeout(function() {
+              $('#spinnersModal').modal('hide');
+            }, 1000);
+            
       },
       error: function(rs, e) {
-          alert('Oops! something went wrong..111');
+          alert('Oops! something went wrong.');
       }
     });
   }
 
     //authorization page
-    function auth_role(){
+    function auth_role(data, currentPage, itemsPerPage,filters, data){
       $.ajax({
         url: '/phan-quyen-ticket/',
         dataType: 'json',
         method: 'POST',
         success: function(response) {
           if (response.success) {
-            var buttonAdd = document.querySelector('#addTicket');
-            var buttonEdit = document.querySelectorAll('.update-ticket');
-            var buttonDel = document.querySelectorAll('.delete-ticket');
-            var buttonAdmin_sta = document.querySelectorAll('.btn-status');
-            var buttonAdmin_assg = document.querySelectorAll('.btn-assign');
-            //Role Add New User
-            if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
-              buttonAdd.classList.remove('disable-button');
-            }
-            else{
-              buttonAdd.classList.add('disable-button');
-            }
-            //Role Update User
-            if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
-              buttonEdit.forEach(function(edit){
-                edit.classList.remove('disable-button');
-              });        
-            }
-            else{
-              buttonEdit.forEach(function(edit){
-                edit.classList.add('disable-button');
-              });             
-            }
-            //Role Delete User
-            if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
-              buttonDel.forEach(function(del){
-                del.classList.remove('disable-button');
-              });
-            }
-            else{
-              buttonDel.forEach(function(del){
-                del.classList.add('disable-button');
-              }); 
-            }
-             //Role Admin
-             if(response.IsAdmin == true || response.Roles[4].Status == 'True'){             
-              buttonAdmin_sta.forEach(function(admin){
-                admin.classList.remove('admin-button');
-              });
-              buttonAdmin_assg.forEach(function(asg){
-                asg.classList.remove('admin-button');
-              });
-            }
-            else{
-              buttonAdmin_sta.forEach(function(admin){
-                admin.classList.add('admin-button');
-              }); 
-              buttonAdmin_assg.forEach(function(asg){
-                asg.classList.add('admin-button');
-              });
-            }
+            IsAdmin = response.IsAdmin;  
+            Dash_Role_Data = response.Roles;
+            display_Ticket(data, currentPage, itemsPerPage,filters, data);
           } else {
             Swal.fire({
               icon: 'error',
@@ -1124,6 +1128,83 @@ if (window.location.pathname === '/danh-sach-yeu-cau/') {
         }
       });
     }
+    // function auth_role(){
+    //   $.ajax({
+    //     url: '/phan-quyen-ticket/',
+    //     dataType: 'json',
+    //     method: 'POST',
+    //     success: function(response) {
+    //       if (response.success) {
+    //         var buttonAdd = document.querySelector('#addTicket');
+    //         var buttonEdit = document.querySelectorAll('.update-ticket');
+    //         var buttonDel = document.querySelectorAll('.delete-ticket');
+    //         var buttonAdmin_sta = document.querySelectorAll('.btn-status');
+    //         var buttonAdmin_assg = document.querySelectorAll('.btn-assign');
+    //         //Role Add New User
+    //         if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
+    //           buttonAdd.classList.remove('disable-button');            
+    //         }
+    //         else{
+    //           buttonAdd.classList.add('disable-button');
+    //           //buttonAdd.remove();
+    //         }
+    //         //Role Update User
+    //         if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
+    //           buttonEdit.forEach(function(edit){
+    //             edit.classList.remove('disable-button');
+    //           });        
+    //         }
+    //         else{
+    //           buttonEdit.forEach(function(edit){
+    //             edit.classList.add('disable-button');
+    //           });             
+    //         }
+    //         //Role Delete User
+    //         if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
+    //           buttonDel.forEach(function(del){
+    //             del.classList.remove('disable-button');
+    //           });
+    //         }
+    //         else{
+    //           buttonDel.forEach(function(del){
+    //             del.classList.add('disable-button');
+    //           }); 
+    //         }
+    //          //Role Admin
+    //          if(response.IsAdmin == true || response.Roles[4].Status == 'True'){             
+    //           buttonAdmin_sta.forEach(function(admin){
+    //             admin.classList.remove('admin-button');
+    //           });
+    //           buttonAdmin_assg.forEach(function(asg){
+    //             asg.classList.remove('admin-button');
+    //           });
+    //         }
+    //         else{
+    //           buttonAdmin_sta.forEach(function(admin){
+    //             admin.classList.add('admin-button');
+    //           }); 
+    //           buttonAdmin_assg.forEach(function(asg){
+    //             asg.classList.add('admin-button');
+    //           });
+    //         }
+    //       } else {
+    //         Swal.fire({
+    //           icon: 'error',
+    //           title: 'Oops...',
+    //           text: response.message,
+    //         });
+    //       }
+    //     },
+    //     error: function(response) {
+    //       Swal.fire({
+    //         icon: 'error',
+    //         title: 'Thông Báo Lỗi',
+    //         text: response.message,
+    //       });
+    //     }
+    //   });
+    // }
+
 
     //event load file upload multiple 
     document.getElementById('file-input').addEventListener('change', function() {
@@ -1286,7 +1367,7 @@ function create_ticket(title,companyOptions,groupOptions,supportOptions,supNameO
             }
             else{
               Add_Ticket_Data(response);  
-              auth_role();         
+              // auth_role();         
               $('#CreateTicketModal').modal('hide');
               Swal.fire({
                 icon: 'success',
@@ -1535,40 +1616,43 @@ function download_all_file() {
     });
 }
 
-function Add_Ticket_Data(data){
-  var show_hide = '';
-  var status = document.querySelector('#showall i');
-  if (status.classList.contains('ti-shift-right')) {
-    show_hide = 'hidden-column';
-  }
-  else if (status.classList.contains('ti-shift-left')){
-    show_hide = 'show-column';
-  }
-  //append insert last item, prepend insert first item
-       $('#product-table tbody').prepend('<tr data-product-id="'+data.Ticket_ID+'">' +
-         '<td data-column="id">#' + data.Ticket_ID + '</td>' +
-         '<td data-column="title">' + (data.Ticket_Title.length < 30 ? data.Ticket_Title : data.Ticket_Title.substring(0,30) + '...') + '</td>' +
-         '<td data-column="Description" class="column-hidden">' + data.Ticket_Desc + '</td>' +                 
-         '<td data-column="company">' + data.Company_Name + '</td>' +
-         '<td data-column="group">' + data.Group_Name + '</td>' +         
-         '<td data-column="assignUser">'+ (data.Ticket_Name_Asign ? '<button type="button" data-ticket-status="' + data.Ticket_ID + '" data-user-id="'+data.Ticket_User_Asign+'" class="btn btn-outline-danger btn-rounded btn-fw btn-assign">'+data.Ticket_Name_Asign+'</button>' :'') +'</td>' +
+function Add_Ticket_Data(product){
+    var show_hide = '';
+    var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+    var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+    var isAdminTrue = IsAdmin === true ||  Dash_Role_Data[4].Status === 'True';
+    var status = document.querySelector('#showall i');
+    if (status.classList.contains('ti-shift-right')) {
+      show_hide = 'hidden-column';
+    }
+    else if (status.classList.contains('ti-shift-left')){
+      show_hide = 'show-column';
+    }
+    //append insert last item, prepend insert first item
+    $('#product-table tbody').append('<tr data-product-id="'+product.Ticket_ID+'">' +
+         '<td data-column="id">#' + product.Ticket_ID + '</td>' +
+         '<td data-column="title"><a href="/chi-tiet-yeu-cau/' + product.Ticket_ID + '/' + product.Ticket_Title_Slug + '/" class="href-ticket" target="_blank">' + (product.Ticket_Title.length < 30 ? product.Ticket_Title : product.Ticket_Title.substring(0,30) + '...') + '</a></td>' +
+         '<td data-column="Description" class="column-hidden">' + product.Ticket_Desc + '</td>' +                 
+         '<td data-column="company">' + product.Company_Name + '</td>' +
+         '<td data-column="group">' + product.Group_Name + '</td>' +         
+         '<td data-column="assignUser">'+ (product.Ticket_Name_Asign ? '<button type="button" data-ticket-status="' + product.Ticket_ID + '" data-user-id="'+product.Ticket_User_Asign+'" class="btn btn-outline-danger btn-rounded btn-fw btn-assign '+((isEditTrue || isAdminTrue) ? '' : 'admin-button')+'">'+product.Ticket_Name_Asign+'</button>' :'') +'</td>' +
          //Type 0 - Sự Cố , 1 - Hỗ Trợ
-         '<td data-column="type" id="toggle-column" class="'+show_hide+'"><button type="button" class="btn btn-'+(data.Ticket_Type == 0 ? 'danger' : (data.Ticket_Type == 1 ? 'warning' : ''))+' btn-rounded btn-fw btn-type">'+         
-         (data.Ticket_Type == 0 ? 'Sự Cố' : (data.Ticket_Type == 1 ? 'Hỗ Trợ' : '' ))+
+         '<td data-column="type" id="toggle-column" class="'+show_hide+'"><button type="button" class="btn btn-'+(product.Ticket_Type == 0 ? 'danger' : (product.Ticket_Type == 1 ? 'warning' : ''))+' btn-rounded btn-fw btn-type">'+         
+         (product.Ticket_Type == 0 ? 'Sự Cố' : (product.Ticket_Type == 1 ? 'Hỗ Trợ' : '' ))+
          '</button></td>' +
-         '<td data-column="username" id="toggle-column" class="'+show_hide+'">' + data.Ticket_User_Name + '</td>' +
-         '<td data-column="date" id="toggle-column" class="'+show_hide+'">' + data.Ticket_Date + '</td>' +
-         '<td data-column="time" id="toggle-column" class="'+show_hide+'">' + data.Ticket_Time + '</td>' +
+         '<td data-column="username" id="toggle-column" class="'+show_hide+'">' + product.Ticket_User_Name + '</td>' +
+         '<td data-column="date" id="toggle-column" class="'+show_hide+'">' + product.Ticket_Date + '</td>' +
+         '<td data-column="time" id="toggle-column" class="'+show_hide+'">' + product.Ticket_Time + '</td>' +
          //Status 0 - Complete , 1 - Inprogress , 2 - Pending, 3 - cancel
-         '<td data-column="status"><button data-ticket-status="' + data.Ticket_ID + '" status-value="'+ data.Ticket_Status +'" type="button" class="btn btn-'+(data.Ticket_Status == 0 ? 'success' : (data.Ticket_Status == 1 ? 'primary' : (data.Ticket_Status == 2 ? 'warning' : (data.Ticket_Status == 3 ? 'danger' : '' ) ) ))+' btn-rounded btn-fw btn-status">'+  
-         (data.Ticket_Status == 0 ? 'Hoàn Thành' : (data.Ticket_Status == 1 ? 'Đang Làm' : (data.Ticket_Status == 2 ? 'Đang Treo' : (data.Ticket_Status == 3 ? 'Hủy' : '' ) ) ))+
+         '<td data-column="status"><button data-ticket-status="' + product.Ticket_ID + '" status-value="'+ product.Ticket_Status +'" type="button" class="btn btn-'+(product.Ticket_Status == 0 ? 'success' : (product.Ticket_Status == 1 ? 'primary' : (product.Ticket_Status == 2 ? 'warning' : (product.Ticket_Status == 3 ? 'danger' : '' ) ) ))+' btn-rounded btn-fw btn-status '+((isEditTrue || isAdminTrue) ? '' : 'admin-button')+'">'+  
+         (product.Ticket_Status == 0 ? 'Hoàn Thành' : (product.Ticket_Status == 1 ? 'Đang Làm' : (product.Ticket_Status == 2 ? 'Đang Treo' : (product.Ticket_Status == 3 ? 'Hủy' : '' ) ) ))+
          '</button></td>' +
         //  '<td data-column="price"><input class="checkbox delivery-input-checkbox" type="checkbox"'+ (product.Ticket_Status == 1 ? 'checked' : '') +'></td>' +
          // '<td><input type="checkbox" name="delete[]" value="' + product.id + '">' +
          '<td>' +
-         '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon view-ticket" name="View[]" value="' + data.Ticket_ID + '"><a href="/chi-tiet-yeu-cau/' + data.Ticket_ID + '/' + data.Ticket_Title_Slug + '/" target="_blank"><i class="ti-comment-alt text-danger"></i></a></button>' +
-         '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket disable-button" name="Update[]" value="' + data.Ticket_ID + '"><i class="ti-pencil text-danger"></i></button>' +
-         '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-ticket disable-button" name="delete[] " value="' + data.Ticket_ID + '"><i class="ti-trash text-danger"></i></button>' +
+         '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon view-ticket" name="View[]" value="' + product.Ticket_ID + '"><a href="/chi-tiet-yeu-cau/' + product.Ticket_ID + '/' + product.Ticket_Title_Slug + '/" target="_blank"><i class="ti-comment-alt text-danger"></i></a></button>' +
+         ((isEditTrue || isAdminTrue) ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket" name="Update[]" value="' + product.Ticket_ID + '"><i class="ti-pencil text-danger"></i></button>': '') +
+         ((isDellTrue || isAdminTrue) ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-ticket" name="delete[]" value="' + product.Ticket_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
          '</td>' +
        '</tr>');
 }
@@ -1711,6 +1795,8 @@ function uploadFiles_Update(files, ticketID, data) {
 }
 
 function update_info_ticket(Ticket_Data){
+    var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+    var isAdminTrue = IsAdmin === true ||  Dash_Role_Data[4].Status === 'True';
     // Lấy danh sách tất cả các phần tử tr có thuộc tính data-product-id
     var productRows = document.querySelectorAll('tr[data-product-id]');
 
@@ -1722,7 +1808,7 @@ function update_info_ticket(Ticket_Data){
       // Kiểm tra xem productId có khớp với sản phẩm bạn đang quan tâm không
       if (productId === Ticket_Data.Ticket_ID) {
         // Cập nhật thông tin của phần tử
-        var titleElement = row.querySelector('[data-column="title"]');
+        var titleElement = row.querySelector('[data-column="title"] a');
         var companyElement = row.querySelector('[data-column="company"]');
         var groupElement = row.querySelector('[data-column="group"]');
         var assignUserElement = row.querySelector('[data-column="assignUser"]');
@@ -1733,7 +1819,7 @@ function update_info_ticket(Ticket_Data){
         companyElement.textContent =    Ticket_Data.Company_Name;
         groupElement.textContent   =    Ticket_Data.Group_Name;
 
-        var assignUserHTML = (Ticket_Data.Ticket_Name_Asign ? '<button type="button" class="btn btn-outline-danger btn-rounded btn-fw btn-assign">'+Ticket_Data.Ticket_Name_Asign+'</button>' :'');
+        var assignUserHTML = (Ticket_Data.Ticket_Name_Asign ? '<button type="button" class="btn btn-outline-danger btn-rounded btn-fw btn-assign '+((isEditTrue || isAdminTrue) ? '' : 'admin-button')+'">'+Ticket_Data.Ticket_Name_Asign+'</button>' :'');
         var buttonAssignElement = assignUserElement.querySelector('button');
         if (buttonAssignElement) {
           buttonAssignElement.remove();
@@ -1747,7 +1833,7 @@ function update_info_ticket(Ticket_Data){
         }
         typeElement.insertAdjacentHTML('beforeend', typeHTML);
 
-        var statusHTML = '<button data-ticket-status="' + Ticket_Data.Ticket_ID + '" status-value="'+ Ticket_Data.Ticket_Status +'" type="button" class="btn btn-'+(Ticket_Data.Ticket_Status == 0 ? 'success' : (Ticket_Data.Ticket_Status == 1 ? 'primary' : (Ticket_Data.Ticket_Status == 2 ? 'warning' : (Ticket_Data.Ticket_Status == 3 ? 'danger' : '' ) ) ))+' btn-rounded btn-fw btn-status">'+(Ticket_Data.Ticket_Status == 0 ? 'Hoàn Thành' : (Ticket_Data.Ticket_Status == 1 ? 'Đang Làm' : (Ticket_Data.Ticket_Status == 2 ? 'Đang Treo' : (Ticket_Data.Ticket_Status == 3 ? 'Hủy' : '' ) ) ))+'</button>';
+        var statusHTML = '<button data-ticket-status="' + Ticket_Data.Ticket_ID + '" status-value="'+ Ticket_Data.Ticket_Status +'" type="button" class="btn btn-'+(Ticket_Data.Ticket_Status == 0 ? 'success' : (Ticket_Data.Ticket_Status == 1 ? 'primary' : (Ticket_Data.Ticket_Status == 2 ? 'warning' : (Ticket_Data.Ticket_Status == 3 ? 'danger' : '' ) ) ))+' btn-rounded btn-fw btn-status '+((isEditTrue || isAdminTrue) ? '' : 'admin-button')+'">'+(Ticket_Data.Ticket_Status == 0 ? 'Hoàn Thành' : (Ticket_Data.Ticket_Status == 1 ? 'Đang Làm' : (Ticket_Data.Ticket_Status == 2 ? 'Đang Treo' : (Ticket_Data.Ticket_Status == 3 ? 'Hủy' : '' ) ) ))+'</button>';
         var buttonstatusElement = statusElement.querySelector('button');
         if (buttonstatusElement) {
           buttonstatusElement.remove();
@@ -1811,6 +1897,20 @@ function Load_data(companys, Tgroups, User_support, Users_Company){
 
  // Load data
  function display_Ticket(products, currentPage, itemsPerPage, filters, data_temp) {
+      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+      var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+      var isAddTrue = IsAdmin === true   ||  Dash_Role_Data[2].Status === 'True';
+      var isAdminTrue = IsAdmin === true ||  Dash_Role_Data[4].Status === 'True';
+      if (isAddTrue == true){
+        var addTicketButton = document.querySelector('.addTicket');
+        if (addTicketButton == null){
+          $('.top-title div').append(
+            '<button type="button" class="btn btn-danger btn-icon-text addTicket" id="addTicket">' +
+            '<i class="ti-files btn-icon-prepend"></i>TẠO TICKET' +
+            '</button>'
+          );
+        } 
+      }
 
      $('#product-table tbody').empty();
      var filteredProducts = products.filter(function(product) {
@@ -1848,11 +1948,11 @@ function Load_data(companys, Tgroups, User_support, Users_Company){
        var product = products[i];
        $('#product-table tbody').append('<tr data-product-id="'+product.Ticket_ID+'">' +
          '<td data-column="id">#' + product.Ticket_ID + '</td>' +
-         '<td data-column="title">' + (product.Ticket_Title.length < 30 ? product.Ticket_Title : product.Ticket_Title.substring(0,30) + '...') + '</td>' +
+         '<td data-column="title"><a href="/chi-tiet-yeu-cau/' + product.Ticket_ID + '/' + product.Ticket_Title_Slug + '/" class="href-ticket" target="_blank">' + (product.Ticket_Title.length < 30 ? product.Ticket_Title : product.Ticket_Title.substring(0,30) + '...') + '</a></td>' +
          '<td data-column="Description" class="column-hidden">' + product.Ticket_Desc + '</td>' +                 
          '<td data-column="company">' + product.Company_Name + '</td>' +
          '<td data-column="group">' + product.Group_Name + '</td>' +         
-         '<td data-column="assignUser">'+ (product.Ticket_Name_Asign ? '<button type="button" data-ticket-status="' + product.Ticket_ID + '" data-user-id="'+product.Ticket_User_Asign+'" class="btn btn-outline-danger btn-rounded btn-fw btn-assign">'+product.Ticket_Name_Asign+'</button>' :'') +'</td>' +
+         '<td data-column="assignUser">'+ (product.Ticket_Name_Asign ? '<button type="button" data-ticket-status="' + product.Ticket_ID + '" data-user-id="'+product.Ticket_User_Asign+'" class="btn btn-outline-danger btn-rounded btn-fw btn-assign '+((isEditTrue || isAdminTrue) ? '' : 'admin-button')+'">'+product.Ticket_Name_Asign+'</button>' :'') +'</td>' +
          //Type 0 - Sự Cố , 1 - Hỗ Trợ
          '<td data-column="type" id="toggle-column" class="'+show_hide+'"><button type="button" class="btn btn-'+(product.Ticket_Type == 0 ? 'danger' : (product.Ticket_Type == 1 ? 'warning' : ''))+' btn-rounded btn-fw btn-type">'+         
          (product.Ticket_Type == 0 ? 'Sự Cố' : (product.Ticket_Type == 1 ? 'Hỗ Trợ' : '' ))+
@@ -1861,15 +1961,15 @@ function Load_data(companys, Tgroups, User_support, Users_Company){
          '<td data-column="date" id="toggle-column" class="'+show_hide+'">' + product.Ticket_Date + '</td>' +
          '<td data-column="time" id="toggle-column" class="'+show_hide+'">' + product.Ticket_Time + '</td>' +
          //Status 0 - Complete , 1 - Inprogress , 2 - Pending, 3 - cancel
-         '<td data-column="status"><button data-ticket-status="' + product.Ticket_ID + '" status-value="'+ product.Ticket_Status +'" type="button" class="btn btn-'+(product.Ticket_Status == 0 ? 'success' : (product.Ticket_Status == 1 ? 'primary' : (product.Ticket_Status == 2 ? 'warning' : (product.Ticket_Status == 3 ? 'danger' : '' ) ) ))+' btn-rounded btn-fw btn-status">'+  
+         '<td data-column="status"><button data-ticket-status="' + product.Ticket_ID + '" status-value="'+ product.Ticket_Status +'" type="button" class="btn btn-'+(product.Ticket_Status == 0 ? 'success' : (product.Ticket_Status == 1 ? 'primary' : (product.Ticket_Status == 2 ? 'warning' : (product.Ticket_Status == 3 ? 'danger' : '' ) ) ))+' btn-rounded btn-fw btn-status '+((isEditTrue || isAdminTrue) ? '' : 'admin-button')+'">'+  
          (product.Ticket_Status == 0 ? 'Hoàn Thành' : (product.Ticket_Status == 1 ? 'Đang Làm' : (product.Ticket_Status == 2 ? 'Đang Treo' : (product.Ticket_Status == 3 ? 'Hủy' : '' ) ) ))+
          '</button></td>' +
         //  '<td data-column="price"><input class="checkbox delivery-input-checkbox" type="checkbox"'+ (product.Ticket_Status == 1 ? 'checked' : '') +'></td>' +
          // '<td><input type="checkbox" name="delete[]" value="' + product.id + '">' +
          '<td>' +
          '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon view-ticket" name="View[]" value="' + product.Ticket_ID + '"><a href="/chi-tiet-yeu-cau/' + product.Ticket_ID + '/' + product.Ticket_Title_Slug + '/" target="_blank"><i class="ti-comment-alt text-danger"></i></a></button>' +
-         '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket disable-button" name="Update[]" value="' + product.Ticket_ID + '"><i class="ti-pencil text-danger"></i></button>' +
-         '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-ticket disable-button" name="delete[]" value="' + product.Ticket_ID + '"><i class="ti-trash text-danger"></i></button>' +
+         ((isEditTrue || isAdminTrue) ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-ticket" name="Update[]" value="' + product.Ticket_ID + '"><i class="ti-pencil text-danger"></i></button>': '') +
+         ((isDellTrue || isAdminTrue) ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-ticket" name="delete[]" value="' + product.Ticket_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
          '</td>' +
        '</tr>');
      }
@@ -1906,8 +2006,7 @@ function Load_data(companys, Tgroups, User_support, Users_Company){
         event.preventDefault();
    
         var page = $(this).data('page');
-        display_Ticket(products, page, itemsPerPage, filters);
-        auth_role();
+        display_Ticket(products, page, itemsPerPage, filters, data_temp);
      });
      
      // Handle First and Last button click event - start
@@ -1915,26 +2014,22 @@ function Load_data(companys, Tgroups, User_support, Users_Company){
        event.preventDefault();
        
        if (currentPage > 1) {
-        display_Ticket(products, 1, itemsPerPage, filters);
-        auth_role();
+        display_Ticket(products, 1, itemsPerPage, filters, data_temp);
        }
        else
        {
-        display_Ticket(products, currentPage, itemsPerPage, filters);
-        auth_role();
+        display_Ticket(products, currentPage, itemsPerPage, filters, data_temp);
        }
      });
      pagination.find('.page-item:last-child .page-link').click(function(event) {
        event.preventDefault();
        
        if (currentPage < numPages) {
-        display_Ticket(products, numPages, itemsPerPage, filters);
-        auth_role();
+        display_Ticket(products, numPages, itemsPerPage, filters, data_temp);
        }
        else
        {
-        display_Ticket(products, currentPage, itemsPerPage, filters);
-        auth_role();
+        display_Ticket(products, currentPage, itemsPerPage, filters, data_temp);
        }
      });
      // Handle First and Last button click event - end
@@ -2180,7 +2275,7 @@ function Load_data(companys, Tgroups, User_support, Users_Company){
      });
 
 
-     $('#addProductForm').submit(function(event) {
+     $('#addProductForm').submit(function(event) {https://localhost:8000/danh-sach-yeu-cau/#ui-manage2
        event.preventDefault(); // Prevent default form submission      
        var add_product = $(this).serialize();
        CreateProduct(add_product)
@@ -2193,7 +2288,9 @@ function Load_data(companys, Tgroups, User_support, Users_Company){
      });
 
      // Search data in textbox table - start
-     $('#search-TicketID, #search-TicketTitle, #search-TicketDes,.db-company, .db-group, #search-TicketSupport, #search-TicketCreate, #search-TicketDate,#search-TicketTime,.db-type,.db-status').on('keydown', function(event) {
+     $('#search-TicketID, #search-TicketTitle, #search-TicketDes,.db-company, .db-group, #search-TicketSupport, #search-TicketCreate, #search-TicketDate,#search-TicketTime,.db-type,.db-status')
+     .off('keydown')
+     .on('keydown', function (event) {
        if (event.keyCode === 13) { // Nếu nhấn phím Enter
            event.preventDefault(); // Tránh việc reload lại trang
            $('#search-TicketID').blur(); // Mất focus khỏi textbox tìm kiếm
@@ -2221,12 +2318,12 @@ function Load_data(companys, Tgroups, User_support, Users_Company){
            };
            if(data_temp){
             display_Ticket(data_temp, currentPage, itemsPerPage, filters, data_temp);
-            auth_role();
+            // auth_role();
            }
        }
      });
 
-     $(document).on('click', '.btn-remove-filter', function() {
+     $(document).off('click', '.btn-remove-filter').on('click', '.btn-remove-filter', function() {
       $('#search-TicketID').val('');
       $('#search-TicketTitle').val('');
       $('#search-TicketDes').val('');
@@ -2268,7 +2365,7 @@ function Load_data(companys, Tgroups, User_support, Users_Company){
       };
       if(data_temp){
         display_Ticket(data_temp, currentPage, itemsPerPage, filters, data_temp);
-        auth_role();
+        // auth_role();
       }
     }
      // Search data in textbox table - end  
@@ -2520,6 +2617,8 @@ $(document).on('click', '#showall', function() {
 if (window.location.pathname === '/danh-sach-cong-ty/') {
   var currentPage = 1;
   var itemsPerPage = 10;
+  var IsAdmin = '';
+  var Dash_Role_Data =[];
 
   //Check Role
   $.ajax({
@@ -2761,8 +2860,12 @@ function formatFileSize(size) {
               status: $('.db-status').val().toLowerCase().trim(),
             };
             // Load_data(context.companys, context.tgroups, context.users)
-            display_Company(context.data, currentPage, itemsPerPage,filters, context.data);
-            auth_role();
+            // display_Company(context.data, currentPage, itemsPerPage,filters, context.data);
+            auth_role(context.data, currentPage, itemsPerPage,filters, context.data);
+            setTimeout(function() {
+              $('#spinnersModal').modal('hide');
+            }, 1000);
+            
       },
       error: function(rs, e) {
           alert('Oops! something went wrong');
@@ -2771,55 +2874,16 @@ function formatFileSize(size) {
   }
 
   //authorization page
-  function auth_role(){
+  function auth_role(data, currentPage, itemsPerPage,filters, data){
     $.ajax({
       url: '/phan-quyen-cong-ty/',
       dataType: 'json',
       method: 'POST',
       success: function(response) {
         if (response.success) {
-          // if(response.IsAdmin == false || response.Roles[0].Status == 'False'){             
-          //   window.location.href = '/dashboard/';
-          // }
-          var buttonAdd = document.querySelector('#addCompany');
-          var buttonEdit = document.querySelectorAll('.update-company');
-          var buttonDel = document.querySelectorAll('.delete-company');
-          var buttonSta = document.querySelectorAll('.btn-company-status');
-          //Role Add New User
-          if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
-            buttonAdd.classList.remove('disable-button');
-          }
-          else{
-            buttonAdd.classList.add('disable-button');
-          }
-          //Role Update User
-          if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
-            buttonEdit.forEach(function(edit){
-              edit.classList.remove('disable-button');
-            });        
-            buttonSta.forEach(function(sta){
-              sta.classList.remove('admin-button');
-            }); 
-          }
-          else{
-            buttonEdit.forEach(function(edit){
-              edit.classList.add('disable-button');
-            });      
-            buttonSta.forEach(function(sta){
-              sta.classList.add('admin-button');
-            });        
-          }
-          //Role Delete User
-          if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
-            buttonDel.forEach(function(edit){
-              edit.classList.remove('disable-button');
-            });
-          }
-          else{
-            buttonDel.forEach(function(edit){
-              edit.classList.add('disable-button');
-            }); 
-          }
+          IsAdmin = response.IsAdmin;  
+          Dash_Role_Data = response.Roles;
+          display_Company(data, currentPage, itemsPerPage,filters,data);
         } else {
           Swal.fire({
             icon: 'error',
@@ -2838,8 +2902,88 @@ function formatFileSize(size) {
     });
   }
 
+  // function auth_role(){
+  //   $.ajax({
+  //     url: '/phan-quyen-cong-ty/',
+  //     dataType: 'json',
+  //     method: 'POST',
+  //     success: function(response) {
+  //       if (response.success) {
+  //         // if(response.IsAdmin == false || response.Roles[0].Status == 'False'){             
+  //         //   window.location.href = '/dashboard/';
+  //         // }
+  //         var buttonAdd = document.querySelector('#addCompany');
+  //         var buttonEdit = document.querySelectorAll('.update-company');
+  //         var buttonDel = document.querySelectorAll('.delete-company');
+  //         var buttonSta = document.querySelectorAll('.btn-company-status');
+  //         //Role Add New User
+  //         if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
+  //           buttonAdd.classList.remove('disable-button');
+  //         }
+  //         else{
+  //           buttonAdd.classList.add('disable-button');
+  //         }
+  //         //Role Update User
+  //         if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
+  //           buttonEdit.forEach(function(edit){
+  //             edit.classList.remove('disable-button');
+  //           });        
+  //           buttonSta.forEach(function(sta){
+  //             sta.classList.remove('admin-button');
+  //           }); 
+  //         }
+  //         else{
+  //           buttonEdit.forEach(function(edit){
+  //             edit.classList.add('disable-button');
+  //           });      
+  //           buttonSta.forEach(function(sta){
+  //             sta.classList.add('admin-button');
+  //           });        
+  //         }
+  //         //Role Delete User
+  //         if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
+  //           buttonDel.forEach(function(edit){
+  //             edit.classList.remove('disable-button');
+  //           });
+  //         }
+  //         else{
+  //           buttonDel.forEach(function(edit){
+  //             edit.classList.add('disable-button');
+  //           }); 
+  //         }
+  //       } else {
+  //         Swal.fire({
+  //           icon: 'error',
+  //           title: 'Oops...',
+  //           text: response.message,
+  //         });
+  //       }
+  //     },
+  //     error: function(response) {
+  //       Swal.fire({
+  //         icon: 'error',
+  //         title: 'Thông Báo Lỗi',
+  //         text: response.message,
+  //       });
+  //     }
+  //   });
+  // }
+
     // Load data
     function display_Company(products, currentPage, itemsPerPage, filters, data_temp) {
+      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+      var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+      var isAddTrue = IsAdmin === true   ||  Dash_Role_Data[2].Status === 'True';
+      if (isAddTrue == true){
+        var addCompanyButton = document.querySelector('.addCompany');
+        if (addCompanyButton == null){
+          $('.top-title div').append(
+            '<button type="button" class="btn btn-danger btn-icon-text addCompany" id="addCompany">'+
+            '<i class="ti-files btn-icon-prepend"></i> TẠO CÔNG TY'+
+            '</button>'
+          );
+        } 
+      }
 
       $('#product-table tbody').empty();
       var filteredProducts = products.filter(function(product) {
@@ -2866,12 +3010,12 @@ function formatFileSize(size) {
           '<td data-column="username">' + product.Company_User_Name + '</td>' +         
           '<td data-column="date">' + product.Company_Date + '</td>' +
           '<td data-column="time">' + product.Company_Time + '</td>' +
-          '<td data-column="status"><button data-company-id="' + product.Company_ID + '" data-company-status="' + product.Company_Status + '" type="button" class="btn btn-'+(product.Company_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-company-status admin-button">'+  
+          '<td data-column="status"><button data-company-id="' + product.Company_ID + '" data-company-status="' + product.Company_Status + '" type="button" class="btn btn-'+(product.Company_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-company-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
           (product.Company_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
           '</button></td>' +
           '<td>' +
-          '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-company disable-button" name="Update[]" value="' + product.Company_ID + '"><i class="ti-pencil text-danger"></i></button>' +
-          '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-company disable-button" name="delete[]" value="' + product.Company_ID + '"><i class="ti-trash text-danger"></i></button>' +
+          (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-company" name="Update[]" value="' + product.Company_ID + '"><i class="ti-pencil text-danger"></i></button>': '') +
+          (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-company" name="delete[]" value="' + product.Company_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
           '</td>' +
         '</tr>');
       }
@@ -2908,8 +3052,8 @@ function formatFileSize(size) {
           event.preventDefault();
     
           var page = $(this).data('page');
-          display_Company(products, page, itemsPerPage, filters);
-          auth_role();
+          display_Company(products, page, itemsPerPage, filters, data_temp);
+          // auth_role();
       });
       
       // Handle First and Last button click event - start
@@ -2917,26 +3061,26 @@ function formatFileSize(size) {
         event.preventDefault();
         
         if (currentPage > 1) {
-          display_Company(products, 1, itemsPerPage, filters);
-          auth_role();
+          display_Company(products, 1, itemsPerPage, filters, data_temp);
+          // auth_role();
         }
         else
         {
-          display_Company(products, currentPage, itemsPerPage, filters);
-          auth_role();
+          display_Company(products, currentPage, itemsPerPage, filters, data_temp);
+          // auth_role();
         }
       });
       pagination.find('.page-item:last-child .page-link').click(function(event) {
         event.preventDefault();
         
         if (currentPage < numPages) {
-          display_Company(products, numPages, itemsPerPage, filters);
-          auth_role();
+          display_Company(products, numPages, itemsPerPage, filters, data_temp);
+          // auth_role();
         }
         else
         {
-          display_Company(products, currentPage, itemsPerPage, filters);
-          auth_role();
+          display_Company(products, currentPage, itemsPerPage, filters, data_temp);
+          // auth_role();
         }
       });
       // Handle First and Last button click event - end
@@ -3007,17 +3151,56 @@ function formatFileSize(size) {
       //xử lý sự kiện update status
 
       // Search data in textbox table - start
-      $('#search-CompanyID, #search-CompanyName, #search-CompanyCreate,#search-CompanyDate,#search-CompanyTime,.db-status').on('keydown', function(event) {
+      // $('#search-CompanyID, #search-CompanyName, #search-CompanyCreate,#search-CompanyDate,#search-CompanyTime,.db-status').on('keydown', function(event) {
+      //   if (event.keyCode === 13) { // Nếu nhấn phím Enter
+      //       event.preventDefault(); // Tránh việc reload lại trang
+      //       $('#search-CompanyID').blur(); // Mất focus khỏi textbox tìm kiếm
+      //       $('#search-CompanyName').blur();
+      //       $('#search-CompanyCreate').blur();
+      //       var formattedDate ="";
+      //       var date = $('#search-CompanyDate').val();
+      //       if(date){
+      //         var parts = date.split("-");
+      //         formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0];
+      //       }
+      //       // Lấy giá trị của filters
+      //       var filters = {
+      //           id: $('#search-CompanyID').val().toLowerCase().trim(),
+      //           company: $('#search-CompanyName').val().toLowerCase().trim(),
+      //           create: $('#search-CompanyCreate').val().toLowerCase().trim(),
+      //           date: (formattedDate ? formattedDate : ''),
+      //           time: $('#search-CompanyTime').val().toLowerCase().trim(),
+      //           status: $('.db-status').val().toLowerCase().trim(),
+      //       };
+      //       if(data_temp){
+      //         display_Company(data_temp, currentPage, itemsPerPage, filters, data_temp);
+      //         auth_role();
+      //       }
+      //   }
+      // });
+      // $(document).on('click', '.btn-remove-filter', function() {
+      //   $('#search-CompanyID').val('');
+      //   $('#search-CompanyName').val('');
+      //   $('#search-CompanyCreate').val('');
+      //   $('#search-CompanyDate').val('');
+      //   $('#search-CompanyTime').val('');
+      //   $('.db-status').val('');
+      //   reset_data();  
+      // });
+
+      $('#search-CompanyID, #search-CompanyName, #search-CompanyCreate, #search-CompanyDate, #search-CompanyTime, .db-status')
+      .off('keydown')
+      .on('keydown', function (event) {
         if (event.keyCode === 13) { // Nếu nhấn phím Enter
             event.preventDefault(); // Tránh việc reload lại trang
             $('#search-CompanyID').blur(); // Mất focus khỏi textbox tìm kiếm
             $('#search-CompanyName').blur();
             $('#search-CompanyCreate').blur();
-            var formattedDate ="";
+            var formattedDate = "";
             var date = $('#search-CompanyDate').val();
-            if(date){
-              var parts = date.split("-");
-              formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0];
+            if (date) {
+                var parts = date.split("-");
+                formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0];
             }
             // Lấy giá trị của filters
             var filters = {
@@ -3028,21 +3211,20 @@ function formatFileSize(size) {
                 time: $('#search-CompanyTime').val().toLowerCase().trim(),
                 status: $('.db-status').val().toLowerCase().trim(),
             };
-            if(data_temp){
-              display_Company(data_temp, currentPage, itemsPerPage, filters, data_temp);
-              auth_role();
+            if (data_temp) {
+                display_Company(data_temp, currentPage, itemsPerPage, filters, data_temp);
             }
         }
-      });
-      $(document).on('click', '.btn-remove-filter', function() {
+    });
+      $(document).off('click', '.btn-remove-filter').on('click', '.btn-remove-filter', function() {
         $('#search-CompanyID').val('');
         $('#search-CompanyName').val('');
         $('#search-CompanyCreate').val('');
         $('#search-CompanyDate').val('');
         $('#search-CompanyTime').val('');
         $('.db-status').val('');
-        reset_data();  
-      });
+        reset_data();
+    });
       
       function reset_data(){
         $('#search-CompanyID').blur(); // Mất focus khỏi textbox tìm kiếm
@@ -3065,12 +3247,9 @@ function formatFileSize(size) {
         };
         if(data_temp){
           display_Company(data_temp, currentPage, itemsPerPage, filters, data_temp);
-          auth_role();
         }
       }
       // Search data in textbox table - end
-
-
 
       //function button status update  - start
         var statusButtons = document.querySelectorAll('.btn-status');
@@ -3236,10 +3415,12 @@ function formatFileSize(size) {
     // Xử lý sự kiện khi người dùng chọn checkbox và nhấn nút Delete
 
     // Xử lý sự kiện khi người dùng nhấn nút Create
-    $('.addCompany').click(function(event) {
+    $(document).on('click', '.addCompany', function() {
+    // $('.addCompany').click(function(event) {
       $('#CreateCompanyModal').modal('show');
     });
-    $('#create-company-button').click(function(event) {
+    $(document).on('click', '#create-company-button', function() {
+    // $('#create-company-button').click(function(event) {
       event.preventDefault(); // Prevent default form submission      
       var Company_Name = document.querySelector('#input_company_name').value;
       create_company(Company_Name);
@@ -3258,7 +3439,7 @@ function formatFileSize(size) {
             // var companyName =  data_Company.querySelector('td[data-column="company"]');
             // companyName.textContent = response.Company_Name;
             add_row_company(response)
-            auth_role();
+            // auth_role();
             $('#CreateCompanyModal').modal('hide');           
             Swal.fire({
               icon: 'success',
@@ -3283,21 +3464,38 @@ function formatFileSize(size) {
         }
       });
     }
-    function add_row_company(data){
-      $('#product-table tbody').prepend('<tr data-product-id="'+data.Company_ID+'">' +
-      '<td data-column="id">#' + data.Company_ID + '</td>' +           
-      '<td data-column="company">' + data.Company_Name + '</td>' +
-      '<td data-column="username">' + data.Company_User_Name + '</td>' +         
-      '<td data-column="date">' + data.Company_Date + '</td>' +
-      '<td data-column="time">' + data.Company_Time + '</td>' +
-      '<td data-column="status"><button data-company-id="' + data.Company_ID + '" data-ticket-status="' + data.Company_Status + '" type="button" class="btn btn-'+(data.Company_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-company-status admin-button">'+  
-      (data.Company_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
+    function add_row_company(product){
+      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+      var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+
+      $('#product-table tbody').prepend('<tr data-product-id="'+product.Company_ID+'">' +
+      '<td data-column="id">#' + product.Company_ID + '</td>' +           
+      '<td data-column="company">' + product.Company_Name + '</td>' +
+      '<td data-column="username">' + product.Company_User_Name + '</td>' +         
+      '<td data-column="date">' + product.Company_Date + '</td>' +
+      '<td data-column="time">' + product.Company_Time + '</td>' +
+      '<td data-column="status"><button data-company-id="' + product.Company_ID + '" data-company-status="' + product.Company_Status + '" type="button" class="btn btn-'+(product.Company_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-company-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
+      (product.Company_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
       '</button></td>' +
       '<td>' +
-      '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-company disable-button" name="Update[]" value="' + data.Company_ID + '"><i class="ti-pencil text-danger"></i></button>' +
-      '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-company disable-button" name="delete[]" value="' + data.Company_ID + '"><i class="ti-trash text-danger"></i></button>' +
+      (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-company" name="Update[]" value="' + product.Company_ID + '"><i class="ti-pencil text-danger"></i></button>': '') +
+      (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-company" name="delete[]" value="' + product.Company_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
       '</td>' +
     '</tr>');
+    //   $('#product-table tbody').prepend('<tr data-product-id="'+data.Company_ID+'">' +
+    //   '<td data-column="id">#' + data.Company_ID + '</td>' +           
+    //   '<td data-column="company">' + data.Company_Name + '</td>' +
+    //   '<td data-column="username">' + data.Company_User_Name + '</td>' +         
+    //   '<td data-column="date">' + data.Company_Date + '</td>' +
+    //   '<td data-column="time">' + data.Company_Time + '</td>' +
+    //   '<td data-column="status"><button data-company-id="' + data.Company_ID + '" data-ticket-status="' + data.Company_Status + '" type="button" class="btn btn-'+(data.Company_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-company-status admin-button">'+  
+    //   (data.Company_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
+    //   '</button></td>' +
+    //   '<td>' +
+    //   '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-company disable-button" name="Update[]" value="' + data.Company_ID + '"><i class="ti-pencil text-danger"></i></button>' +
+    //   '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-company disable-button" name="delete[]" value="' + data.Company_ID + '"><i class="ti-trash text-danger"></i></button>' +
+    //   '</td>' +
+    // '</tr>');
     }
     // Xử lý sự kiện khi người dùng nhấn nút Create
 
@@ -3416,6 +3614,8 @@ function formatFileSize(size) {
     }
 
     function update_info_company(Company_Data,status_new){
+      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+      // var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
         // Lấy danh sách tất cả các phần tử tr có thuộc tính data-product-id
         var productRows = document.querySelectorAll('tr[data-product-id]');
 
@@ -3431,7 +3631,7 @@ function formatFileSize(size) {
             var statusElement = row.querySelector('[data-column="status"]');
             companyElement.textContent =  Company_Data.Company_Name;
 
-            var htmlStatus = '<button data-company-id="' + Company_Data.Company_ID + '" data-company-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-company-status">'+  
+            var htmlStatus = '<button data-company-id="' + Company_Data.Company_ID + '" data-company-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-company-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
             (status_new === "true" ? 'Kích Hoạt' : 'Không Kích Hoạt' ) + 
             '</button>';
             var buttonStatusElement = statusElement.querySelector('button');
@@ -3450,6 +3650,9 @@ function formatFileSize(size) {
 if (window.location.pathname === '/danh-sach-nhom/') {
   var currentPage = 1;
   var itemsPerPage = 10;
+  var IsAdmin = '';
+  var Dash_Role_Data =[];
+
   //Check Role
   $.ajax({
     url: '/role-nhom/',
@@ -3486,8 +3689,11 @@ if (window.location.pathname === '/danh-sach-nhom/') {
               status: $('.db-status').val().toLowerCase().trim(),
             };
             // Load_data(context.companys, context.tgroups, context.users)
-            display_Group(context.data, currentPage, itemsPerPage,filters, context.data)
-            auth_role();
+            // display_Group(context.data, currentPage, itemsPerPage,filters, context.data)
+            auth_role(context.data, currentPage, itemsPerPage,filters, context.data);
+            setTimeout(function() {
+              $('#spinnersModal').modal('hide');
+            }, 1000);
       },
       error: function(rs, e) {
           alert('Oops! something went wrong');
@@ -3496,56 +3702,16 @@ if (window.location.pathname === '/danh-sach-nhom/') {
   }
 
   //authorization page
-  function auth_role(){
+  function auth_role(data, currentPage, itemsPerPage,filters,data){
     $.ajax({
       url: '/phan-quyen-nhom/',
       dataType: 'json',
       method: 'POST',
       success: function(response) {
         if (response.success) {
-          // if(response.IsAdmin == false || response.Roles[0].Status == 'False'){             
-          //   window.location.href = '/dashboard/';
-          // }
-          var buttonAdd = document.querySelector('#addGroup');
-          var buttonEdit = document.querySelectorAll('.update-group');
-          var buttonDel = document.querySelectorAll('.delete-group');
-          var buttonSta = document.querySelectorAll('.btn-group-status');
-
-          //Role Add New User
-          if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
-            buttonAdd.classList.remove('disable-button');
-          }
-          else{
-            buttonAdd.classList.add('disable-button');
-          }
-          //Role Update User
-          if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
-            buttonEdit.forEach(function(edit){
-              edit.classList.remove('disable-button');
-            }); 
-            buttonSta.forEach(function(sta){
-              sta.classList.remove('admin-button');
-            });       
-          }
-          else{
-            buttonEdit.forEach(function(edit){
-              edit.classList.add('disable-button');
-            });    
-            buttonSta.forEach(function(sta){
-              sta.classList.add('admin-button');
-            });         
-          }
-          //Role Delete User
-          if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
-            buttonDel.forEach(function(edit){
-              edit.classList.remove('disable-button');
-            });
-          }
-          else{
-            buttonDel.forEach(function(edit){
-              edit.classList.add('disable-button');
-            }); 
-          }       
+          IsAdmin = response.IsAdmin;  
+          Dash_Role_Data = response.Roles;
+          display_Group(data, currentPage, itemsPerPage,filters, data)
         } else {
           Swal.fire({
             icon: 'error',
@@ -3564,8 +3730,89 @@ if (window.location.pathname === '/danh-sach-nhom/') {
     });
   }
 
+  // function auth_role(){
+  //   $.ajax({
+  //     url: '/phan-quyen-nhom/',
+  //     dataType: 'json',
+  //     method: 'POST',
+  //     success: function(response) {
+  //       if (response.success) {
+  //         // if(response.IsAdmin == false || response.Roles[0].Status == 'False'){             
+  //         //   window.location.href = '/dashboard/';
+  //         // }
+  //         var buttonAdd = document.querySelector('#addGroup');
+  //         var buttonEdit = document.querySelectorAll('.update-group');
+  //         var buttonDel = document.querySelectorAll('.delete-group');
+  //         var buttonSta = document.querySelectorAll('.btn-group-status');
+
+  //         //Role Add New User
+  //         if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
+  //           buttonAdd.classList.remove('disable-button');
+  //         }
+  //         else{
+  //           buttonAdd.classList.add('disable-button');
+  //         }
+  //         //Role Update User
+  //         if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
+  //           buttonEdit.forEach(function(edit){
+  //             edit.classList.remove('disable-button');
+  //           }); 
+  //           buttonSta.forEach(function(sta){
+  //             sta.classList.remove('admin-button');
+  //           });       
+  //         }
+  //         else{
+  //           buttonEdit.forEach(function(edit){
+  //             edit.classList.add('disable-button');
+  //           });    
+  //           buttonSta.forEach(function(sta){
+  //             sta.classList.add('admin-button');
+  //           });         
+  //         }
+  //         //Role Delete User
+  //         if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
+  //           buttonDel.forEach(function(edit){
+  //             edit.classList.remove('disable-button');
+  //           });
+  //         }
+  //         else{
+  //           buttonDel.forEach(function(edit){
+  //             edit.classList.add('disable-button');
+  //           }); 
+  //         }       
+  //       } else {
+  //         Swal.fire({
+  //           icon: 'error',
+  //           title: 'Oops...',
+  //           text: response.message,
+  //         });
+  //       }
+  //     },
+  //     error: function(response) {
+  //       Swal.fire({
+  //         icon: 'error',
+  //         title: 'Thông Báo Lỗi',
+  //         text: response.message,
+  //       });
+  //     }
+  //   });
+  // }
+
     // Load data
       function display_Group(products, currentPage, itemsPerPage, filters, data_temp) {
+        var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+        var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+        var isAddTrue = IsAdmin === true   ||  Dash_Role_Data[2].Status === 'True';
+        if (isAddTrue == true){
+        var addGroupButton = document.querySelector('.addGroup');
+        if (addGroupButton == null){
+          $('.top-title').append(
+            '<button type="button" class="btn btn-danger btn-icon-text addGroup" id="addGroup">'+
+            '<i class="ti-files btn-icon-prepend"></i>TẠO NHÓM '+
+            '</button>'
+          );
+        } 
+      }
 
         $('#product-table tbody').empty();
         var filteredProducts = products.filter(function(product) {
@@ -3592,12 +3839,12 @@ if (window.location.pathname === '/danh-sach-nhom/') {
             '<td data-column="username">' + product.TGroup_User_Name + '</td>' +         
             '<td data-column="date">' + product.TGroup_Date + '</td>' +
             '<td data-column="time">' + product.TGroup_Time + '</td>' +
-            '<td data-column="status"><button data-group-id="' + product.TGroup_ID + '" data-group-status="' + product.TGroup_Status + '" type="button" class="btn btn-'+(product.TGroup_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-group-status admin-button">'+  
+            '<td data-column="status"><button data-group-id="' + product.TGroup_ID + '" data-group-status="' + product.TGroup_Status + '" type="button" class="btn btn-'+(product.TGroup_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-group-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
             (product.TGroup_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
             '</button></td>' +
             '<td>' +
-            '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-group disable-button" name="Update[]" value="' + product.TGroup_ID + '"><i class="ti-pencil text-danger"></i></button>' +
-            '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-group disable-button" name="delete[]" value="' + product.TGroup_ID + '"><i class="ti-trash text-danger"></i></button>' +
+            (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-group" name="Update[]" value="' + product.TGroup_ID + '"><i class="ti-pencil text-danger"></i></button>': '') +
+            (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-group" name="delete[]" value="' + product.TGroup_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
             '</td>' +
           '</tr>');
         }
@@ -3633,8 +3880,7 @@ if (window.location.pathname === '/danh-sach-nhom/') {
             event.preventDefault();
       
             var page = $(this).data('page');
-            display_Group(products, page, itemsPerPage, filters);
-            auth_role();
+            display_Group(products, page, itemsPerPage, filters, data_temp);
         });
         
         // Handle First and Last button click event - start
@@ -3642,26 +3888,22 @@ if (window.location.pathname === '/danh-sach-nhom/') {
           event.preventDefault();
           
           if (currentPage > 1) {
-            display_Group(products, 1, itemsPerPage, filters);
-            auth_role();
+            display_Group(products, 1, itemsPerPage, filters, data_temp);
           }
           else
           {
-            display_Group(products, currentPage, itemsPerPage, filters);
-            auth_role();
+            display_Group(products, currentPage, itemsPerPage, filters, data_temp);
           }
         });
         pagination.find('.page-item:last-child .page-link').click(function(event) {
           event.preventDefault();
           
           if (currentPage < numPages) {
-            display_Group(products, numPages, itemsPerPage, filters);
-            auth_role();
+            display_Group(products, numPages, itemsPerPage, filters, data_temp);
           }
           else
           {
-            display_Group(products, currentPage, itemsPerPage, filters);
-            auth_role();
+            display_Group(products, currentPage, itemsPerPage, filters, data_temp);
           }
         });
         // Handle First and Last button click event - end
@@ -3729,7 +3971,9 @@ if (window.location.pathname === '/danh-sach-nhom/') {
         //xử lý sự kiện update status
 
         // Search data in textbox table - start
-        $('#search-GroupID, #search-GroupName, #search-GroupCreate,#search-GroupDate,#search-GroupTime,.db-status').on('keydown', function(event) {
+        $('#search-GroupID, #search-GroupName, #search-GroupCreate,#search-GroupDate,#search-GroupTime,.db-status')
+        .off('keydown')
+        .on('keydown', function (event) {
           if (event.keyCode === 13) { // Nếu nhấn phím Enter
               event.preventDefault(); // Tránh việc reload lại trang
               $('#search-GroupID').blur(); // Mất focus khỏi textbox tìm kiếm
@@ -3752,12 +3996,11 @@ if (window.location.pathname === '/danh-sach-nhom/') {
               };
               if(data_temp){
                 display_Group(data_temp, currentPage, itemsPerPage, filters, data_temp);
-                auth_role();
               }
           }
         });
 
-        $(document).on('click', '.btn-remove-filter', function() {
+        $(document).off('click', '.btn-remove-filter').on('click', '.btn-remove-filter', function() {
           $('#search-GroupID').val('');
           $('#search-GroupName').val('');
           $('#search-GroupCreate').val('');
@@ -3788,7 +4031,6 @@ if (window.location.pathname === '/danh-sach-nhom/') {
               };
               if(data_temp){
                 display_Group(data_temp, currentPage, itemsPerPage, filters, data_temp);
-                auth_role();
               }
         }
         // Search data in textbox table - end
@@ -3823,7 +4065,7 @@ if (window.location.pathname === '/danh-sach-nhom/') {
               var new_status = $('#input_model_status').val();
               var new_name = $('#input_model_status option:selected').text();
               ticket_update_status(ticketid, new_status, new_name);   
-              auth_role();         
+              // auth_role();         
             }            
           });
 
@@ -3957,10 +4199,12 @@ if (window.location.pathname === '/danh-sach-nhom/') {
     // Xử lý sự kiện khi người dùng chọn checkbox và nhấn nút Delete
 
     // Xử lý sự kiện khi người dùng nhấn nút Create
-      $('.addGroup').click(function(event) {
+    $(document).on('click', '.addGroup', function() {
+      // $('.addGroup').click(function(event) {
         $('#CreateGroupModal').modal('show');
       });
-      $('#create-group-button').click(function(event) {
+      $(document).on('click', '#create-group-button', function() {
+      // $('#create-group-button').click(function(event) {
         event.preventDefault(); // Prevent default form submission      
         var Group_Name = document.querySelector('#input_group_name').value;
         create_group(Group_Name);
@@ -3979,7 +4223,6 @@ if (window.location.pathname === '/danh-sach-nhom/') {
               // var companyName =  data_Company.querySelector('td[data-column="company"]');
               // companyName.textContent = response.Company_Name;
               add_row_group(response);
-              auth_role();
               $('#CreateGroupModal').modal('hide');           
               Swal.fire({
                 icon: 'success',
@@ -4004,19 +4247,21 @@ if (window.location.pathname === '/danh-sach-nhom/') {
           }
         });
       }
-      function add_row_group(data){
-        $('#product-table tbody').prepend('<tr data-product-id="'+data.TGroup_ID+'">' +
-        '<td data-column="id">#' + data.TGroup_ID + '</td>' +           
-        '<td data-column="group">' + data.TGroup_Name + '</td>' +
-        '<td data-column="username">' + data.TGroup_User_Name + '</td>' +         
-        '<td data-column="date">' + data.TGroup_Date + '</td>' +
-        '<td data-column="time">' + data.TGroup_Time + '</td>' +
-        '<td data-column="status"><button data-group-id="' + data.TGroup_ID + '" data-group-status="' + data.TGroup_Status + '" type="button" class="btn btn-'+(data.TGroup_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-group-status admin-button">'+  
-        (data.TGroup_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
+      function add_row_group(product){
+        var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+        var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+        $('#product-table tbody').prepend('<tr data-product-id="'+product.TGroup_ID+'">' +
+        '<td data-column="id">#' + product.TGroup_ID + '</td>' +           
+        '<td data-column="TGroup">' + product.TGroup_Name + '</td>' +
+        '<td data-column="username">' + product.TGroup_User_Name + '</td>' +         
+        '<td data-column="date">' + product.TGroup_Date + '</td>' +
+        '<td data-column="time">' + product.TGroup_Time + '</td>' +
+        '<td data-column="status"><button data-group-id="' + product.TGroup_ID + '" data-group-status="' + product.TGroup_Status + '" type="button" class="btn btn-'+(product.TGroup_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-group-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
+        (product.TGroup_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
         '</button></td>' +
         '<td>' +
-        '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-group disable-button" name="Update[]" value="' + data.TGroup_ID + '"><i class="ti-pencil text-danger"></i></button>' +
-        '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-group disable-button" name="delete[]" value="' + data.TGroup_ID + '"><i class="ti-trash text-danger"></i></button>' +
+        (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-group" name="Update[]" value="' + product.TGroup_ID + '"><i class="ti-pencil text-danger"></i></button>': '') +
+        (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-group" name="delete[]" value="' + product.TGroup_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
         '</td>' +
       '</tr>');
       }
@@ -4137,6 +4382,7 @@ if (window.location.pathname === '/danh-sach-nhom/') {
     }
 
     function update_info_group(Group_Data,status_new){
+      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
         // Lấy danh sách tất cả các phần tử tr có thuộc tính data-product-id
         var productRows = document.querySelectorAll('tr[data-product-id]');
 
@@ -4148,10 +4394,10 @@ if (window.location.pathname === '/danh-sach-nhom/') {
           // Kiểm tra xem productId có khớp với sản phẩm bạn đang quan tâm không
           if (GroupID === Group_Data.TGroup_ID) {
             // Cập nhật thông tin của phần tử
-            var groupElement = row.querySelector('[data-column="group"]');
+            var groupElement = row.querySelector('[data-column="TGroup"]');
             var statusElement = row.querySelector('[data-column="status"]');
             groupElement.textContent =  Group_Data.TGroup_Name;
-            var htmlStatus = '<button data-group-id="' + Group_Data.TGroup_ID + '" data-TGroup-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-group-status">'+  
+            var htmlStatus = '<button data-group-id="' + Group_Data.TGroup_ID + '" data-group-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-group-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
             (status_new === "true" ? 'Kích Hoạt' : 'Không Kích Hoạt' ) + 
             '</button>';
             var buttonStatusElement = statusElement.querySelector('button');
@@ -4170,6 +4416,9 @@ if (window.location.pathname === '/danh-sach-nhom/') {
 if (window.location.pathname === '/danh-sach-attach-file/') {
   var currentPage = 1;
   var itemsPerPage = 10;
+  var IsAdmin = '';
+  var Dash_Role_Data =[];
+
   //Check Role
   $.ajax({
     url: '/role-attach/',
@@ -4207,9 +4456,11 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
               status: $('.db-status').val().toLowerCase().trim(),
             };
             // Load_data(context.companys, context.tAttachments, context.users)
-            display_Attachment(context.data, currentPage, itemsPerPage,filters, context.data);
-            auth_role();
-          
+            // display_Attachment(context.data, currentPage, itemsPerPage,filters, context.data);
+            auth_role(context.data, currentPage, itemsPerPage,filters, context.data);
+            setTimeout(function() {
+              $('#spinnersModal').modal('hide');
+            }, 1000);
       },
       error: function(rs, e) {
           alert('Oops! something went wrong');
@@ -4218,45 +4469,16 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
   }
 
     //authorization page
-    function auth_role(){
+    function auth_role(data, currentPage, itemsPerPage,filters, data){
       $.ajax({
         url: '/phan-quyen-attach/',
         dataType: 'json',
         method: 'POST',
         success: function(response) {
           if (response.success) {
-            // var buttonAdd = document.querySelector('#addRole');
-            var buttonEdit = document.querySelectorAll('.update-attach');
-            var buttonDel = document.querySelectorAll('.delete-attach');
-            //Role Add New User
-            // if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
-            //   buttonAdd.classList.remove('disable-button');
-            // }
-            // else{
-            //   buttonAdd.classList.add('disable-button');
-            // }
-            //Role Update User
-            if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
-              buttonEdit.forEach(function(edit){
-                edit.classList.remove('disable-button');
-              });        
-            }
-            else{
-              buttonEdit.forEach(function(edit){
-                edit.classList.add('disable-button');
-              });             
-            }
-            //Role Delete User
-            if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
-              buttonDel.forEach(function(edit){
-                edit.classList.remove('disable-button');
-              });
-            }
-            else{
-              buttonDel.forEach(function(edit){
-                edit.classList.add('disable-button');
-              }); 
-            }
+            IsAdmin = response.IsAdmin;  
+            Dash_Role_Data = response.Roles;
+            display_Attachment(data, currentPage, itemsPerPage,filters, data);
           } else {
             Swal.fire({
               icon: 'error',
@@ -4275,9 +4497,78 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
       });
     }
 
+    // function auth_role(){
+    //   $.ajax({
+    //     url: '/phan-quyen-attach/',
+    //     dataType: 'json',
+    //     method: 'POST',
+    //     success: function(response) {
+    //       if (response.success) {
+    //         // var buttonAdd = document.querySelector('#addRole');
+    //         var buttonEdit = document.querySelectorAll('.update-attach');
+    //         var buttonDel = document.querySelectorAll('.delete-attach');
+    //         //Role Add New User
+    //         // if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
+    //         //   buttonAdd.classList.remove('disable-button');
+    //         // }
+    //         // else{
+    //         //   buttonAdd.classList.add('disable-button');
+    //         // }
+    //         //Role Update User
+    //         if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
+    //           buttonEdit.forEach(function(edit){
+    //             edit.classList.remove('disable-button');
+    //           });        
+    //         }
+    //         else{
+    //           buttonEdit.forEach(function(edit){
+    //             edit.classList.add('disable-button');
+    //           });             
+    //         }
+    //         //Role Delete User
+    //         if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
+    //           buttonDel.forEach(function(edit){
+    //             edit.classList.remove('disable-button');
+    //           });
+    //         }
+    //         else{
+    //           buttonDel.forEach(function(edit){
+    //             edit.classList.add('disable-button');
+    //           }); 
+    //         }
+    //       } else {
+    //         Swal.fire({
+    //           icon: 'error',
+    //           title: 'Oops...',
+    //           text: response.message,
+    //         });
+    //       }
+    //     },
+    //     error: function(response) {
+    //       Swal.fire({
+    //         icon: 'error',
+    //         title: 'Thông Báo Lỗi',
+    //         text: response.message,
+    //       });
+    //     }
+    //   });
+    // }
+
     // Load data
       function display_Attachment(products, currentPage, itemsPerPage, filters, data_temp) {
-
+        var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+        var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+        // var isAddTrue = IsAdmin === true   ||  Dash_Role_Data[2].Status === 'True';
+        // if (isAddTrue == true){
+        //   var addAttachButton = document.querySelector('.addTicket');
+        //   if (addAttachButton == null){
+        //     $('.top-title div').append(
+        //       '<button type="button" class="btn btn-danger btn-icon-text addTicket" id="addTicket">' +
+        //       '<i class="ti-files btn-icon-prepend"></i>TẠO TICKET' +
+        //       '</button>'
+        //     );
+        //   } 
+        // }
         $('#product-table tbody').empty();
         var filteredProducts = products.filter(function(product) {
             var IDMatch = filters.id === '' || product.Attachment_ID.toString().toLowerCase().includes(filters.id);
@@ -4313,12 +4604,12 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
             '<td data-column="username">' + product.Attachment_User_Name + '</td>' +         
             '<td data-column="date" id="toggle-column" class="'+show_hide+'">' + product.Attachment_Date + '</td>' +
             '<td data-column="time" id="toggle-column" class="'+show_hide+'">' + product.Attachment_Time + '</td>' +
-            '<td data-column="status"><button data-attach-id="' + product.Attachment_ID + '" data-attach-status="' + product.Attachment_Status + '" type="button" class="btn btn-'+(product.Attachment_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-attach-status">'+  
+            '<td data-column="status"><button data-attach-id="' + product.Attachment_ID + '" data-attach-status="' + product.Attachment_Status + '" type="button" class="btn btn-'+(product.Attachment_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-attach-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
             (product.Attachment_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
             '</button></td>' +
             '<td>' +
-            '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-attach disable-button" name="Update[]" value="' + product.Attachment_ID + '"><i class="ti-pencil text-danger"></i></button>' +
-            '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-attach disable-button" name="delete[]" value="' + product.Attachment_ID + '"><i class="ti-trash text-danger"></i></button>' +
+            (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-attach" name="Update[]" value="' + product.Attachment_ID + '"><i class="ti-pencil text-danger"></i></button>': '') +
+            (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-attach" name="delete[]" value="' + product.Attachment_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
             '</td>' +
           '</tr>');
         }
@@ -4354,8 +4645,7 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
             event.preventDefault();
       
             var page = $(this).data('page');
-            display_Attachment(products, page, itemsPerPage, filters);
-            auth_role();
+            display_Attachment(products, page, itemsPerPage, filters, data_temp);
         });
         
         // Handle First and Last button click event - start
@@ -4363,26 +4653,22 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
           event.preventDefault();
           
           if (currentPage > 1) {
-            display_Attachment(products, 1, itemsPerPage, filters);
-            auth_role();
+            display_Attachment(products, 1, itemsPerPage, filters, data_temp);
           }
           else
           {
-            display_Attachment(products, currentPage, itemsPerPage, filters);
-            auth_role();
+            display_Attachment(products, currentPage, itemsPerPage, filters, data_temp);
           }
         });
         pagination.find('.page-item:last-child .page-link').click(function(event) {
           event.preventDefault();
           
           if (currentPage < numPages) {
-            display_Attachment(products, numPages, itemsPerPage, filters);
-            auth_role();
+            display_Attachment(products, numPages, itemsPerPage, filters, data_temp);
           }
           else
           {
-            display_Attachment(products, currentPage, itemsPerPage, filters);
-            auth_role();
+            display_Attachment(products, currentPage, itemsPerPage, filters, data_temp);
           }
         });
         // Handle First and Last button click event - end
@@ -4453,7 +4739,9 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
         //xử lý sự kiện update status
 
         // Search data in textbox table - start
-        $('#search-AttachmentID,#search-TicketID, #search-AttachmentName, #search-AttachmentCreate,#search-AttachmentDate,#search-AttachmentTime,.db-status').on('keydown', function(event) {
+        $('#search-AttachmentID,#search-TicketID, #search-AttachmentName, #search-AttachmentCreate,#search-AttachmentDate,#search-AttachmentTime,.db-status')
+        .off('keydown')
+        .on('keydown', function(event) {
           if (event.keyCode === 13) { // Nếu nhấn phím Enter
               event.preventDefault(); // Tránh việc reload lại trang
               $('#search-AttachmentID').blur(); // Mất focus khỏi textbox tìm kiếm
@@ -4478,11 +4766,10 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
               };
               if(data_temp){
                 display_Attachment(data_temp, currentPage, itemsPerPage, filters, data_temp);
-                auth_role();
               }
           }
         });
-        $(document).on('click', '.btn-remove-filter', function() {
+        $(document).off('click', '.btn-remove-filter').on('click', '.btn-remove-filter', function() {
           $('#search-AttachmentID').val('');
           $('#search-TicketID').val('');
           $('#search-AttachmentName').val('');
@@ -4491,8 +4778,7 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
           $('#search-AttachmentTime').val('');
           $('.db-status').val('');
           reset_data();  
-        });
-        
+        });      
         function reset_data(){
           $('#search-AttachmentID').blur(); // Mất focus khỏi textbox tìm kiếm
           $('#search-AttachmentName').blur();
@@ -4516,7 +4802,6 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
           };
           if(data_temp){
             display_Attachment(data_temp, currentPage, itemsPerPage, filters, data_temp);
-            auth_role();
           }
         }
         // Search data in textbox table - end
@@ -4583,7 +4868,6 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
             
           });
       //update status - click
-        
       }
 
     //xử lý sự kiện close modal
@@ -4802,8 +5086,7 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
           text: 'Nhập thông tin vào các trường có *',
         });
       }
-    });
-    
+    });   
 
     function update_attach(AttachID, AttachName,status){
       var status_new = (status == "true" ? "true" : "false")
@@ -4845,6 +5128,7 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
     }
 
     function update_info_attach(Attach_Data,status_new){
+      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
         // Lấy danh sách tất cả các phần tử tr có thuộc tính data-product-id
         var productRows = document.querySelectorAll('tr[data-product-id]');
 
@@ -4859,7 +5143,7 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
             var attachElement = row.querySelector('[data-column="attach"]');
             var statusElement = row.querySelector('[data-column="status"]');
             attachElement.textContent =  (Attach_Data.Attachment_Name < 30 ? Attach_Data.Attachment_Name : Attach_Data.Attachment_Name.substring(0,30) + '...');
-            var htmlStatus = '<button data-attach-id="' + Attach_Data.Attachment_ID + '" data-attach-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-attach-status">'+  
+            var htmlStatus = '<button data-attach-id="' + Attach_Data.Attachment_ID + '" data-attach-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-attach-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
             (status_new === "true" ? 'Kích Hoạt' : 'Không Kích Hoạt' ) + 
             '</button>';
             var buttonStatusElement = statusElement.querySelector('button');
@@ -4900,6 +5184,9 @@ if (window.location.pathname === '/danh-sach-attach-file/') {
 if (window.location.pathname === '/danh-sach-phan-cong/') {
   var currentPage = 1;
   var itemsPerPage = 10;
+  var IsAdmin = '';
+  var Dash_Role_Data =[];
+
   //Check Role
   $.ajax({
     url: '/role-phan-cong/',
@@ -5144,9 +5431,11 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
               status: $('.db-status').val().toLowerCase().trim(),
             };
             Load_data(context.group);
-            display_Assign(context.data, currentPage, itemsPerPage,filters, context.data);
-            auth_role();
-          
+            // display_Assign(context.data, currentPage, itemsPerPage,filters, context.data);
+            auth_role(context.data, currentPage, itemsPerPage,filters, context.data);
+            setTimeout(function() {
+              $('#spinnersModal').modal('hide');
+            }, 1000);
       },
       error: function(rs, e) {
           alert('Oops! something went wrong');
@@ -5155,47 +5444,16 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
   }
 
   //authorization page
-  function auth_role(){
+  function auth_role(data, currentPage, itemsPerPage,filters, data){
     $.ajax({
       url: '/phan-quyen-phan-cong/',
       dataType: 'json',
       method: 'POST',
       success: function(response) {
         if (response.success) {
-          var buttonAdd = document.querySelector('#addAssign');
-          var buttonEdit = document.querySelectorAll('.btn-assign-status');
-          var buttonDel = document.querySelectorAll('.delete-assign');
-
-          //Role Add New User
-          if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
-            buttonAdd.classList.remove('disable-button');
-          }
-          else{
-            buttonAdd.classList.add('disable-button');
-          }
-          //Role Update User
-          if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
-            buttonEdit.forEach(function(edit){
-              edit.classList.remove('admin-button');
-            });        
-          }
-          else{
-            buttonEdit.forEach(function(edit){
-              edit.classList.add('admin-button');
-            });             
-          }
-          //Role Delete User
-          if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
-            buttonDel.forEach(function(edit){
-              edit.classList.remove('disable-button');
-            });
-          }
-          else{
-            buttonDel.forEach(function(edit){
-              edit.classList.add('disable-button');
-            }); 
-          }
-          
+          IsAdmin = response.IsAdmin;  
+          Dash_Role_Data = response.Roles;
+          display_Assign(data, currentPage, itemsPerPage,filters, data);        
         } else {
           Swal.fire({
             icon: 'error',
@@ -5213,10 +5471,80 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
       }
     });
   }
+  // function auth_role(){
+  //   $.ajax({
+  //     url: '/phan-quyen-phan-cong/',
+  //     dataType: 'json',
+  //     method: 'POST',
+  //     success: function(response) {
+  //       if (response.success) {
+  //         var buttonAdd = document.querySelector('#addAssign');
+  //         var buttonEdit = document.querySelectorAll('.btn-assign-status');
+  //         var buttonDel = document.querySelectorAll('.delete-assign');
+
+  //         //Role Add New User
+  //         if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
+  //           buttonAdd.classList.remove('disable-button');
+  //         }
+  //         else{
+  //           buttonAdd.classList.add('disable-button');
+  //         }
+  //         //Role Update User
+  //         if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
+  //           buttonEdit.forEach(function(edit){
+  //             edit.classList.remove('admin-button');
+  //           });        
+  //         }
+  //         else{
+  //           buttonEdit.forEach(function(edit){
+  //             edit.classList.add('admin-button');
+  //           });             
+  //         }
+  //         //Role Delete User
+  //         if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
+  //           buttonDel.forEach(function(edit){
+  //             edit.classList.remove('disable-button');
+  //           });
+  //         }
+  //         else{
+  //           buttonDel.forEach(function(edit){
+  //             edit.classList.add('disable-button');
+  //           }); 
+  //         }
+          
+  //       } else {
+  //         Swal.fire({
+  //           icon: 'error',
+  //           title: 'Oops...',
+  //           text: response.message,
+  //         });
+  //       }
+  //     },
+  //     error: function(response) {
+  //       Swal.fire({
+  //         icon: 'error',
+  //         title: 'Thông Báo Lỗi',
+  //         text: response.message,
+  //       });
+  //     }
+  //   });
+  // }
 
     // Load data
       function display_Assign(products, currentPage, itemsPerPage, filters, data_temp) {
-
+        var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+        var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+        var isAddTrue = IsAdmin === true   ||  Dash_Role_Data[2].Status === 'True';
+        if (isAddTrue == true){
+          var addAssignButton = document.querySelector('.addAssign');
+          if (addAssignButton == null){
+            $('.top-title div').append(
+              '<button type="button" class="btn btn-danger btn-icon-text addAssign" id="addAssign">'+
+              '<i class="ti-files btn-icon-prepend"></i> TẠO PHÂN CÔNG'+
+              '</button>'
+            );
+          } 
+        }
         $('#product-table tbody').empty();
         var filteredProducts = products.filter(function(product) {
             var IDMatch = filters.id === '' || product.Assign_ID.toString().toLowerCase().includes(filters.id);
@@ -5254,12 +5582,12 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
             '<td data-column="username">' + product.Assign_User_Name + '</td>' +         
             '<td data-column="date" id="toggle-column" class="'+show_hide+'">' + product.Assign_User_Date + '</td>' +
             '<td data-column="time" id="toggle-column" class="'+show_hide+'">' + product.Assign_User_Time + '</td>' +
-            '<td data-column="status"><button data-assign-id="' + product.Assign_ID + '" data-assign-status="' + product.Assign_User_Status + '" type="button" class="btn btn-'+(product.Assign_User_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-assign-status admin-button">'+  
+            '<td data-column="status"><button data-assign-id="' + product.Assign_ID + '" data-assign-status="' + product.Assign_User_Status + '" type="button" class="btn btn-'+(product.Assign_User_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-assign-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
             (product.Assign_User_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
             '</button></td>' +
             '<td>' +
             // '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-assign" name="Update[]" value="' + product.Assign_ID + '"><i class="ti-pencil text-danger"></i></button>' +
-            '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-assign disable-button" name="delete[]" value="' + product.Assign_ID + '"><i class="ti-trash text-danger"></i></button>' +
+            (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-assign" name="delete[]" value="' + product.Assign_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
             '</td>' +
           '</tr>');
         }
@@ -5295,8 +5623,7 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
             event.preventDefault();
       
             var page = $(this).data('page');
-            display_Assign(products, page, itemsPerPage, filters);
-            auth_role();
+            display_Assign(products, page, itemsPerPage, filters, data_temp);
         });
         
         // Handle First and Last button click event - start
@@ -5304,26 +5631,22 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
           event.preventDefault();
           
           if (currentPage > 1) {
-            display_Assign(products, 1, itemsPerPage, filters);
-            auth_role();
+            display_Assign(products, 1, itemsPerPage, filters, data_temp);
           }
           else
           {
-            display_Assign(products, currentPage, itemsPerPage, filters);
-            auth_role();
+            display_Assign(products, currentPage, itemsPerPage, filters, data_temp);
           }
         });
         pagination.find('.page-item:last-child .page-link').click(function(event) {
           event.preventDefault();
           
           if (currentPage < numPages) {
-            display_Assign(products, numPages, itemsPerPage, filters);
-            auth_role();
+            display_Assign(products, numPages, itemsPerPage, filters, data_temp);
           }
           else
           {
-            display_Assign(products, currentPage, itemsPerPage, filters);
-            auth_role();
+            display_Assign(products, currentPage, itemsPerPage, filters, data_temp);
           }
         });
         // Handle First and Last button click event - end
@@ -5392,7 +5715,9 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
         //xử lý sự kiện update status click
 
         // Search data in textbox table - start
-        $('#search-Assign_ID,#search-username,#search-ID_user,#search-,#search-TGroup_ID , #search-Assign_User_Name, #search-Assign_User_Create,#search-Assign_User_Date,#search-Assign_User_Time,.db-status').on('keydown', function(event) {
+        $('#search-Assign_ID,#search-username,#search-ID_user,#search-,#search-TGroup_ID , #search-Assign_User_Name, #search-Assign_User_Create,#search-Assign_User_Date,#search-Assign_User_Time,.db-status')
+        .off('keydown')
+        .on('keydown', function(event) {
           if (event.keyCode === 13) { // Nếu nhấn phím Enter
               event.preventDefault(); // Tránh việc reload lại trang
               $('#search-Assign_ID').blur(); // Mất focus khỏi textbox tìm kiếm
@@ -5418,11 +5743,10 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
               };
               if(data_temp){
                 display_Assign(data_temp, currentPage, itemsPerPage, filters, data_temp);
-                auth_role();
               }
           }
         });
-        $(document).on('click', '.btn-remove-filter', function() {
+        $(document).off('click', '.btn-remove-filter').on('click', '.btn-remove-filter', function() {
           $('#search-Assign_ID').val('');
           $('#search-ID_user').val('');
           $('#search-username').val('');
@@ -5458,7 +5782,6 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
               };
               if(data_temp){
                 display_Assign(data_temp, currentPage, itemsPerPage, filters, data_temp);
-                auth_role();
               }
         }
         // Search data in textbox table - end
@@ -5537,11 +5860,13 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
     // Xử lý sự kiện khi người dùng chọn checkbox và nhấn nút Delete
 
     // Xử lý sự kiện khi người dùng nhấn nút Create
-      $('.addAssign').click(function(event) {
+    $(document).on('click', '.addAssign', function() {
+      // $('.addAssign').click(function(event) {
         $('#CreateAssignModal').modal('show');
       });         
 
-      $('#create-assign-button').click(function(event) {
+      $(document).on('click', '#create-assign-button', function() {
+      // $('#create-assign-button').click(function(event) {
         event.preventDefault(); // Prevent default form submission
         var group = document.querySelector('#input_assign_group').value;      
         var users = document.querySelectorAll('#selectedItemsContainer .selected-item');  
@@ -5568,8 +5893,7 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
               var list = response.assigns;
               list.forEach(function(item){
                 if(item.Status_Create === 'Insert'){
-                  add_row_group(item);
-                  auth_role();
+                  add_row_assign(item);
                 }
                 else if(item.Status_Create === 'Update'){
                   var htmlStatus = '<button data-assign-id="' + item.Assign_ID + '" data-assign-status="' + item.Assign_User_Status + '" type="button" class="btn btn-'+(item.Assign_User_Status.toString() === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-assign-status">'+  
@@ -5622,7 +5946,9 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
         });
       }
 
-      function add_row_group(data){
+      function add_row_assign(product){
+        var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+        var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
         var show_hide = '';
         var status = document.querySelector('#showall i');
         if (status.classList.contains('ti-shift-right')) {
@@ -5631,20 +5957,20 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
         else if (status.classList.contains('ti-shift-left')){
           show_hide = 'show-column';
         }
-        $('#product-table tbody').prepend('<tr data-product-id="'+data.Assign_ID+'">' +
-            '<td data-column="id">#' + data.Assign_ID + '</td>' +           
-            '<td data-column="user">#' + data.ID_user + '</td>' +           
-            '<td data-column="name">' + data.UserName + '</td>' +           
-            '<td data-column="group">' + data.TGroup_Name + '</td>' +
-            '<td data-column="username">' + data.Assign_User_Name + '</td>' +         
-            '<td data-column="date" id="toggle-column" class="'+show_hide+'">' + data.Assign_User_Date + '</td>' +
-            '<td data-column="time" id="toggle-column" class="'+show_hide+'">' + data.Assign_User_Time + '</td>' +
-            '<td data-column="status"><button data-assign-id="' + data.Assign_ID + '" data-assign-status="' + data.Assign_User_Status + '" type="button" class="btn btn-'+(data.Assign_User_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-assign-status admin-button">'+  
-            (data.Assign_User_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
+        $('#product-table tbody').prepend('<tr data-product-id="'+product.Assign_ID+'">' +
+            '<td data-column="id">#' + product.Assign_ID + '</td>' +           
+            '<td data-column="user">#' + product.ID_user + '</td>' +           
+            '<td data-column="name">' + product.UserName + '</td>' +           
+            '<td data-column="group">' + product.TGroup_Name + '</td>' +
+            '<td data-column="username">' + product.Assign_User_Name + '</td>' +         
+            '<td data-column="date" id="toggle-column" class="'+show_hide+'">' + product.Assign_User_Date + '</td>' +
+            '<td data-column="time" id="toggle-column" class="'+show_hide+'">' + product.Assign_User_Time + '</td>' +
+            '<td data-column="status"><button data-assign-id="' + product.Assign_ID + '" data-assign-status="' + product.Assign_User_Status + '" type="button" class="btn btn-'+(product.Assign_User_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-assign-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
+            (product.Assign_User_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
             '</button></td>' +
             '<td>' +
-            // '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-assign" name="Update[]" value="' + data.Assign_ID + '"><i class="ti-pencil text-danger"></i></button>' +
-            '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-assign disable-button" name="delete[]" value="' + data.Assign_ID + '"><i class="ti-trash text-danger"></i></button>' +
+            // '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-assign" name="Update[]" value="' + product.Assign_ID + '"><i class="ti-pencil text-danger"></i></button>' +
+            (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-assign" name="delete[]" value="' + product.Assign_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
             '</td>' +
           '</tr>');
       }
@@ -5694,6 +6020,9 @@ if (window.location.pathname === '/danh-sach-phan-cong/') {
 if (window.location.pathname === '/danh-sach-nguoi-dung/') {
   var currentPage = 1;
   var itemsPerPage = 10;
+  var IsAdmin = '';
+  var Dash_Role_Data =[];
+
   //Check Role
   $.ajax({
     url: '/role-user/',
@@ -5739,8 +6068,11 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
               status: $('.db-status').val().toLowerCase().trim(),
             };
             // Load_data(context.companys, context.tgroups, context.users)
-            display_User(context.data, currentPage, itemsPerPage,filters, context.data)
-            auth_role();
+            // display_User(context.data, currentPage, itemsPerPage,filters, context.data)
+            auth_role(context.data, currentPage, itemsPerPage,filters, context.data);
+            setTimeout(function() {
+              $('#spinnersModal').modal('hide');
+            }, 1000);
       },
       error: function(rs, e) {
           alert('Oops! something went wrong');
@@ -5749,67 +6081,16 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
   }
 
     //authorization page
-    function auth_role(){
+    function auth_role(data, currentPage, itemsPerPage,filters, data){
       $.ajax({
         url: '/phan-quyen-user/',
         dataType: 'json',
         method: 'POST',
         success: function(response) {
           if (response.success) {
-            // if(response.IsAdmin == false || response.Roles[0].Status == 'False'){             
-            //   window.location.href = '/dashboard/';
-            // }
-            var buttonAdd = document.querySelector('#addUser');
-            var buttonEdit = document.querySelectorAll('.update-user');
-            var buttonDel = document.querySelectorAll('.delete-user');
-            var buttonAdmin = document.querySelectorAll('.btn-user-role');
-            var optionAdmin = document.querySelectorAll('.opt-admin');
-            //Role Add New User
-            if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
-              buttonAdd.classList.remove('disable-button');
-            }
-            else{
-              buttonAdd.classList.add('disable-button');
-            }
-            //Role Update User
-            if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
-              buttonEdit.forEach(function(edit){
-                edit.classList.remove('disable-button');
-              });        
-            }
-            else{
-              buttonEdit.forEach(function(edit){
-                edit.classList.add('disable-button');
-              });             
-            }
-            //Role Delete User
-            if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
-              buttonDel.forEach(function(edit){
-                edit.classList.remove('disable-button');
-              });
-            }
-            else{
-              buttonDel.forEach(function(edit){
-                edit.classList.add('disable-button');
-              }); 
-            }
-            //Role Admin
-            if(response.IsAdmin == true || response.Roles[4].Status == 'True'){             
-              buttonAdmin.forEach(function(admin){
-                admin.classList.remove('admin-button');               
-                optionAdmin.forEach(function(opt){
-                  opt.classList.remove('hide-option');
-                });
-              });
-            }
-            else{
-              buttonDel.forEach(function(edit){
-                admin.classList.add('admin-button');
-                optionAdmin.forEach(function(opt){
-                  opt.classList.add('hide-option');
-                });
-              }); 
-            }
+            IsAdmin = response.IsAdmin;  
+            Dash_Role_Data = response.Roles;
+            display_User(data, currentPage, itemsPerPage,filters, data);
           } else {
             Swal.fire({
               icon: 'error',
@@ -5827,6 +6108,84 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
         }
       });
     }
+    // function auth_role(){
+    //   $.ajax({
+    //     url: '/phan-quyen-user/',
+    //     dataType: 'json',
+    //     method: 'POST',
+    //     success: function(response) {
+    //       if (response.success) {
+    //         // if(response.IsAdmin == false || response.Roles[0].Status == 'False'){             
+    //         //   window.location.href = '/dashboard/';
+    //         // }
+    //         var buttonAdd = document.querySelector('#addUser');
+    //         var buttonEdit = document.querySelectorAll('.update-user');
+    //         var buttonDel = document.querySelectorAll('.delete-user');
+    //         var buttonAdmin = document.querySelectorAll('.btn-user-role');
+    //         var optionAdmin = document.querySelectorAll('.opt-admin');
+    //         //Role Add New User
+    //         if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
+    //           buttonAdd.classList.remove('disable-button');
+    //         }
+    //         else{
+    //           buttonAdd.classList.add('disable-button');
+    //         }
+    //         //Role Update User
+    //         if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
+    //           buttonEdit.forEach(function(edit){
+    //             edit.classList.remove('disable-button');
+    //           });        
+    //         }
+    //         else{
+    //           buttonEdit.forEach(function(edit){
+    //             edit.classList.add('disable-button');
+    //           });             
+    //         }
+    //         //Role Delete User
+    //         if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
+    //           buttonDel.forEach(function(edit){
+    //             edit.classList.remove('disable-button');
+    //           });
+    //         }
+    //         else{
+    //           buttonDel.forEach(function(edit){
+    //             edit.classList.add('disable-button');
+    //           }); 
+    //         }
+    //         //Role Admin
+    //         if(response.IsAdmin == true || response.Roles[4].Status == 'True'){             
+    //           buttonAdmin.forEach(function(admin){
+    //             admin.classList.remove('admin-button');               
+    //             optionAdmin.forEach(function(opt){
+    //               opt.classList.remove('hide-option');
+    //             });
+    //           });
+    //         }
+    //         else{
+    //           buttonDel.forEach(function(edit){
+    //             admin.classList.add('admin-button');
+    //             optionAdmin.forEach(function(opt){
+    //               opt.classList.add('hide-option');
+    //             });
+    //           }); 
+    //         }
+    //       } else {
+    //         Swal.fire({
+    //           icon: 'error',
+    //           title: 'Oops...',
+    //           text: response.message,
+    //         });
+    //       }
+    //     },
+    //     error: function(response) {
+    //       Swal.fire({
+    //         icon: 'error',
+    //         title: 'Thông Báo Lỗi',
+    //         text: response.message,
+    //       });
+    //     }
+    //   });
+    // }
 
     function filter_data_excel(callback){
       $.ajax({
@@ -5937,6 +6296,27 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
 
     // Load data
     function display_User(products, currentPage, itemsPerPage, filters, data_temp) {
+      var isEditTrue  = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+      var isDellTrue  = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+      var isAdminTrue = IsAdmin === true  ||  Dash_Role_Data[4].Status === 'True';
+      var isAddTrue   = IsAdmin === true  ||  Dash_Role_Data[2].Status === 'True';
+      if (isAddTrue == true){
+        var addUserButton = document.querySelector('.addUser');
+        if (addUserButton == null){
+          $('.top-title div').append(
+            '<button type="button" class="btn btn-danger btn-icon-text addUser" id="addUser">' +
+            '<i class="ti-files btn-icon-prepend"></i>TẠO NGƯỜI DÙNG' +
+            '</button>'
+          );
+        } 
+      }
+
+      if (isAdminTrue == true){
+        var adminUserCreate = document.querySelector('.db-support-ticket opt-admin');
+        if(adminUserCreate == null){
+          $('.db-support-ticket').append('<option value="0" class="opt-admin">Administrator</option>');
+        }
+      }
 
       $('#product-table tbody').empty();
       var filteredProducts = products.filter(function(product) {
@@ -5984,7 +6364,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
           '<td data-column="mail">' + product.Mail + '</td>' +           
           '<td data-column="name">' + product.FullName + '</td>' +           
           '<td data-column="company">' + product.Company_Name + '</td>' +           
-          '<td data-column="utype"><button data-user-id="' + product.ID_user + '" data-type-value="' + product.User_Type + '" type="button" class="btn btn-'+(product.User_Type == 0 ? 'danger' : (product.User_Type == 1 ? 'warning' : 'primary' ))+' btn-rounded btn-fw btn-user-role admin-button">'+  
+          '<td data-column="utype"><button data-user-id="' + product.ID_user + '" data-type-value="' + product.User_Type + '" type="button" class="btn btn-'+(product.User_Type == 0 ? 'danger' : (product.User_Type == 1 ? 'warning' : 'primary' ))+' btn-rounded btn-fw btn-user-role '+(isEditTrue ? '' : 'admin-button')+'">'+  
           (product.User_Type == 0 ? 'Administrator' :  (product.User_Type == 1 ? 'Moderator' : 'Member'))+
           '</button></td>' +
           '<td data-column="atype" id="toggle-column" class="'+show_hide+'">' + product.Acc_Type + '</td>' +
@@ -5996,12 +6376,13 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
           '<td data-column="createname" id="toggle-column" class="'+show_hide+'">' + product.Name_Create + '</td>' +         
           '<td data-column="date" id="toggle-column" class="'+show_hide+'">' + product.Date_Create + '</td>' +
           '<td data-column="time" id="toggle-column" class="'+show_hide+'">' + product.Time_Create + '</td>' +
-          '<td data-column="status"><button data-user-id="' + product.ID_user + '" data-user-status="' + product.User_Status + '" type="button" class="btn btn-'+(product.User_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-user-status">'+  
+          '<td data-column="status"><button data-user-id="' + product.ID_user + '" data-user-status="' + product.User_Status + '" type="button" class="btn btn-'+(product.User_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-user-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
           (product.User_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
           '</button></td>' +
           '<td>' +
-          '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-user disable-button" name="Update[]" value="' + product.ID_user + '"><i class="ti-pencil text-danger"></i></button>' +
-          '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-user disable-button" name="delete[]" value="' + product.ID_user + '"><i class="ti-trash text-danger"></i></button>' +
+          (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-user" name="Update[]" value="' + product.ID_user + '"><i class="ti-pencil text-danger"></i></button>': '') +
+          (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-user" name="delete[]" value="' + product.ID_user + '"><i class="ti-trash text-danger"></i></button>': '') +
+          '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon change-pass-user" name="change[]" value="' + product.ID_user + '"><i class="ti-key text-danger"></i></button>' +
           '</td>' +
         '</tr>');
       }
@@ -6037,8 +6418,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
           event.preventDefault();
     
           var page = $(this).data('page');
-          display_User(products, page, itemsPerPage, filters);
-          auth_role();
+          display_User(products, page, itemsPerPage, filters, data_temp);
       });
       
       // Handle First and Last button click event - start
@@ -6046,26 +6426,22 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
         event.preventDefault();
         
         if (currentPage > 1) {
-          display_User(products, 1, itemsPerPage, filters);
-          auth_role();
+          display_User(products, 1, itemsPerPage, filters, data_temp);
         }
         else
         {
-          display_User(products, currentPage, itemsPerPage, filters);
-          auth_role();
+          display_User(products, currentPage, itemsPerPage, filters, data_temp);
         }
       });
       pagination.find('.page-item:last-child .page-link').click(function(event) {
         event.preventDefault();
         
         if (currentPage < numPages) {
-          display_User(products, numPages, itemsPerPage, filters);
-          auth_role();
+          display_User(products, numPages, itemsPerPage, filters, data_temp);
         }
         else
         {
-          display_User(products, currentPage, itemsPerPage, filters);
-          auth_role();
+          display_User(products, currentPage, itemsPerPage, filters, data_temp);
         }
       });
       // Handle First and Last button click event - end
@@ -6208,7 +6584,9 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       //xử lý sự kiện update status
 
       // Search data in textbox table - start     
-      $('#search-ID_User, #search-Mail, #search-FullName, #search-Company,.db-User_Type,#search-Acc_Type,#search-Birthday,#search-Jobtitle,#search-Address,#search-Phone,#search-ID_Create,#search-Name_Create,#search-Date_Create,#search-Time_Create,.db-status').on('keydown', function(event) {
+      $('#search-ID_User, #search-Mail, #search-FullName, #search-Company,.db-User_Type,#search-Acc_Type,#search-Birthday,#search-Jobtitle,#search-Address,#search-Phone,#search-ID_Create,#search-Name_Create,#search-Date_Create,#search-Time_Create,.db-status')
+      .off('keydown')
+      .on('keydown', function(event) {
         if (event.keyCode === 13) { // Nếu nhấn phím Enter
             event.preventDefault(); // Tránh việc reload lại trang
             $('#search-ID_User').blur(); // Mất focus khỏi textbox tìm kiếm
@@ -6252,7 +6630,6 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
             };
             if(data_temp){
               display_User(data_temp, currentPage, itemsPerPage, filters, data_temp);
-              auth_role();
             }
         }
       });
@@ -6260,7 +6637,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       // Search data in textbox table - end
       
       //clear data search
-      $(document).on('click', '.btn-remove-filter', function() {
+      $(document).off('click', '.btn-remove-filter').on('click', '.btn-remove-filter', function() {
         $('#search-ID_User').val('');
         $('#search-Mail').val('');
         $('#search-FullName').val('');
@@ -6322,7 +6699,6 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
             };
             if(data_temp){
               display_User(data_temp, currentPage, itemsPerPage, filters, data_temp);
-              auth_role();
             }
       }
       //clear data search
@@ -6479,12 +6855,88 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
         // });         
   }   
 
+    //xử lý sự kiện đổi pass nhanh cho user
+
+    //Xử lý sự kiện change pass
+    $(document).on('click', '.change-pass-user', function() {
+      var UserID = $(this).val();
+      $('#ChangePassModal').modal('show');
+      var id = document.querySelector('#input_id')
+      id.value = UserID;
+    });
+
+    $(document).on('click', '#change-pass-button', function() {
+      // var UserID = $(this).val();
+      var UserID   = document.querySelector('#input_id').value
+      var New_Pass = document.querySelector('#input_new_pass').value
+      const swalWithBootstrapButtons = Swal.mixin({
+        customClass: {
+          confirmButton: 'btn btn-success btn-success-cus',
+          cancelButton: 'btn btn-danger btn-danger-cus'
+        },
+        buttonsStyling: false
+      })
+      
+      swalWithBootstrapButtons.fire({
+        title: 'Are you sure?',
+        text: "Bạn muốn reset mật khẩu của "+ UserID + " ?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'No, cancel!',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          event.preventDefault();          
+          reset_pass(UserID,New_Pass);    
+        } 
+      })
+    });
+
+    function reset_pass(UserID,New_Pass){
+      $.ajax({
+        url: '/reset-pass-user/',
+        dataType: 'json',
+        method: 'POST',
+        data: {
+          'ID_User': UserID,
+          'New_Pass': New_Pass,
+        },
+        success: function(response) {
+          if (response.success) {    
+            $('#ChangePassModal').modal('hide');       
+            Swal.fire({
+              icon: 'success',
+              title: 'Thông Báo',
+              timer: 1000,
+              text: response.message,
+            });
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: response.message,
+            });
+          }
+        },
+        error: function(response) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi',
+            text: response.message,
+          });
+        }
+      });
+    }
+    //Xử lý sự kiện change pass
+
     //xử lý sự kiện close modal
     $('.close').click(function(event) {
       $('#CreateUserModal').modal('hide');
       $('#UpdateRoleModal').modal('hide');
       $('#UpdateUserModal').modal('hide');
       $('#ImportExcelModal').modal('hide');
+      $('#ChangePassModal').modal('hide');
     });
     //xử lý sự kiện close modal
 
@@ -6552,8 +7004,10 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
     }
     // Xử lý sự kiện khi người dùng chọn checkbox và nhấn nút Delete
 
+
     // Xử lý sự kiện khi người dùng nhấn nút Create
-    $('.addUser').click(function(event) {
+    $(document).on('click', '.addUser', function() {
+    // $('.addUser').click(function(event) {
       Load_Company_user();
       $('#CreateUserModal').modal('show');
     });
@@ -6590,8 +7044,8 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
         }
       });
     }
-
-    $('#create-user-button').click(function(event) {
+    $(document).on('click', '#create-user-button', function() {
+    // $('#create-user-button').click(function(event) {
       event.preventDefault(); // Prevent default form submission      
       var email = document.querySelector('#input_email').value;
       var pass = document.querySelector('#input_pass').value;
@@ -6636,7 +7090,6 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
         success: function(response) {
           if (response.success) {     
             add_row_user(response);
-            auth_role();
             $('#CreateUserModal').modal('hide');           
             Swal.fire({
               icon: 'success',
@@ -6699,9 +7152,10 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
         });
       }
     }
-
-    function add_row_user(data){
+    function add_row_user(product){
       var show_hide = '';
+      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+      var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
       var status = document.querySelector('#showall i');
       if (status.classList.contains('ti-shift-right')) {
         show_hide = 'hidden-column';
@@ -6709,154 +7163,156 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
       else if (status.classList.contains('ti-shift-left')){
         show_hide = 'show-column';
       } 
-
-      $('#product-table tbody').prepend('<tr data-product-id="'+data.ID_user+'">' +
-      '<td data-column="ava">' + (data.Avatar != '' ? '<img class="img-xs rounded-circle" src="'+data.Avatar+'" alt="Profile image">' : '<div class="avatar-container"> <div class="avatar-title-list">'+ data.img +'</div></div>' )+ '</td>' +           
-      '<td data-column="id">#' + data.ID_user + '</td>' +           
-      '<td data-column="mail">' + data.Mail + '</td>' +           
-      '<td data-column="name">' + data.FullName + '</td>' +           
-      '<td data-column="company">' + data.Company_Name + '</td>' +           
-      '<td data-column="utype"><button data-user-id="' + data.ID_user + '" data-type-value="' + data.User_Type + '" type="button" class="btn btn-'+(data.User_Type == 0 ? 'danger' : (data.User_Type == 1 ? 'warning' : 'primary' ))+' btn-rounded btn-fw btn-user-role admin-button">'+  
-      (data.User_Type == 0 ? 'Administrator' :  (data.User_Type == 1 ? 'Moderator' : 'Member'))+
-      '</button></td>' +
-      '<td data-column="atype" id="toggle-column" class="'+show_hide+'">' + data.Acc_Type + '</td>' +
-      '<td data-column="jobtitle" id="toggle-column" class="'+show_hide+'">' + (data.Jobtitle ? data.Jobtitle : 'No Data') + '</td>' +
-      '<td data-column="birthday" id="toggle-column" class="'+show_hide+'">' + data.Birthday + '</td>' +
-      '<td data-column="address" id="toggle-column" class="'+show_hide+'">' + (data.Address ? data.Address : 'No Data')+ '</td>' +
-      '<td data-column="phone" id="toggle-column" class="'+show_hide+'">' + (data.Phone ? '0'+data.Phone : 'No Data')+ '</td>' +
-      '<td data-column="createid" id="toggle-column" class="'+show_hide+'">' + data.ID_Create + '</td>' +
-      '<td data-column="createname" id="toggle-column" class="'+show_hide+'">' + data.Name_Create + '</td>' +         
-      '<td data-column="date" id="toggle-column" class="'+show_hide+'">' + data.Date_Create + '</td>' +
-      '<td data-column="time" id="toggle-column" class="'+show_hide+'">' + data.Time_Create + '</td>' +
-      '<td data-column="status"><button data-user-id="' + data.ID_user + '" data-user-status="' + data.User_Status + '" type="button" class="btn btn-'+(data.User_Status == 'True' ? 'success' : 'danger' )+' btn-rounded btn-fw btn-user-status">'+  
-      (data.User_Status == 'True' ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
-      '</button></td>' +
-      '<td>' +
-      '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-user disable-button" name="Update[]" value="' + data.ID_user + '"><i class="ti-pencil text-danger"></i></button>' +
-      '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-user disable-button" name="delete[]" value="' + data.ID_user + '"><i class="ti-trash text-danger"></i></button>' +
-      '</td>' +
-    '</tr>');
+      $('#product-table tbody').prepend('<tr data-product-id="'+product.ID_user+'">' +
+        '<td data-column="ava">' + ((product.Avatar !== null && product.Avatar !== "Null" && product.Avatar !== "") ? '<img class="img-xs rounded-circle" src="'+product.Avatar+'" alt="Profile image">' : '<div class="avatar-container"> <div class="avatar-title-list">'+ product.img +'</div></div>' )+ '</td>' +           
+        '<td data-column="id">#' + product.ID_user + '</td>' +           
+        '<td data-column="mail">' + product.Mail + '</td>' +           
+        '<td data-column="name">' + product.FullName + '</td>' +           
+        '<td data-column="company">' + product.Company_Name + '</td>' +           
+        '<td data-column="utype"><button data-user-id="' + product.ID_user + '" data-type-value="' + product.User_Type + '" type="button" class="btn btn-'+(product.User_Type == 0 ? 'danger' : (product.User_Type == 1 ? 'warning' : 'primary' ))+' btn-rounded btn-fw btn-user-role '+(isEditTrue ? '' : 'admin-button')+'">'+  
+        (product.User_Type == 0 ? 'Administrator' :  (product.User_Type == 1 ? 'Moderator' : 'Member'))+
+        '</button></td>' +
+        '<td data-column="atype" id="toggle-column" class="'+show_hide+'">' + product.Acc_Type + '</td>' +
+        '<td data-column="jobtitle" id="toggle-column" class="'+show_hide+'">' + product.Jobtitle + '</td>' +
+        '<td data-column="birthday" id="toggle-column" class="'+show_hide+'">' + product.Birthday + '</td>' +
+        '<td data-column="address" id="toggle-column" class="'+show_hide+'">' + product.Address + '</td>' +
+        '<td data-column="phone" id="toggle-column" class="'+show_hide+'">' + (product.Phone != 'No Data'? '0'+product.Phone : 'No Data') + '</td>' +
+        '<td data-column="createid" id="toggle-column" class="'+show_hide+'">' + product.ID_Create + '</td>' +
+        '<td data-column="createname" id="toggle-column" class="'+show_hide+'">' + product.Name_Create + '</td>' +         
+        '<td data-column="date" id="toggle-column" class="'+show_hide+'">' + product.Date_Create + '</td>' +
+        '<td data-column="time" id="toggle-column" class="'+show_hide+'">' + product.Time_Create + '</td>' +
+        '<td data-column="status"><button data-user-id="' + product.ID_user + '" data-user-status="' + product.User_Status + '" type="button" class="btn btn-'+(product.User_Status == 'True' ? 'success' : 'danger' )+' btn-rounded btn-fw btn-user-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
+        (product.User_Status == 'True' ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
+        '</button></td>' +
+        '<td>' +
+        (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-user" name="Update[]" value="' + product.ID_user + '"><i class="ti-pencil text-danger"></i></button>': '') +
+        (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-user" name="delete[]" value="' + product.ID_user + '"><i class="ti-trash text-danger"></i></button>': '') +
+        '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon change-pass-user" name="change[]" value="' + product.ID_user + '"><i class="ti-key text-danger"></i></button>' +
+        '</td>' +
+      '</tr>');
     }
     // Xử lý sự kiện khi người dùng nhấn nút Create
 
+
      // Xử lý sự kiện khi người dùng nhấn nút Import
-     $(document).on('click', '.importUser', function() {
+    $(document).on('click', '.importUser', function() {
       $('#ImportExcelModal').modal('show');
     });
 
    // event load file upload multiple
-  document.getElementById('file-input').addEventListener('change', function() {
-    var files = this.files;
-    var fileSizeLimit = 10 * 1024 * 1024; // 10MB
-    var validExtensions = ['.xlsx', '.xls']; // Các phần mở rộng tệp Excel hợp lệ
+    document.getElementById('file-input').addEventListener('change', function() {
+      var files = this.files;
+      var fileSizeLimit = 10 * 1024 * 1024; // 10MB
+      var validExtensions = ['.xlsx', '.xls']; // Các phần mở rộng tệp Excel hợp lệ
 
-    var fileSizeExceeded = false;
-    var totalFileSize = 0;
+      var fileSizeExceeded = false;
+      var totalFileSize = 0;
 
-    var fileDisplayInfo = document.getElementById('file-display-info');
-    fileDisplayInfo.innerHTML = '';
+      var fileDisplayInfo = document.getElementById('file-display-info');
+      fileDisplayInfo.innerHTML = '';
 
-    for (var i = 0; i < files.length; i++) {
-      var file = files[i];
+      for (var i = 0; i < files.length; i++) {
+        var file = files[i];
 
-      var fileExtension = '.' + file.name.split('.').pop(); // Lấy phần mở rộng của tệp
+        var fileExtension = '.' + file.name.split('.').pop(); // Lấy phần mở rộng của tệp
 
-      if (validExtensions.indexOf(fileExtension.toLowerCase()) === -1) {
-        // Kiểm tra xem phần mở rộng có hợp lệ không
-        document.getElementById('file-size-info').textContent = '';
-        Swal.fire({
-          icon: 'error',
-          title: 'Thông Báo Lỗi',
-          text: 'Chỉ cho phép tải lên tệp Excel (.xlsx, .xls)',
-        });
-        return;
-      }
-
-    var fileItem = document.createElement('div');
-    fileItem.classList.add('attach-custom');
-    fileItem.textContent = file.name + ' (' + formatFileSize(file.size) + ')';
-    fileDisplayInfo.appendChild(fileItem);
-
-    totalFileSize += file.size;
-
-    if (file.size > fileSizeLimit) {
-      fileSizeExceeded = true;
-      break;
-    }
-  }
-
-  if (fileSizeExceeded) {
-    document.getElementById('file-size-info').textContent = 'Kích thước tệp tin vượt quá giới hạn cho phép';
-  } else {
-    document.getElementById('file-size-info').textContent = 'Tổng kích thước tệp tin: ' + formatFileSize(totalFileSize);
-  }
-  });
-
-  function formatFileSize(size) {
-    var units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    var unitIndex = 0;
-
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
-
-    return size.toFixed(2) + ' ' + units[unitIndex];
-  }
-
-  $(document).on('click', '#Import-Excel-button', function() {
-    var files = document.getElementById('file-input').files;
-  
-    if (files.length > 0) {
-      var formData = new FormData();
-      formData.append('excel_file', files[0]);
-      
-      fetch('/import_excel_user/', {
-        method: 'POST',
-        body: formData
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          // alert('Import thành công!');
-          if (data.list_data){
-            var mail = data.list_data;
-            var err = ""
-            for(i=0; i<mail.length; i++){
-              err+= mail[i] +"\n";
-             }
-            Swal.fire({
-                  icon: 'success',
-                  title: 'Thông Báo',
-                  text: "User đã tồn tại:" + "\n" + err,
-            });
-          }
-          else{
-            Swal.fire({
-              icon: 'success',
-              title: 'Thông Báo',
-              text: 'Import thành công!',
-            });
-            setTimeout(function() {
-              window.location.reload();
-            }, 2000);
-          }         
-        } else {
+        if (validExtensions.indexOf(fileExtension.toLowerCase()) === -1) {
+          // Kiểm tra xem phần mở rộng có hợp lệ không
+          document.getElementById('file-size-info').textContent = '';
           Swal.fire({
             icon: 'error',
             title: 'Thông Báo Lỗi',
-            text: data.message,
+            text: 'Chỉ cho phép tải lên tệp Excel (.xlsx, .xls)',
           });
-          // alert('Lỗi: ' + data.message);
+          return;
         }
-      })
-      .catch(error => {
-        console.error('Lỗi:', error);
-      });
-    }
-  });
 
+      var fileItem = document.createElement('div');
+      fileItem.classList.add('attach-custom');
+      fileItem.textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+      fileDisplayInfo.appendChild(fileItem);
+
+      totalFileSize += file.size;
+
+      if (file.size > fileSizeLimit) {
+        fileSizeExceeded = true;
+        break;
+      }
+    }
+
+    if (fileSizeExceeded) {
+      document.getElementById('file-size-info').textContent = 'Kích thước tệp tin vượt quá giới hạn cho phép';
+    } else {
+      document.getElementById('file-size-info').textContent = 'Tổng kích thước tệp tin: ' + formatFileSize(totalFileSize);
+    }
+    });
+
+    function formatFileSize(size) {
+      var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      var unitIndex = 0;
+
+      while (size >= 1024 && unitIndex < units.length - 1) {
+        size /= 1024;
+        unitIndex++;
+      }
+
+      return size.toFixed(2) + ' ' + units[unitIndex];
+    }
+
+    $(document).on('click', '#Import-Excel-button', function() {
+      var files = document.getElementById('file-input').files;
+    
+      if (files.length > 0) {
+        var formData = new FormData();
+        formData.append('excel_file', files[0]);
+        
+        fetch('/import_excel_user/', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // alert('Import thành công!');
+            if (data.list_data){
+              var mail = data.list_data;
+              var err = ""
+              for(i=0; i<mail.length; i++){
+                err+= mail[i] +"\n";
+              }
+              Swal.fire({
+                    icon: 'success',
+                    title: 'Thông Báo',
+                    text: "User đã tồn tại:" + "\n" + err,
+              });
+            }
+            else{
+              Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                text: 'Import thành công!',
+              });
+              setTimeout(function() {
+                window.location.reload();
+              }, 2000);
+            }         
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Thông Báo Lỗi',
+              text: data.message,
+            });
+            // alert('Lỗi: ' + data.message);
+          }
+        })
+        .catch(error => {
+          console.error('Lỗi:', error);
+        });
+      }
+    });
+     // Xử lý sự kiện khi người dùng nhấn nút Import
   
+
     // Xử lý sự kiện khi người dùng nhấn nút Update
     $(document).on('click', '.update-user', function() {
       $('#UpdateUserModal').modal('show');
@@ -6971,7 +7427,6 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
         });
       }
     });
-    
 
     function update_user(ID_user , FullName , Phone , Address , Birthday , Jobtitle , User_Type , User_Status, Company_ID){
       var status_new = (User_Status.toLowerCase() == "true" ? "true" : "false")
@@ -7025,6 +7480,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
 
         // Lặp qua từng phần tử tr
         productRows.forEach(function(row) {
+          var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
           // Lấy giá trị của thuộc tính data-product-id
           var userID = row.getAttribute('data-product-id');
 
@@ -7044,7 +7500,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
             CompanyElement.textContent =  User_Data.Company_Name;
 
             var roleElement = row.querySelector('[data-column="utype"]');
-            var htmlRole = '<button data-user-id="' + User_Data.ID_user + '" data-type-value="' + User_Data.User_Type + '" type="button" class="btn btn-'+(User_Data.User_Type == '0' ? 'danger' : (User_Data.User_Type == '1' ? 'warning' : 'primary' ))+' btn-rounded btn-fw btn-user-role">'+  
+            var htmlRole = '<button data-user-id="' + User_Data.ID_user + '" data-type-value="' + User_Data.User_Type + '" type="button" class="btn btn-'+(User_Data.User_Type == '0' ? 'danger' : (User_Data.User_Type == '1' ? 'warning' : 'primary' ))+' btn-rounded btn-fw btn-user-role '+(isEditTrue ? '' : 'admin-button')+'">'+  
             (User_Data.User_Type == '0' ? 'Administrator' :  (User_Data.User_Type == '1' ? 'Moderator' : 'Member'))+
             '</button>';
             var buttonRoleElement = roleElement.querySelector('button');
@@ -7055,7 +7511,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
 
 
             var statusElement = row.querySelector('[data-column="status"]');
-            var htmlStatus = '<button data-user-id="' + User_Data.ID_user + '" data-user-status="' + status_new + '" type="button" class="btn btn-'+(status_new == 'true' ? 'success' : 'danger' )+' btn-rounded btn-fw btn-user-status">'+  
+            var htmlStatus = '<button data-user-id="' + User_Data.ID_user + '" data-user-status="' + status_new + '" type="button" class="btn btn-'+(status_new == 'true' ? 'success' : 'danger' )+' btn-rounded btn-fw btn-user-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
             (status_new == 'true' ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
             '</button>';
             var buttonStatusElement = statusElement.querySelector('button');
@@ -7066,6 +7522,7 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
           }
         });
     }
+
     // Xử lý sự kiện khi người dùng nhấn nút Update   
     $(document).on('click', '#showall', function() {
       var show_hide = document.querySelectorAll('#toggle-column');
@@ -7097,7 +7554,9 @@ if (window.location.pathname === '/danh-sach-nguoi-dung/') {
 //########### Danh Sách Comment Start ###########  
 if (window.location.pathname === '/danh-sach-binh-luan/') {
   var currentPage = 1;
-  var itemsPerPage = 10;
+  var itemsPerPage = 5;
+  var IsAdmin = '';
+  var Dash_Role_Data =[];
 
   $.ajax({
     url: '/role-binh-luan/',
@@ -7119,7 +7578,6 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
     }
   });
 
-
   // load data product
   function Load_Comment(){
     $.ajax({
@@ -7137,8 +7595,11 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
               status: $('.db-status').val().toLowerCase().trim(),
             };
             // Load_data(context.companys, context.tgroups, context.users)
-            display_Comment(context.data, currentPage, itemsPerPage,filters, context.data)
-            auth_role();
+            // display_Comment(context.data, currentPage, itemsPerPage,filters, context.data)
+            auth_role(context.data, currentPage, itemsPerPage,filters, context.data);
+            setTimeout(function() {
+              $('#spinnersModal').modal('hide');
+            }, 1000);
       },
       error: function(rs, e) {
           alert('Oops! something went wrong test');
@@ -7147,43 +7608,16 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
   }
 
     //authorization page
-    function auth_role(){
+    function auth_role(data, currentPage, itemsPerPage,filters, data){
       $.ajax({
         url: '/phan-quyen-binh-luan/',
         dataType: 'json',
         method: 'POST',
         success: function(response) {
           if (response.success) {
-            var buttonEdit = document.querySelectorAll('.update-comment');
-            var buttonDel = document.querySelectorAll('.delete-comment');
-            var buttonSta = document.querySelectorAll('.btn-comment-status');
-            if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
-              buttonEdit.forEach(function(edit){
-                edit.classList.remove('disable-button');
-              }); 
-              buttonSta.forEach(function(sta){
-                sta.classList.remove('admin-button');
-              });        
-            }
-            else{
-              buttonEdit.forEach(function(edit){
-                edit.classList.add('disable-button');
-              });    
-              buttonSta.forEach(function(sta){
-                sta.classList.add('admin-button');
-              });          
-            }
-            //Role Delete User
-            if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
-              buttonDel.forEach(function(del){
-                del.classList.remove('disable-button');
-              });
-            }
-            else{
-              buttonDel.forEach(function(edit){
-                del.classList.add('disable-button');
-              }); 
-            }
+            IsAdmin = response.IsAdmin;  
+            Dash_Role_Data = response.Roles;
+            display_Comment(data, currentPage, itemsPerPage,filters, data)
           } else {
             Swal.fire({
               icon: 'error',
@@ -7201,10 +7635,66 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
         }
       });
     }
+    // function auth_role(){
+    //   $.ajax({
+    //     url: '/phan-quyen-binh-luan/',
+    //     dataType: 'json',
+    //     method: 'POST',
+    //     success: function(response) {
+    //       if (response.success) {
+    //         var buttonEdit = document.querySelectorAll('.update-comment');
+    //         var buttonDel = document.querySelectorAll('.delete-comment');
+    //         var buttonSta = document.querySelectorAll('.btn-comment-status');
+    //         if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
+    //           buttonEdit.forEach(function(edit){
+    //             edit.classList.remove('disable-button');
+    //           }); 
+    //           buttonSta.forEach(function(sta){
+    //             sta.classList.remove('admin-button');
+    //           });        
+    //         }
+    //         else{
+    //           buttonEdit.forEach(function(edit){
+    //             edit.classList.add('disable-button');
+    //           });    
+    //           buttonSta.forEach(function(sta){
+    //             sta.classList.add('admin-button');
+    //           });          
+    //         }
+    //         //Role Delete User
+    //         if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
+    //           buttonDel.forEach(function(del){
+    //             del.classList.remove('disable-button');
+    //           });
+    //         }
+    //         else{
+    //           buttonDel.forEach(function(edit){
+    //             del.classList.add('disable-button');
+    //           }); 
+    //         }
+    //       } else {
+    //         Swal.fire({
+    //           icon: 'error',
+    //           title: 'Oops...',
+    //           text: response.message,
+    //         });
+    //       }
+    //     },
+    //     error: function(response) {
+    //       Swal.fire({
+    //         icon: 'error',
+    //         title: 'Thông Báo Lỗi',
+    //         text: response.message,
+    //       });
+    //     }
+    //   });
+    // }
 
     // Load data
+    
     function display_Comment(products, currentPage, itemsPerPage, filters, data_temp) {
-
+      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+      var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[2].Status === 'True';
       $('#product-table tbody').empty();
       var filteredProducts = products.filter(function(product) {
           var IDMatch = filters.id === '' || product.Comment_ID.toString().toLowerCase().includes(filters.id);
@@ -7227,21 +7717,21 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
 
       for (var i = (currentPage - 1) * itemsPerPage; i < currentPage * itemsPerPage && i < products.length; i++) {
         var product = products[i];
-      
+        var des = product.Comment_Desc.replace(/src=["']file:\/\/\/[^"']*["']/g, '');
         $('#product-table tbody').append('<tr data-product-id="'+product.Comment_ID+'">' +
           '<td data-column="id">#' + product.Comment_ID + '</td>' +           
           '<td data-column="ticketid">#' + product.Ticket_ID + '</td>' +           
-          '<td data-column="desc" class="commentDesc">' + product.Comment_Desc + '</td>' +           
+          '<td data-column="desc" class="commentDesc">' + des + '</td>' +           
           '<td data-column="userid">' + product.ID_user + '</td>' +           
           '<td data-column="username">' + product.Comment_User_Name + '</td>' +        
           '<td data-column="date">' + product.Comment_Date + '</td>' +
           '<td data-column="time">' + product.Comment_Time + '</td>' +
-          '<td data-column="status"><button data-comment-id="' + product.Comment_ID + '" data-comment-status="' + product.Comment_Status + '" type="button" class="btn btn-'+(product.Comment_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-comment-status admin-button">'+  
+          '<td data-column="status"><button data-comment-id="' + product.Comment_ID + '" data-comment-status="' + product.Comment_Status + '" type="button" class="btn btn-'+(product.Comment_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-comment-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
           (product.Comment_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
           '</button></td>' +
           '<td>' +
-          '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-comment disable-button" name="Update[]" value="' + product.Comment_ID + '"><i class="ti-pencil text-danger"></i></button>' +
-          '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-comment disable-button" name="delete[]" value="' + product.Comment_ID + '"><i class="ti-trash text-danger"></i></button>' +
+          (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-comment" name="Update[]" value="' + product.Comment_ID + '"><i class="ti-pencil text-danger"></i></button>': '') +
+          (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-comment" name="delete[]" value="' + product.Comment_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
           '</td>' +
         '</tr>');
       }
@@ -7277,8 +7767,7 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
           event.preventDefault();
     
           var page = $(this).data('page');
-          display_Comment(products, page, itemsPerPage, filters);
-          auth_role()
+          display_Comment(products, page, itemsPerPage, filters, data_temp);
       });
       
       // Handle First and Last button click event - start
@@ -7286,26 +7775,22 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
         event.preventDefault();
         
         if (currentPage > 1) {
-          display_Comment(products, 1, itemsPerPage, filters);
-          auth_role()
+          display_Comment(products, 1, itemsPerPage, filters, data_temp);
         }
         else
         {
-          display_Comment(products, currentPage, itemsPerPage, filters);
-          auth_role()
+          display_Comment(products, currentPage, itemsPerPage, filters, data_temp);
         }
       });
       pagination.find('.page-item:last-child .page-link').click(function(event) {
         event.preventDefault();
         
         if (currentPage < numPages) {
-          display_Comment(products, numPages, itemsPerPage, filters);
-          auth_role()
+          display_Comment(products, numPages, itemsPerPage, filters, data_temp);
         }
         else
         {
-          display_Comment(products, currentPage, itemsPerPage, filters);
-          auth_role()
+          display_Comment(products, currentPage, itemsPerPage, filters, data_temp);
         }
       });
       // Handle First and Last button click event - end
@@ -7374,7 +7859,9 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
       //xử lý sự kiện update status
 
       // Search data in textbox table - start     
-      $('#search-CommentID,#search-TicketID,#search-UserID,#search-Username,#search-CommentDate,#search-CommentTime ,.db-status,#search-CommentDesc').on('keydown', function(event) {
+      $('#search-CommentID,#search-TicketID,#search-UserID,#search-Username,#search-CommentDate,#search-CommentTime ,.db-status,#search-CommentDesc')
+      .off('keydown')
+      .on('keydown', function(event) {
         if (event.keyCode === 13) { // Nếu nhấn phím Enter
             event.preventDefault(); // Tránh việc reload lại trang
             $('#search-CommentID').blur(); // Mất focus khỏi textbox tìm kiếm
@@ -7401,7 +7888,6 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
             };    
             if(data_temp){
               display_Comment(data_temp, currentPage, itemsPerPage, filters, data_temp);
-              auth_role()
             }      
         }
       });
@@ -7409,7 +7895,7 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
       // Search data in textbox table - end
       
       //clear data search
-    $(document).on('click', '.btn-remove-filter', function() {
+      $(document).off('click', '.btn-remove-filter').on('click', '.btn-remove-filter', function() {
       $('#search-CommentID').val(''),
       $('#search-TicketID').val(''),
       $('#search-CommentDesc').val(''),
@@ -7447,7 +7933,6 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
 
       if(data_temp){
         display_Comment(data_temp, currentPage, itemsPerPage, filters, data_temp);
-        auth_role()
       }  
     }
     //clear data search
@@ -7684,7 +8169,6 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
       }
     });
     
-
     function update_comment_desc(CommentID, CommentDesc){
       $.ajax({
             url: '/data-update-comment-desc/',
@@ -7696,6 +8180,7 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
             },
             success: function(response) {
               if (response.success) {
+                update_info_comment(response)
                 $('#UpdateCommentModal').modal('hide');
                   Swal.fire({
                     icon: 'success',
@@ -7720,6 +8205,23 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
             }
           });
     }
+
+    function update_info_comment(Comment_Data){
+      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+      // Lấy danh sách tất cả các phần tử tr có thuộc tính data-product-id
+      var productRows = document.querySelectorAll('tr[data-product-id]');
+
+      // Lặp qua từng phần tử tr
+      productRows.forEach(function(row) {
+        // Lấy giá trị của thuộc tính data-product-id
+        var CommnetID = row.getAttribute('data-product-id');
+
+        if (CommnetID === Comment_Data.Comment_ID.toString()) {
+          var DesElement = row.querySelector('[data-column="desc"]');
+          DesElement.innerHTML =  Comment_Data.Comment_Desc;
+        }
+      });
+  }
    
     $(document).on('click', '#desc-toggle', function() {
       var contentRows = document.querySelectorAll('tbody td[data-column="desc"]');
@@ -8216,7 +8718,10 @@ document.getElementById('file-input').addEventListener('change', function() {
       break;
     }
   }
-  
+  if(files.length > 0){
+    document.getElementById('file-size-info').hidden = false; 
+    document.getElementById('file-display-info').hidden = false; 
+  }
 
   if (fileSizeExceeded) {
     document.getElementById('file-size-info').textContent = 'Kích thước tệp tin vượt quá giới hạn cho phép';
@@ -8279,8 +8784,20 @@ function uploadFiles_Data(files, ticketID) {
               'ticketID'   : ticketID,
             },
             success: function(response) {
-              if (response.success) {     
+              if (response.success) {    
+                document.getElementById('upload-file-button').hidden = true; 
+                document.getElementById('file-size-info').hidden = true; 
+                document.getElementById('file-display-info').hidden = true; 
                 Add_Files_Data(response.name);
+                var files_attach = document.querySelectorAll('.attachs-file');
+                if(files_attach.length > 1){
+                  var download = document.querySelector('#down-files-button');
+                  if(download == null){
+                    $('#list-files').append(
+                      '<button type="button" class="btn btn-outline-primary btn-fw btn-MD" id="down-files-button"><i class="ti-cloud-down btn-icon-prepen"></i> LƯU TẤT CẢ FILE</button>'
+                    );
+                  }
+                }
               } else {
                 Swal.fire({
                   icon: 'error',
@@ -8329,11 +8846,15 @@ function Add_Files_Data(name){
 //upload files
 
 //download file all
-if (window.location.pathname.startsWith('/chi-tiet-yeu-cau/')) {
-document.getElementById('down-files-button').addEventListener('click', function() {
+// if (window.location.pathname.startsWith('/chi-tiet-yeu-cau/')) {
+// document.getElementById('down-files-button').addEventListener('click', function() {
+//   download_all_file_view();
+// });
+// }
+
+$(document).on('click', '#down-files-button', function() {
   download_all_file_view();
 });
-}
 //event load file upload multiple 
 // Hàm tạo và tải xuống file zip
 function download_all_file_view() {
@@ -8467,8 +8988,7 @@ if (window.location.pathname.startsWith('/dashboard/')) {
             per_data.classList.add('disable-report');
           }
           // }     
-        });   
-
+        });           
     },
     error: function(rs, e) {
         alert('Oops! something went wrong Dashboard');
@@ -8714,6 +9234,9 @@ if (window.location.pathname.startsWith('/dashboard/')) {
 if (window.location.pathname === '/danh-sach-nhom-quyen/') {
   var currentPage = 1;
   var itemsPerPage = 10;
+  var IsAdmin = '';
+  var Dash_Role_Data =[];
+
   //Check Role
   $.ajax({
     url: '/role-nhom-quyen/',
@@ -8792,9 +9315,11 @@ if (window.location.pathname === '/danh-sach-nhom-quyen/') {
               status: $('.db-status').val().toLowerCase().trim(),
             };
             // Load_data(context.companys, context.tgroups, context.users)
-            display_Group_Role(context.data, currentPage, itemsPerPage,filters, context.data);
-            auth_role();
-          
+            // display_Group_Role(context.data, currentPage, itemsPerPage,filters, context.data);
+            auth_role(context.data, currentPage, itemsPerPage,filters, context.data);
+            setTimeout(function() {
+              $('#spinnersModal').modal('hide');
+            }, 1000);
       },
       error: function(rs, e) {
           alert('Oops! something went wrong');
@@ -8970,52 +9495,16 @@ function formatFileSize(size) {
   return size.toFixed(2) + ' ' + units[unitIndex];
 }
   //authorization page
-  function auth_role(){
+  function auth_role(data, currentPage, itemsPerPage,filters, data){
     $.ajax({
       url: '/phan-quyen-nhom-quyen/',
       dataType: 'json',
       method: 'POST',
       success: function(response) {
         if (response.success) {
-          var buttonAdd = document.querySelector('#addGroupRole');
-          var buttonEdit = document.querySelectorAll('.update-group');
-          var buttonDel = document.querySelectorAll('.delete-group');
-          var buttonSta = document.querySelectorAll('.btn-grouprole-status');
-          //Role Add New User
-          if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
-            buttonAdd.classList.remove('disable-button');
-          }
-          else{
-            buttonAdd.classList.add('disable-button');
-          }
-          //Role Update User
-          if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
-            buttonEdit.forEach(function(edit){
-              edit.classList.remove('disable-button');
-            });  
-            buttonSta.forEach(function(sta){
-              sta.classList.remove('admin-button');
-            });      
-          }
-          else{
-            buttonEdit.forEach(function(edit){
-              edit.classList.add('disable-button');
-            });   
-            buttonSta.forEach(function(sta){
-              sta.classList.add('admin-button');
-            });          
-          }
-          //Role Delete User
-          if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
-            buttonDel.forEach(function(del){
-              del.classList.remove('disable-button');
-            });
-          }
-          else{
-            buttonDel.forEach(function(del){
-              del.classList.add('disable-button');
-            }); 
-          }     
+          IsAdmin = response.IsAdmin;  
+          Dash_Role_Data = response.Roles;
+          display_Group_Role(data, currentPage, itemsPerPage,filters, data);
         } else {
           Swal.fire({
             icon: 'error',
@@ -9033,10 +9522,86 @@ function formatFileSize(size) {
       }
     });
   }
+  // function auth_role(){
+  //   $.ajax({
+  //     url: '/phan-quyen-nhom-quyen/',
+  //     dataType: 'json',
+  //     method: 'POST',
+  //     success: function(response) {
+  //       if (response.success) {
+  //         var buttonAdd = document.querySelector('#addGroupRole');
+  //         var buttonEdit = document.querySelectorAll('.update-group');
+  //         var buttonDel = document.querySelectorAll('.delete-group');
+  //         var buttonSta = document.querySelectorAll('.btn-grouprole-status');
+  //         //Role Add New User
+  //         if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
+  //           buttonAdd.classList.remove('disable-button');
+  //         }
+  //         else{
+  //           buttonAdd.classList.add('disable-button');
+  //         }
+  //         //Role Update User
+  //         if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
+  //           buttonEdit.forEach(function(edit){
+  //             edit.classList.remove('disable-button');
+  //           });  
+  //           buttonSta.forEach(function(sta){
+  //             sta.classList.remove('admin-button');
+  //           });      
+  //         }
+  //         else{
+  //           buttonEdit.forEach(function(edit){
+  //             edit.classList.add('disable-button');
+  //           });   
+  //           buttonSta.forEach(function(sta){
+  //             sta.classList.add('admin-button');
+  //           });          
+  //         }
+  //         //Role Delete User
+  //         if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
+  //           buttonDel.forEach(function(del){
+  //             del.classList.remove('disable-button');
+  //           });
+  //         }
+  //         else{
+  //           buttonDel.forEach(function(del){
+  //             del.classList.add('disable-button');
+  //           }); 
+  //         }     
+  //       } else {
+  //         Swal.fire({
+  //           icon: 'error',
+  //           title: 'Oops...',
+  //           text: response.message,
+  //         });
+  //       }
+  //     },
+  //     error: function(response) {
+  //       Swal.fire({
+  //         icon: 'error',
+  //         title: 'Thông Báo Lỗi',
+  //         text: response.message,
+  //       });
+  //     }
+  //   });
+  // }
 
     // Load data
-      function display_Group_Role(products, currentPage, itemsPerPage, filters, data_temp) {
-
+    
+    function display_Group_Role(products, currentPage, itemsPerPage, filters, data_temp) {
+      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+      var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+      var isAddTrue = IsAdmin === true   ||  Dash_Role_Data[2].Status === 'True';
+      if (isAddTrue == true){
+        var addGroupRoleButton = document.querySelector('.addGroupRole');
+        if (addGroupRoleButton == null){
+          $('.top-title div').append(
+            '<button type="button" class="btn btn-danger btn-icon-text addGroupRole" id="addGroupRole">' +
+            '<i class="ti-files btn-icon-prepend"></i>TẠO NHÓM QUYỀN' +
+            '</button>'
+          );
+        } 
+      }
         $('#product-table tbody').empty();
         var filteredProducts = products.filter(function(product) {
             var IDMatch = filters.id === '' || product.Role_Group_ID.toString().toLowerCase().includes(filters.id);
@@ -9066,12 +9631,12 @@ function formatFileSize(size) {
             '<td data-column="username">' + product.Role_Group_CreateBy + '</td>' +         
             '<td data-column="date">' + product.Role_Group_Date + '</td>' +
             '<td data-column="time">' + product.Role_Group_Time + '</td>' +
-            '<td data-column="status"><button data-group-id="' + product.Role_Group_ID + '" data-group-status="' + product.Role_Group_Status + '" type="button" class="btn btn-'+(product.Role_Group_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-grouprole-status admin-button">'+  
+            '<td data-column="status"><button data-group-id="' + product.Role_Group_ID + '" data-group-status="' + product.Role_Group_Status + '" type="button" class="btn btn-'+(product.Role_Group_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-grouprole-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
             (product.Role_Group_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
             '</button></td>' +
             '<td>' +
-            '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-group disable-button" name="Update[]" value="' + product.Role_Group_ID + '"><i class="ti-pencil text-danger"></i></button>' +
-            '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-group disable-button" name="delete[]" value="' + product.Role_Group_ID + '"><i class="ti-trash text-danger"></i></button>' +
+            (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-group" name="Update[]" value="' + product.Role_Group_ID + '"><i class="ti-pencil text-danger"></i></button>': '') +
+            (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-group" name="delete[]" value="' + product.Role_Group_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
             '</td>' +
           '</tr>');
         }
@@ -9107,8 +9672,7 @@ function formatFileSize(size) {
             event.preventDefault();
       
             var page = $(this).data('page');
-            display_Group_Role(products, page, itemsPerPage, filters);
-            auth_role();
+            display_Group_Role(products, page, itemsPerPage, filters, data_temp);
         });
         
         // Handle First and Last button click event - start
@@ -9116,26 +9680,22 @@ function formatFileSize(size) {
           event.preventDefault();
           
           if (currentPage > 1) {
-            display_Group_Role(products, 1, itemsPerPage, filters);
-            auth_role();
+            display_Group_Role(products, 1, itemsPerPage, filters, data_temp);
           }
           else
           {
-            display_Group_Role(products, currentPage, itemsPerPage, filters);
-            auth_role();
+            display_Group_Role(products, currentPage, itemsPerPage, filters, data_temp);
           }
         });
         pagination.find('.page-item:last-child .page-link').click(function(event) {
           event.preventDefault();
           
           if (currentPage < numPages) {
-            display_Group_Role(products, numPages, itemsPerPage, filters);
-            auth_role();
+            display_Group_Role(products, numPages, itemsPerPage, filters, data_temp);
           }
           else
           {
-            display_Group_Role(products, currentPage, itemsPerPage, filters);
-            auth_role();
+            display_Group_Role(products, currentPage, itemsPerPage, filters, data_temp);
           }
         });
         // Handle First and Last button click event - end
@@ -9203,7 +9763,9 @@ function formatFileSize(size) {
         //xử lý sự kiện update status
 
         // Search data in textbox table - start
-        $('#search-GroupRoleID, #search-GroupRoleName,#search-MenuName,#search-MenuAddress, #search-GroupRoleCreate,#search-GroupRoleDate,#search-GroupRoleTime,.db-status').on('keydown', function(event) {
+        $('#search-GroupRoleID, #search-GroupRoleName,#search-MenuName,#search-MenuAddress, #search-GroupRoleCreate,#search-GroupRoleDate,#search-GroupRoleTime,.db-status')
+        .off('keydown')
+        .on('keydown', function(event) {
           if (event.keyCode === 13) { // Nếu nhấn phím Enter
               event.preventDefault(); // Tránh việc reload lại trang
               $('#search-GroupRoleID').blur(); // Mất focus khỏi textbox tìm kiếm
@@ -9230,12 +9792,11 @@ function formatFileSize(size) {
               };
               if(data_temp){
                 display_Group_Role(data_temp, currentPage, itemsPerPage, filters, data_temp);
-                auth_role();
               }
           }
         });
 
-        $(document).on('click', '.btn-remove-filter', function() {
+        $(document).off('click', '.btn-remove-filter').on('click', '.btn-remove-filter', function() {
           $('#search-GroupRoleID').val('');
           $('#search-GroupRoleName').val('');
           $('#search-MenuName').val('');
@@ -9258,9 +9819,20 @@ function formatFileSize(size) {
                 formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0];
               }
               // Lấy giá trị của filters
+              // var filters = {
+              //   id: $('#search-GroupRoleID').val().toLowerCase().trim(),
+              //   group: $('#search-GroupRoleName').val().toLowerCase().trim(),
+              //   create: $('#search-GroupRoleCreate').val().toLowerCase().trim(),
+              //   // date: formattedDate,
+              //   date: $('#search-GroupRoleDate').val().toLowerCase().trim(),
+              //   time: $('#search-GroupRoleTime').val().toLowerCase().trim(),
+              //   status: $('.db-status').val().toLowerCase().trim(),
+              // };
               var filters = {
                 id: $('#search-GroupRoleID').val().toLowerCase().trim(),
                 group: $('#search-GroupRoleName').val().toLowerCase().trim(),
+                menu: $('#search-MenuName').val().toLowerCase().trim(),
+                address: $('#search-MenuAddress').val().toLowerCase().trim(),
                 create: $('#search-GroupRoleCreate').val().toLowerCase().trim(),
                 date: formattedDate,
                 time: $('#search-GroupRoleTime').val().toLowerCase().trim(),
@@ -9268,7 +9840,6 @@ function formatFileSize(size) {
               };
               if(data_temp){
                 display_Group_Role(data_temp, currentPage, itemsPerPage, filters, data_temp);
-                auth_role();
               }
         }
         // Search data in textbox table - end
@@ -9364,7 +9935,10 @@ function formatFileSize(size) {
           //function button status update ticket - end  
 
           function add_row_group(product){
-            $('#product-table tbody').prepend('<tr data-product-id="'+product.Role_Group_ID+'">' +
+            var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+            var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+
+            $('#product-table tbody').append('<tr data-product-id="'+product.Role_Group_ID+'">' +
             '<td data-column="id">#' + product.Role_Group_ID + '</td>' +           
             '<td data-column="group">' + product.Role_Group_Name + '</td>' +
             '<td data-column="menu">' + product.Menu_Name + '</td>' +
@@ -9372,12 +9946,12 @@ function formatFileSize(size) {
             '<td data-column="username">' + product.Role_Group_CreateBy + '</td>' +         
             '<td data-column="date">' + product.Role_Group_Date + '</td>' +
             '<td data-column="time">' + product.Role_Group_Time + '</td>' +
-            '<td data-column="status"><button data-group-id="' + product.Role_Group_ID + '" data-group-status="' + product.Role_Group_Status + '" type="button" class="btn btn-'+(product.Role_Group_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-grouprole-status admin-button">'+  
+            '<td data-column="status"><button data-group-id="' + product.Role_Group_ID + '" data-group-status="' + product.Role_Group_Status + '" type="button" class="btn btn-'+(product.Role_Group_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-grouprole-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
             (product.Role_Group_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
             '</button></td>' +
             '<td>' +
-            '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-group disable-button" name="Update[]" value="' + product.Role_Group_ID + '"><i class="ti-pencil text-danger"></i></button>' +
-            '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-group disable-button" name="delete[]" value="' + product.Role_Group_ID + '"><i class="ti-trash text-danger"></i></button>' +
+            (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-group" name="Update[]" value="' + product.Role_Group_ID + '"><i class="ti-pencil text-danger"></i></button>': '') +
+            (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-group" name="delete[]" value="' + product.Role_Group_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
             '</td>' +
           '</tr>');
           var list = {
@@ -9466,7 +10040,7 @@ function formatFileSize(size) {
     // Xử lý sự kiện khi người dùng chọn checkbox và nhấn nút Delete
 
     // Xử lý sự kiện khi người dùng nhấn nút Create
-      $('.addGroupRole').click(function(event) {
+    $(document).on('click', '.addGroupRole', function() {
         Load_Menu(function(data) {
           var input_menu = document.querySelector('#input_grouprole_menu');
           var option = '';
@@ -9477,13 +10051,25 @@ function formatFileSize(size) {
           $('#CreateGroupRoleModal').modal('show');
         });     
       });
-      $('#create-grouprole-button').click(function(event) {
+
+      $(document).on('click', '#create-grouprole-button', function() {
         event.preventDefault(); // Prevent default form submission      
         var Group_Name = document.querySelector('#input_group_name').value;
         var MenuID = document.querySelector('#input_grouprole_menu').value;
         var Menu_Add = document.querySelector('#input_group_add').value;
-        create_group_role(Group_Name,MenuID,Menu_Add);
+        if(Group_Name !== '' || MenuID !== '' || Menu_Add !== ''){
+          Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: 'Nhập đầy đủ trường có dấu *',
+          });
+        }
+        else{
+          create_group_role(Group_Name,MenuID,Menu_Add);
+        }
+        
       });
+      
       function create_group_role(Group_Name,MenuID,Menu_Add){
         $.ajax({
           url: '/tao-nhom-quyen/',
@@ -9497,7 +10083,6 @@ function formatFileSize(size) {
           success: function(response) {
             if (response.success) {     
               add_row_group(response, product);
-              auth_role();
               $('#CreateGroupRoleModal').modal('hide');           
               Swal.fire({
                 icon: 'success',
@@ -9523,7 +10108,7 @@ function formatFileSize(size) {
         });
       }
      
-      }
+  }
     // Xử lý sự kiện khi người dùng nhấn nút Create
 
     // Xử lý sự kiện khi người dùng nhấn nút Update
@@ -9664,6 +10249,7 @@ function formatFileSize(size) {
     }
 
     function update_info_group(Group_Data,status_new){
+      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
         // Lấy danh sách tất cả các phần tử tr có thuộc tính data-product-id
         var productRows = document.querySelectorAll('tr[data-product-id]');
 
@@ -9683,7 +10269,7 @@ function formatFileSize(size) {
             menuElement.textContent =  Group_Data.Menu_Name;
             addElement.textContent =  Group_Data.Role_Group_Address ? Group_Data.Role_Group_Address : 'No Data' ;
 
-            var htmlStatus = '<button data-group-id="' + Group_Data.Role_Group_ID + '" data-group-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-grouprole-status">'+  
+            var htmlStatus = '<button data-group-id="' + Group_Data.Role_Group_ID + '" data-group-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-grouprole-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
             (status_new === "true" ? 'Kích Hoạt' : 'Không Kích Hoạt' ) + 
             '</button>';
             var buttonStatusElement = statusElement.querySelector('button');
@@ -9728,6 +10314,9 @@ function formatFileSize(size) {
 if (window.location.pathname === '/danh-sach-quyen/') {
   var currentPage = 1;
   var itemsPerPage = 10;
+  var IsAdmin = '';
+  var Dash_Role_Data =[];
+
   //Check Role
   $.ajax({
     url: '/role-quyen/',
@@ -9971,9 +10560,12 @@ if (window.location.pathname === '/danh-sach-quyen/') {
               status: $('.db-status').val().toLowerCase().trim(),
             };
             // Load_data(context.companys, context.tgroups, context.users)
-            display_Role(context.data, currentPage, itemsPerPage,filters, context.data);
+            // display_Role(context.data, currentPage, itemsPerPage,filters, context.data); 
+            auth_role(context.data, currentPage, itemsPerPage,filters, context.data);
             group_role = context.groups;
-            auth_role();
+            setTimeout(function() {
+              $('#spinnersModal').modal('hide');
+            }, 1000);
       },
       error: function(rs, e) {
           alert('Oops! something went wrong');
@@ -9981,53 +10573,16 @@ if (window.location.pathname === '/danh-sach-quyen/') {
     });
   }
     //authorization page
-    function auth_role(){
+    function auth_role(data, currentPage, itemsPerPage,filters, data){
       $.ajax({
         url: '/phan-quyen-quyen/',
         dataType: 'json',
         method: 'POST',
         success: function(response) {
           if (response.success) {
-            var buttonAdd = document.querySelector('#addRole');
-            var buttonEdit = document.querySelectorAll('.update-group');
-            var buttonDel = document.querySelectorAll('.delete-group');
-            var buttonSta = document.querySelectorAll('.btn-role-status');
-            //Role Add New User
-            if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
-              buttonAdd.classList.remove('disable-button');
-            }
-            else{
-              buttonAdd.classList.add('disable-button');
-            }
-            //Role Update User
-            if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
-              buttonEdit.forEach(function(edit){
-                edit.classList.remove('disable-button');
-              });    
-              buttonSta.forEach(function(sta){
-                sta.classList.remove('admin-button');
-              });    
-            }
-            else{
-              buttonEdit.forEach(function(edit){
-                edit.classList.add('disable-button');
-              }); 
-              buttonSta.forEach(function(sta){
-                sta.classList.add('admin-button');
-              });            
-            }
-            //Role Delete User
-            if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
-              buttonDel.forEach(function(edit){
-                edit.classList.remove('disable-button');
-              });
-            }
-            else{
-              buttonDel.forEach(function(edit){
-                edit.classList.add('disable-button');
-              }); 
-            }
-            
+            IsAdmin = response.IsAdmin;  
+            Dash_Role_Data = response.Roles;
+            display_Role(data, currentPage, itemsPerPage,filters, data);       
           } else {
             Swal.fire({
               icon: 'error',
@@ -10045,10 +10600,87 @@ if (window.location.pathname === '/danh-sach-quyen/') {
         }
       });
     }
+    // function auth_role(){
+    //   $.ajax({
+    //     url: '/phan-quyen-quyen/',
+    //     dataType: 'json',
+    //     method: 'POST',
+    //     success: function(response) {
+    //       if (response.success) {
+    //         var buttonAdd = document.querySelector('#addRole');
+    //         var buttonEdit = document.querySelectorAll('.update-group');
+    //         var buttonDel = document.querySelectorAll('.delete-group');
+    //         var buttonSta = document.querySelectorAll('.btn-role-status');
+    //         //Role Add New User
+    //         if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
+    //           buttonAdd.classList.remove('disable-button');
+    //         }
+    //         else{
+    //           buttonAdd.classList.add('disable-button');
+    //         }
+    //         //Role Update User
+    //         if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
+    //           buttonEdit.forEach(function(edit){
+    //             edit.classList.remove('disable-button');
+    //           });    
+    //           buttonSta.forEach(function(sta){
+    //             sta.classList.remove('admin-button');
+    //           });    
+    //         }
+    //         else{
+    //           buttonEdit.forEach(function(edit){
+    //             edit.classList.add('disable-button');
+    //           }); 
+    //           buttonSta.forEach(function(sta){
+    //             sta.classList.add('admin-button');
+    //           });            
+    //         }
+    //         //Role Delete User
+    //         if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
+    //           buttonDel.forEach(function(edit){
+    //             edit.classList.remove('disable-button');
+    //           });
+    //         }
+    //         else{
+    //           buttonDel.forEach(function(edit){
+    //             edit.classList.add('disable-button');
+    //           }); 
+    //         }
+            
+    //       } else {
+    //         Swal.fire({
+    //           icon: 'error',
+    //           title: 'Oops...',
+    //           text: response.message,
+    //         });
+    //       }
+    //     },
+    //     error: function(response) {
+    //       Swal.fire({
+    //         icon: 'error',
+    //         title: 'Thông Báo Lỗi',
+    //         text: response.message,
+    //       });
+    //     }
+    //   });
+    // }
 
     // Load data
-      function display_Role(products, currentPage, itemsPerPage, filters, data_temp) {
-
+    
+    function display_Role(products, currentPage, itemsPerPage, filters, data_temp) {
+      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+      var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+      var isAddTrue = IsAdmin === true   ||  Dash_Role_Data[2].Status === 'True';
+      if (isAddTrue == true){
+              var addRoleButton = document.querySelector('.addRole');
+              if (addRoleButton == null){
+                $('.top-title div').append(
+                  '<button type="button" class="btn btn-danger btn-icon-text addRole" id="addRole">' +
+                  '<i class="ti-files btn-icon-prepend"></i>TẠO QUYỀN' +
+                  '</button>'
+                );
+              } 
+            }
         $('#product-table tbody').empty();
         var filteredProducts = products.filter(function(product) {
             var IDMatch = filters.id === '' || product.Role_ID.toString().toLowerCase().includes(filters.id);
@@ -10076,12 +10708,12 @@ if (window.location.pathname === '/danh-sach-quyen/') {
             '<td data-column="username">' + product.Role_CreateBy + '</td>' +         
             '<td data-column="date">' + product.Role_Date + '</td>' +
             '<td data-column="time">' + product.Role_Time + '</td>' +
-            '<td data-column="status"><button data-group-id="' + product.Role_ID + '" data-group-status="' + product.Role_Status + '" type="button" class="btn btn-'+(product.Role_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-role-status admin-button">'+  
+            '<td data-column="status"><button data-group-id="' + product.Role_ID + '" data-group-status="' + product.Role_Status + '" type="button" class="btn btn-'+(product.Role_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-role-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
             (product.Role_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
             '</button></td>' +
             '<td>' +
-            '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-group disable-button" name="Update[]" value="' + product.Role_ID + '" data-group-id="'+product.Role_Group_ID+'"><i class="ti-pencil text-danger"></i></button>' +
-            '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-group disable-button" name="delete[]" value="' + product.Role_ID + '"><i class="ti-trash text-danger"></i></button>' +
+            (isEditTrue ? '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-group" name="Update[]" value="' + product.Role_ID + '" data-group-id="'+product.Role_Group_ID+'"><i class="ti-pencil text-danger"></i></button>': '') +
+            (isDellTrue ? '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-group" name="delete[]" value="' + product.Role_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
             '</td>' +
           '</tr>');
         }
@@ -10117,8 +10749,7 @@ if (window.location.pathname === '/danh-sach-quyen/') {
             event.preventDefault();
       
             var page = $(this).data('page');
-            display_Role(products, page, itemsPerPage, filters);
-            auth_role();
+            display_Role(products, page, itemsPerPage, filters, data_temp);
         });
         
         // Handle First and Last button click event - start
@@ -10126,26 +10757,22 @@ if (window.location.pathname === '/danh-sach-quyen/') {
           event.preventDefault();
           
           if (currentPage > 1) {
-            display_Role(products, 1, itemsPerPage, filters);
-            auth_role();
+            display_Role(products, 1, itemsPerPage, filters, data_temp);
           }
           else
           {
-            display_Role(products, currentPage, itemsPerPage, filters);
-            auth_role();
+            display_Role(products, currentPage, itemsPerPage, filters, data_temp);
           }
         });
         pagination.find('.page-item:last-child .page-link').click(function(event) {
           event.preventDefault();
           
           if (currentPage < numPages) {
-            display_Role(products, numPages, itemsPerPage, filters);
-            auth_role();
+            display_Role(products, numPages, itemsPerPage, filters, data_temp);
           }
           else
           {
-            display_Role(products, currentPage, itemsPerPage, filters);
-            auth_role();
+            display_Role(products, currentPage, itemsPerPage, filters, data_temp);
           }
         });
         // Handle First and Last button click event - end
@@ -10213,7 +10840,9 @@ if (window.location.pathname === '/danh-sach-quyen/') {
         //xử lý sự kiện update status
 
         // Search data in textbox table - start
-        $('#search-RoleID, #search-RoleName,#search-RoleGroup, #search-RoleCreate,#search-RoleDate,#search-RoleTime,.db-status').on('keydown', function(event) {
+        $('#search-RoleID, #search-RoleName,#search-RoleGroup, #search-RoleCreate,#search-RoleDate,#search-RoleTime,.db-status')
+        .off('keydown')
+        .on('keydown', function(event) {
           if (event.keyCode === 13) { // Nếu nhấn phím Enter
               event.preventDefault(); // Tránh việc reload lại trang
               $('#search-RoleID').blur(); // Mất focus khỏi textbox tìm kiếm
@@ -10238,12 +10867,11 @@ if (window.location.pathname === '/danh-sach-quyen/') {
               };
               if(data_temp){
                 display_Role(data_temp, currentPage, itemsPerPage, filters, data_temp);
-                auth_role()
               }
           }
         });
 
-        $(document).on('click', '.btn-remove-filter', function() {
+        $(document).off('click', '.btn-remove-filter').on('click', '.btn-remove-filter', function() {
           $('#search-RoleID').val('');
           $('#search-RoleName').val('');
           $('#search-Role').val('');
@@ -10256,29 +10884,28 @@ if (window.location.pathname === '/danh-sach-quyen/') {
         
         function reset_data(){
           $('#search-RoleID').blur(); // Mất focus khỏi textbox tìm kiếm
-              $('#search-RoleName').blur();
-              $('#search-RoleCreate').blur();
-              $('#search-RoleGroup').blur();
-              var formattedDate ="";
-              var date = $('#search-RoleDate').val();
-              if(date){
-                var parts = date.split("-");
-                formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0];
-              }
-              // Lấy giá trị của filters
-              var filters = {
-                id: $('#search-RoleID').val().toLowerCase().trim(),
-                name: $('#search-RoleName').val().toLowerCase().trim(),
-                groupname: $('#search-RoleGroup').val().toLowerCase().trim(),
-                create: $('#search-RoleCreate').val().toLowerCase().trim(),
-                date: formattedDate,
-                time: $('#search-RoleTime').val().toLowerCase().trim(),
-                status: $('.db-status').val().toLowerCase().trim(),
-              };
-              if(data_temp){
-                display_Role(data_temp, currentPage, itemsPerPage, filters, data_temp);
-                auth_role()
-              }
+          $('#search-RoleName').blur();
+          $('#search-RoleCreate').blur();
+          $('#search-RoleGroup').blur();
+          var formattedDate ="";
+          var date = $('#search-RoleDate').val();
+          if(date){
+            var parts = date.split("-");
+            formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0];
+          }
+          // Lấy giá trị của filters
+          var filters = {
+            id: $('#search-RoleID').val().toLowerCase().trim(),
+            name: $('#search-RoleName').val().toLowerCase().trim(),
+            groupname: $('#search-RoleGroup').val().toLowerCase().trim(),
+            create: $('#search-RoleCreate').val().toLowerCase().trim(),
+            date: formattedDate,
+            time: $('#search-RoleTime').val().toLowerCase().trim(),
+            status: $('.db-status').val().toLowerCase().trim(),
+          };
+          if(data_temp){
+            display_Role(data_temp, currentPage, itemsPerPage, filters, data_temp);
+          }
         }
         // Search data in textbox table - end
 
@@ -10373,19 +11000,21 @@ if (window.location.pathname === '/danh-sach-quyen/') {
           //function button status update ticket - end  
 
           function add_row_group(product){
-            $('#product-table tbody').prepend('<tr data-product-id="'+product.Role_ID+'">' +
+            var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+            var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+            $('#product-table tbody').append('<tr data-product-id="'+product.Role_ID+'">' +
             '<td data-column="id">#' + product.Role_ID + '</td>' +           
             '<td data-column="name">' + product.Role_Name + '</td>' +
             '<td data-column="groupname">' + product.Role_Group_ID +' - ' +product.Role_Group_Name +'</td>' +
             '<td data-column="username">' + product.Role_CreateBy + '</td>' +         
             '<td data-column="date">' + product.Role_Date + '</td>' +
             '<td data-column="time">' + product.Role_Time + '</td>' +
-            '<td data-column="status"><button data-group-id="' + product.Role_ID + '" data-group-status="' + product.Role_Status + '" type="button" class="btn btn-'+(product.Role_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-role-status admin-button">'+  
+            '<td data-column="status"><button data-group-id="' + product.Role_ID + '" data-group-status="' + product.Role_Status + '" type="button" class="btn btn-'+(product.Role_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-role-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
             (product.Role_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
             '</button></td>' +
             '<td>' +
-            '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-group admin-button" name="Update[]" value="' + product.Role_ID + '" data-group-id="'+product.Role_Group_ID+'"><i class="ti-pencil text-danger"></i></button>' +
-            '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-group admin-button" name="delete[]" value="' + product.Role_ID + '"><i class="ti-trash text-danger"></i></button>' +
+            (isEditTrue ? '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-group" name="Update[]" value="' + product.Role_ID + '" data-group-id="'+product.Role_Group_ID+'"><i class="ti-pencil text-danger"></i></button>': '') +
+            (isDellTrue ? '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-group" name="delete[]" value="' + product.Role_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
             '</td>' +
           '</tr>');
           // var list = {
@@ -10515,7 +11144,6 @@ if (window.location.pathname === '/danh-sach-quyen/') {
           success: function(response) {
             if (response.success) {     
               add_row_group(response, product);
-              auth_role();
               $('#CreateRoleModal').modal('hide');           
               Swal.fire({
                 icon: 'success',
@@ -10540,6 +11168,7 @@ if (window.location.pathname === '/danh-sach-quyen/') {
           }
         });
       }
+
       $(document).on('click', '.update-group', function() {
         $('#UpdateRoleModal').modal('show');
         if( $('#UpdateRoleModal').modal('show'))
@@ -10671,6 +11300,7 @@ if (window.location.pathname === '/danh-sach-quyen/') {
     }
 
     function update_info_group(Role_Data,status_new){
+      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
         // Lấy danh sách tất cả các phần tử tr có thuộc tính data-product-id
         var productRows = document.querySelectorAll('tr[data-product-id]');
 
@@ -10687,7 +11317,7 @@ if (window.location.pathname === '/danh-sach-quyen/') {
             var statusElement = row.querySelector('[data-column="status"]');
             nameElement.textContent =  Role_Data.Role_Name;
             groupElement.textContent =  Role_Data.Role_Group_ID + ' - ' +Role_Data.Role_Group_Name;
-            var htmlStatus = '<button data-group-id="' + Role_Data.Role_Status + '" data-group-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-role-status">'+  
+            var htmlStatus = '<button data-group-id="' + Role_Data.Role_ID + '" data-group-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-role-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
             (status_new === "true" ? 'Kích Hoạt' : 'Không Kích Hoạt' ) + 
             '</button>';
             var buttonStatusElement = statusElement.querySelector('button');
@@ -10705,32 +11335,36 @@ if (window.location.pathname === '/danh-sach-quyen/') {
 //########### Danh Sách Authorize Start ###########  
 if (window.location.pathname === '/danh-sach-phan-quyen/') {
 //Scroll screen
-// Get the button element
-const buttonRole = document.querySelector('#addRole');
-const buttonInitialTop = buttonRole.getBoundingClientRect().top + 'px'; // Convert to 'px'
-
 // Listen for the scroll event
 window.addEventListener('scroll', () => {
+  const buttonRole = document.querySelector('#addRole');
+  if (buttonRole !== null){
+    const buttonInitialTop = buttonRole.getBoundingClientRect().top + 'px'; // Convert to 'px'
+  }
   // Get the current scroll position
   const scrollPosition = window.scrollY;
-
+  if (buttonRole !== null){
   // Check if the scroll position is greater than or equal to 191
-  if (scrollPosition >= 107) {
-    // Fix the button to the top of the page
-    buttonRole.style.position = 'fixed';
-    buttonRole.style.top = '107px';
-    buttonRole.style.right = '0';
-    buttonRole.classList.add('button-fix');
-  } else {
-    // Unfix the button and reset its position
-    buttonRole.style.position = '';
-    buttonRole.style.top = ''; // Reset to its original position
-    buttonRole.style.right = '';
+    if (scrollPosition >= 107) {
+      // Fix the button to the top of the page
+      buttonRole.style.position = 'fixed';
+      buttonRole.style.top = '107px';
+      buttonRole.style.right = '0';
+      buttonRole.classList.add('button-fix');
+    } else {
+      // Unfix the button and reset its position
+      buttonRole.style.position = '';
+      buttonRole.style.top = ''; // Reset to its original position
+      buttonRole.style.right = '';
+    }
   }
 });
+//Scroll screen
 
   var currentPage = 1;
-  var itemsPerPage = 25;
+  var itemsPerPage = 30;
+  var IsAdmin = '';
+  var Dash_Role_Data =[];
   //Check Role
   $.ajax({
     url: '/role-authorize/',
@@ -10960,9 +11594,12 @@ window.addEventListener('scroll', () => {
               name: $('#search-Name').val().toLowerCase().trim(),
             };
             // Load_data(context.companys, context.tgroups, context.users)
-            display_user(context.users, currentPage, itemsPerPage,filters, context.users);
-            display_role_data(context.groups, context.roles);
-            auth_role();
+            // display_user(context.users, currentPage, itemsPerPage,filters, context.users);
+            // display_role_data(context.groups, context.roles);
+            auth_role(context,currentPage, itemsPerPage,filters);
+            setTimeout(function() {
+              $('#spinnersModal').modal('hide');
+            }, 1000);
       },
       error: function(rs, e) {
           alert('Oops! something went wrong');
@@ -10971,21 +11608,17 @@ window.addEventListener('scroll', () => {
   }
 
     //authorization page
-    function auth_role(){
+    function auth_role(context,currentPage, itemsPerPage,filters){
       $.ajax({
         url: '/phan-quyen-authorize/',
         dataType: 'json',
         method: 'POST',
         success: function(response) {
           if (response.success) {
-            var buttonAdd = document.querySelector('#addRole');
-            //Role Add New User
-            if(response.IsAdmin == true || response.Roles[1].Status == 'True'){             
-              buttonAdd.classList.remove('disable-button');
-            }
-            else{
-              buttonAdd.classList.add('disable-button');
-            }           
+            IsAdmin = response.IsAdmin;  
+            Dash_Role_Data = response.Roles;
+            display_user(context.users, currentPage, itemsPerPage,filters, context.users);    
+            display_role_data(context.groups, context.roles);   
           } else {
             Swal.fire({
               icon: 'error',
@@ -11003,9 +11636,53 @@ window.addEventListener('scroll', () => {
         }
       });
     }
+    // function auth_role(){
+    //   $.ajax({
+    //     url: '/phan-quyen-authorize/',
+    //     dataType: 'json',
+    //     method: 'POST',
+    //     success: function(response) {
+    //       if (response.success) {
+    //         var buttonAdd = document.querySelector('#addRole');
+    //         //Role Add New User
+    //         if(response.IsAdmin == true || response.Roles[1].Status == 'True'){             
+    //           buttonAdd.classList.remove('disable-button');
+    //         }
+    //         else{
+    //           buttonAdd.classList.add('disable-button');
+    //         }           
+    //       } else {
+    //         Swal.fire({
+    //           icon: 'error',
+    //           title: 'Oops...',
+    //           text: response.message,
+    //         });
+    //       }
+    //     },
+    //     error: function(response) {
+    //       Swal.fire({
+    //         icon: 'error',
+    //         title: 'Thông Báo Lỗi',
+    //         text: response.message,
+    //       });
+    //     }
+    //   });
+    // }
 
     // Load data
-      function display_user(products, currentPage, itemsPerPage, filters, data_temp) {
+    
+    function display_user(products, currentPage, itemsPerPage, filters, data_temp) {
+      // var isAddTrue = IsAdmin === true   ||  Dash_Role_Data[1].Status === 'True';
+      // if (isAddTrue == true){
+      //   var addAuthorizeButton = document.querySelector('.addRole');
+      //     if (addAuthorizeButton == null){
+      //       $('.top-title div').append(
+      //         '<button type="button" class="btn btn-danger btn-icon-text addRole" id="addRole">' +
+      //         '<i class="ti-files btn-icon-prepend"></i>PHÂN QUYỀN' +
+      //         '</button>'
+      //       );
+      //     } 
+      //   }
         $('#product-table-user tbody').empty();
         var filteredProducts = products.filter(function(product) {
             var IDMatch = filters.id === '' || product.ID_user.toString().toLowerCase().includes(filters.id);
@@ -11022,7 +11699,7 @@ window.addEventListener('scroll', () => {
         for (var i = (currentPage - 1) * itemsPerPage; i < currentPage * itemsPerPage && i < products.length; i++) {
           var product = products[i];
           $('#product-table-user tbody').append('<tr data-product-id="'+product.ID_user+'">' +
-            '<td data-column="check"><input type="checkbox" id="check-user" value="'+product.ID_user+'" /></td>' +           
+            '<td data-column="check" class="checkbox-wrapper-14"><input type="checkbox" id="check-user" value="'+product.ID_user+'" /></td>' +           
             '<td data-column="id">#' + product.ID_user + '</td>' +           
             '<td data-column="name">' + product.FullName + '</td>' +
             '<td>' +
@@ -11062,8 +11739,7 @@ window.addEventListener('scroll', () => {
             event.preventDefault();
       
             var page = $(this).data('page');
-            display_user(products, page, itemsPerPage, filters);
-            auth_role();
+            display_user(products, page, itemsPerPage, filters, data_temp);
         });
         
         // Handle First and Last button click event - start
@@ -11071,33 +11747,31 @@ window.addEventListener('scroll', () => {
           event.preventDefault();
           
           if (currentPage > 1) {
-            display_user(products, 1, itemsPerPage, filters);
-            auth_role();
+            display_user(products, 1, itemsPerPage, filters, data_temp);
           }
           else
           {
-            display_user(products, currentPage, itemsPerPage, filters);
-            auth_role();
+            display_user(products, currentPage, itemsPerPage, filters, data_temp);
           }
         });
         pagination.find('.page-item:last-child .page-link').click(function(event) {
           event.preventDefault();
           
           if (currentPage < numPages) {
-            display_user(products, numPages, itemsPerPage, filters);
-            auth_role();
+            display_user(products, numPages, itemsPerPage, filters, data_temp);
           }
           else
           {
-            display_user(products, currentPage, itemsPerPage, filters);
-            auth_role();
+            display_user(products, currentPage, itemsPerPage, filters, data_temp);
           }
         });
         // Handle First and Last button click event - end
         
 
         // Search data in textbox table - start
-        $('#search-UserID, #search-Name').on('keydown', function(event) {
+        $('#search-UserID, #search-Name')
+        .off('keydown')
+        .on('keydown', function(event) {
           if (event.keyCode === 13) { // Nếu nhấn phím Enter
               event.preventDefault(); // Tránh việc reload lại trang
               $('#search-UserID').blur(); // Mất focus khỏi textbox tìm kiếm
@@ -11109,7 +11783,6 @@ window.addEventListener('scroll', () => {
               };
               if(data_temp){
                 display_user(data_temp, currentPage, itemsPerPage, filters, data_temp);
-                auth_role();
               }
           }
         });
@@ -11117,8 +11790,8 @@ window.addEventListener('scroll', () => {
 
     //xử lý sự kiện close modal
       $('.close').click(function(event) {
-        $('#CreateRoleModal').modal('hide');
-        $('#UpdateRoleModal').modal('hide');
+        $('#ImportExcelModal').modal('hide');
+        // $('#UpdateRoleModal').modal('hide');
       });
     //xử lý sự kiện close modal
 
@@ -11238,7 +11911,18 @@ window.addEventListener('scroll', () => {
         });
       });
 
-      function display_role_data(data_groups, data_roles){
+    function display_role_data(data_groups, data_roles){
+      var isAddTrue = IsAdmin === true   ||  Dash_Role_Data[1].Status === 'True';
+      if (isAddTrue == true){
+        var addAuthorizeButton = document.querySelector('.addRole');
+        if (addAuthorizeButton == null){
+            $('.top-title .func-auth').append(
+              '<button type="button" class="btn btn-danger btn-icon-text addRole" id="addRole">' +
+              '<i class="ti-files btn-icon-prepend"></i>PHÂN QUYỀN' +
+              '</button>'
+            );
+          } 
+        }
         for (var i = 0; i < data_groups.length; i++) {
           // var id = data_groups[i].Role_Group_ID;
           var roleData = '<div class="role-item checkbox-wrapper-14" value="' + data_groups[i].Role_Group_ID + '">' +
@@ -11261,6 +11945,11 @@ window.addEventListener('scroll', () => {
             '</div>';
       
           $('.role-container').append(roleData);
+          // if (isAddTrue == false){
+          //   $('#checkbox-role').click(function(e) {
+          //     e.preventDefault(); // Ngăn chặn sự kiện click
+          //   });
+          // }
       }
     }
 
@@ -11283,14 +11972,14 @@ window.addEventListener('scroll', () => {
         for (var j = 0; j < data_roles.length; j++) {
           if(data_groups[i].Role_Group_ID == data_roles[j].Role_Group_ID){
             roleData += '<tr>' +
-            '<td>' +
+            '<td class="role-name-style">' +
               '<div class="role-single-item-data">' +
                 '<input type="checkbox" id="checkbox-role" '+ data_roles[j].isStatus+' data-group="' + data_roles[j].Role_Group_ID + '" value="' + data_roles[j].Role_ID + '" />' +
                 '<p>' + data_roles[j].Role_Name + '</p>' +             
               '</div>'+
             '</td>' +
-            '<td>' + data_roles[j].DateFrom + '</td>' +
-            '<td>' + data_roles[j].DateTo + '</td>' +
+            '<td class="role-date-style">' + data_roles[j].DateFrom + '</td>' +
+            '<td class="role-date-style">' + data_roles[j].DateTo + '</td>' +
             '</tr>';
           }    
         }
@@ -11312,6 +12001,940 @@ window.addEventListener('scroll', () => {
 
 }
 //########### Danh Sách Authorize End ########### 
+
+//########### Danh Sách Group Role Start ###########  
+if (window.location.pathname === '/danh-sach-menu/') {
+  var currentPage = 1;
+  var itemsPerPage = 10;
+  var IsAdmin = '';
+  var Dash_Role_Data =[];
+  //Check Role
+  $.ajax({
+    url: '/role-menu/',
+    dataType: 'json',
+    success: function(response) {
+      if(response.success){
+        Load_Role_Menu();
+      }
+      else{
+        window.location.href = '/dashboard/';
+      }    
+    },
+    error: function(rs, e) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Thông Báo',
+        text: response.message,
+      });
+    }
+  });
+
+  function filter_data_excel(callback){
+    $.ajax({
+      url: '/danh-sach-data-nhom-quyen/',
+      dataType: 'json',
+      success: function(context) {
+        filter_excel = [];
+        var filters = {
+          id: $('#search-GroupRoleID').val().toLowerCase().trim(),
+          group: $('#search-GroupRoleName').val().toLowerCase().trim(),
+          menu: $('#search-MenuName').val().toLowerCase().trim(),
+          address: $('#search-MenuAddress').val().toLowerCase().trim(),
+          create: $('#search-GroupRoleCreate').val().toLowerCase().trim(),
+          date: $('#search-GroupRoleDate').val().toLowerCase().trim(),
+          time: $('#search-GroupRoleTime').val().toLowerCase().trim(),
+          status: $('.db-status').val().toLowerCase().trim(),
+        };
+          // Load_data(context.companys, context.tgroups, context.users)
+          data_grouprole = context.data
+          var filteredData = data_grouprole.filter(function(product) {
+            var IDMatch = filters.id === '' || product.Role_Group_ID.toString().toLowerCase().includes(filters.id);
+            var GroupNameMatch = filters.group === '' || product.Role_Group_Name.toLowerCase().indexOf(filters.group) > -1;
+            var MenuNameMatch = filters.menu === '' || product.Menu_Name.toLowerCase().indexOf(filters.menu) > -1;
+            var AddNameMatch = filters.address === '' || product.Role_Group_Address.toLowerCase().indexOf(filters.address) > -1;
+            var createMatch = filters.create === '' || product.Role_Group_CreateBy.toString().toLowerCase().indexOf(filters.create) > -1;
+            var dateMatch = filters.date === '' || product.Role_Group_Date.toString().toLowerCase().indexOf(filters.date) > -1;
+            var timeMatch = filters.time === '' || product.Role_Group_Time.toLowerCase().indexOf(filters.time) > -1;
+            var statusMatch = filters.status === '' || product.Role_Group_Status.toString().toLowerCase().indexOf(filters.status) > -1;
+
+            return IDMatch && GroupNameMatch && MenuNameMatch && AddNameMatch && createMatch && dateMatch && timeMatch && statusMatch ;
+          });
+          filter_excel = filteredData;
+          callback(filter_excel);
+      },
+      error: function(rs, e) {
+          alert('Oops! something went wrong');
+      }
+    });
+   
+  }
+
+  // load data product
+  function Load_Role_Menu(){
+    $.ajax({
+      url: '/danh-sach-data-menu/',
+      dataType: 'json',
+      success: function(context) {
+          var filters = {
+              id: $('#search-MenuID').val().toLowerCase().trim(),
+              name: $('#search-MenuName').val().toLowerCase().trim(),
+              address: $('#search-MenuAddress').val().toLowerCase().trim(),
+              icon: $('#search-MenuIcon').val().toLowerCase().trim(),
+              level: $('#search-MenuLevel').val().toLowerCase().trim(),
+              create: $('#search-MenuCreate').val().toLowerCase().trim(),
+              createname: $('#search-MenuCreateName').val().toLowerCase().trim(),
+              date: $('#search-MenuDate').val().toLowerCase().trim(),
+              time: $('#search-MenuTime').val().toLowerCase().trim(),
+              status: $('.db-status').val().toLowerCase().trim(),
+            };
+            auth_role(context.data, currentPage, itemsPerPage,filters, context.data);
+            // display_Menu(context.data, currentPage, itemsPerPage,filters, context.data);            
+            setTimeout(function() {
+              $('#spinnersModal').modal('hide');
+            }, 1000);
+      },
+      error: function(rs, e) {
+          alert('Oops! something went wrong');
+      }
+    });
+  }
+
+  //export excel 
+  $(document).on('click', '.exportGroupRole', function() {
+    var data =[];
+    filter_data_excel(function(result) {
+      data = result;
+      if (data.length === 0) {
+        // Nếu không có dữ liệu, thông báo lỗi và không gửi yêu cầu
+        Swal.fire({
+            icon: 'error',
+            title: 'Lỗi',
+            text: 'Không có dữ liệu để xuất Excel.'
+        });
+        return;
+    }
+    var jsonData = JSON.stringify(data);
+    // Tạo một yêu cầu POST đến URL export-excel
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/export_excel_grouprole/', true);
+    xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8'); // Thiết lập header cho yêu cầu
+    xhr.responseType = 'blob'; // Để nhận tệp Excel dưới dạng Blob
+
+    xhr.onload = function () {
+        if (xhr.status === 200) {
+            // Xử lý tệp Excel như trước
+            var blob = new Blob([xhr.response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'GroupRole_data_list.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                text: 'Export Data thành công!'
+            });
+        } else {
+            // Xử lý lỗi từ phía máy chủ
+            var errorResponse = JSON.parse(xhr.response);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi',
+                text: errorResponse.message || 'Có lỗi xảy ra khi xuất Excel.'
+            });
+        }
+    };
+    xhr.send(jsonData); // Gửi dữ liệu JSON bằng phương thức POST
+   });      
+ });  
+
+   // Xử lý sự kiện khi người dùng nhấn nút Import
+   $(document).on('click', '.importGroupRole', function() {
+    $('#ImportExcelModal').modal('show');
+  });
+
+$(document).on('click', '#Import-Excel-GroupRole', function() {
+  var files = document.getElementById('file-input').files;
+
+  if (files.length > 0) {
+    var formData = new FormData();
+    formData.append('excel_file', files[0]);
+    
+    fetch('/import_excel_grouprole/', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // alert('Import thành công!');
+        if (data.list_data){
+          var mail = data.list_data;
+          var err = ""
+          for(i=0; i<mail.length; i++){
+            err+= mail[i] +"\n";
+           }
+          Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                text: "User đã tồn tại:" + "\n" + err,
+          });
+        }
+        else{
+          Swal.fire({
+            icon: 'success',
+            title: 'Thông Báo',
+            text: 'Import thành công!',
+          });
+          setTimeout(function() {
+            window.location.reload();
+          }, 2000);
+        }         
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: data.message,
+        });
+        // alert('Lỗi: ' + data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Lỗi:', error);
+    });
+  }
+});
+
+
+function formatFileSize(size) {
+  var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  var unitIndex = 0;
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+
+  return size.toFixed(2) + ' ' + units[unitIndex];
+}
+  //authorization page
+  function auth_role(data, currentPage, itemsPerPage,filters, data){
+    $.ajax({
+      url: '/phan-quyen-menu/',
+      dataType: 'json',
+      method: 'POST',
+      success: function(response) {
+        if (response.success) {
+          IsAdmin = response.IsAdmin;  
+          Dash_Role_Data = response.Roles;   
+          // var buttonAdd = document.querySelector('#addMenu');
+          // if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
+          //   buttonAdd.classList.remove('disable-button');
+          // }
+          // else{
+          //   buttonAdd.classList.add('disable-button');
+          // }
+          display_Menu(data, currentPage, itemsPerPage,filters,data);
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: response.message,
+          });
+        }
+      },
+      error: function(response) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: response.message,
+        });
+      }
+    });
+  }
+  // function auth_role(){
+  //   $.ajax({
+  //     url: '/phan-quyen-menu/',
+  //     dataType: 'json',
+  //     method: 'POST',
+  //     success: function(response) {
+  //       if (response.success) {
+  //         // var buttonAdd = document.querySelector('#addGroupRole');
+  //         // var buttonEdit = document.querySelectorAll('.update-group');
+  //         // var buttonDel = document.querySelectorAll('.delete-group');
+  //         // var buttonSta = document.querySelectorAll('.btn-grouprole-status');
+  //         // //Role Add New User
+  //         // if(response.IsAdmin == true || response.Roles[2].Status == 'True'){             
+  //         //   buttonAdd.classList.remove('disable-button');
+  //         // }
+  //         // else{
+  //         //   buttonAdd.classList.add('disable-button');
+  //         // }
+  //         // //Role Update User
+  //         // if(response.IsAdmin == true || response.Roles[1].Status == 'True'){   
+  //         //   buttonEdit.forEach(function(edit){
+  //         //     edit.classList.remove('disable-button');
+  //         //   });  
+  //         //   buttonSta.forEach(function(sta){
+  //         //     sta.classList.remove('admin-button');
+  //         //   });      
+  //         // }
+  //         // else{
+  //         //   buttonEdit.forEach(function(edit){
+  //         //     edit.classList.add('disable-button');
+  //         //   });   
+  //         //   buttonSta.forEach(function(sta){
+  //         //     sta.classList.add('admin-button');
+  //         //   });          
+  //         // }
+  //         // //Role Delete User
+  //         // if(response.IsAdmin == true || response.Roles[3].Status == 'True'){             
+  //         //   buttonDel.forEach(function(del){
+  //         //     del.classList.remove('disable-button');
+  //         //   });
+  //         // }
+  //         // else{
+  //         //   buttonDel.forEach(function(del){
+  //         //     del.classList.add('disable-button');
+  //         //   }); 
+  //         // }     
+  //       } else {
+  //         Swal.fire({
+  //           icon: 'error',
+  //           title: 'Oops...',
+  //           text: response.message,
+  //         });
+  //       }
+  //     },
+  //     error: function(response) {
+  //       Swal.fire({
+  //         icon: 'error',
+  //         title: 'Thông Báo Lỗi',
+  //         text: response.message,
+  //       });
+  //     }
+  //   });
+  // }
+
+    // Load data
+  
+    function display_Menu(products, currentPage, itemsPerPage, filters, data_temp) {
+      var isEditTrue = IsAdmin === true || (Dash_Role_Data.length > 2 && Dash_Role_Data[1].Status === 'True');
+      var isDellTrue = IsAdmin === true || (Dash_Role_Data.length > 2 && Dash_Role_Data[3].Status === 'True');
+      var isAddTrue = IsAdmin === true || (Dash_Role_Data.length > 2 && Dash_Role_Data[2].Status === 'True');
+      if (isAddTrue == true){
+        var addMenuButton = document.querySelector('.addMenu');
+        if (addMenuButton == null){
+          $('.top-title').append(
+            '<button type="button" class="btn btn-danger btn-icon-text addMenu" id="addMenu">' +
+            '<i class="ti-files btn-icon-prepend"></i> TẠO MENU '+          
+            '</button>'
+          );
+        } 
+      }
+
+        $('#product-table tbody').empty();
+        var filteredProducts = products.filter(function(product) {
+            var IDMatch = filters.id === '' || product.Menu_ID.toString().toLowerCase().includes(filters.id);
+            var NameMatch = filters.name === '' || product.Menu_Name.toString().toLowerCase().includes(filters.name);
+            var AddressMatch = filters.address === '' || product.Menu_Adress.toString().toLowerCase().indexOf(filters.address) > -1;
+            var IconMatch = filters.icon === '' || product.Menu_Icon.toLowerCase().indexOf(filters.icon) > -1;
+            var LevelMatch = filters.level === '' || product.Menu_Level.toString().toLowerCase().indexOf(filters.level) > -1;
+            var createMatch = filters.create === '' || product.Menu_CreateID.toString().toLowerCase().indexOf(filters.create) > -1;
+            var createNameMatch = filters.createname === '' || product.Menu_CreateBy.toString().toLowerCase().indexOf(filters.createname) > -1;
+            var dateMatch = filters.date === '' || product.Menu_Date.toString().toLowerCase().indexOf(filters.date) > -1;
+            var timeMatch = filters.time === '' || product.Menu_Time.toLowerCase().indexOf(filters.time) > -1;
+            var statusMatch = filters.status === '' || product.Menu_Status.toString().toLowerCase().indexOf(filters.status) > -1;
+
+            return IDMatch && NameMatch && AddressMatch && IconMatch && LevelMatch && createMatch && createNameMatch && dateMatch && timeMatch && statusMatch ;
+          });
+
+          if(filteredProducts !== null || filteredProducts !== '')
+          {
+            products = filteredProducts
+          }
+
+        for (var i = (currentPage - 1) * itemsPerPage; i < currentPage * itemsPerPage && i < products.length; i++) {
+          var product = products[i];
+          $('#product-table tbody').append('<tr data-product-id="'+product.Menu_ID+'">' +
+            '<td data-column="id">#' + product.Menu_ID + '</td>' +           
+            '<td data-column="name">' + product.Menu_Name + '</td>' +
+            '<td data-column="add">' + (product.Menu_Adress ? product.Menu_Adress : 'No Data') + '</td>' +
+            '<td data-column="icon">' + product.Menu_Icon + '</td>' +
+            '<td data-column="level">' + product.Menu_Level + '</td>' +
+            '<td data-column="username">' + product.Menu_CreateID + '</td>' +
+            '<td data-column="fullname">' + product.Menu_CreateBy + '</td>' +         
+            '<td data-column="date">' + product.Menu_Date + '</td>' +
+            '<td data-column="time">' + product.Menu_Time + '</td>' +
+            '<td data-column="status"><button data-group-id="' + product.Menu_ID + '" data-group-status="' + product.Menu_Status + '" type="button" class="btn btn-'+(product.Menu_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-menu-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
+            (product.Menu_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
+            '</button></td>' +
+            '<td>' +
+            (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-menu" name="Update[]" value="' + product.Menu_ID + '"><i class="ti-pencil text-danger"></i></button>' : '') +
+            (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-menu" name="delete[]" value="' + product.Menu_ID + '"><i class="ti-trash text-danger"></i></button>' : '') +
+            '</td>' +
+          '</tr>');
+        }
+      
+        var numPages = Math.ceil(products.length / itemsPerPage);
+        var pagination = $('#pagination');
+        pagination.empty();
+        
+        // Add First button
+        pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="1">&laquo;</a></li>');
+        
+        // for (var i = 1; i <= numPages; i++) {
+        //   var activeClass = (i === currentPage) ? "active" : "";
+        //   pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+        // }
+        for (var i = 1; i <= numPages; i++) {
+          var activeClass = (i === currentPage) ? "active" : "";
+          var pageLink = '<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+          
+          if (i <= 4 || i > numPages - 4 || (i >= currentPage - 1 && i <= currentPage + 1)) {
+              pagination.append(pageLink);
+          } else if (i === 5 && currentPage > 6) { // Hiển thị "..." trước các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          } else if (i === numPages - 4 && currentPage < numPages - 5) { // Hiển thị "..." sau các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          }
+        }
+        
+        // Add Last button
+        pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="' + numPages + '">&raquo;</a></li>');
+      
+        pagination.find('.page-link').click(function(event) {
+            event.preventDefault();
+      
+            var page = $(this).data('page');
+            display_Menu(products, page, itemsPerPage, filters, data_temp);
+            // auth_role();
+        });
+        
+        // Handle First and Last button click event - start
+        pagination.find('.page-item:first-child .page-link').click(function(event) {
+          event.preventDefault();
+          
+          if (currentPage > 1) {
+            display_Menu(products, 1, itemsPerPage, filters, data_temp);
+            // auth_role();
+          }
+          else
+          {
+            display_Menu(products, currentPage, itemsPerPage, filters, data_temp);
+            // auth_role();
+          }
+        });
+        pagination.find('.page-item:last-child .page-link').click(function(event) {
+          event.preventDefault();
+          
+          if (currentPage < numPages) {
+            display_Menu(products, numPages, itemsPerPage, filters, data_temp);
+            // auth_role();
+          }
+          else
+          {
+            display_Menu(products, currentPage, itemsPerPage, filters, data_temp);
+            // auth_role();
+          }
+        });
+        // Handle First and Last button click event - end
+        
+        //xử lý sự kiện update status
+        $(document).on('click', '.btn-menu-status', function() {
+            var comp   = $(this);
+            var status = comp.attr('data-group-status');
+            var id     = comp.attr('data-group-id');
+            var status_new = (status === "true" ? "false" : "true");
+            if(status){
+              $.ajax({
+                url: '/cap-nhat-menu/',
+                dataType: 'json',
+                method: 'POST',
+                data: {
+                  'status': (status === "true" ? "False" : "True"),
+                  'MenuID': id,
+                },
+                success: function(response) {
+                  if (response.success) {     
+                    var htmlStatus = '<button data-group-id="' + response.Menu_ID + '" data-group-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-menu-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
+                    (status_new === "true" ? 'Kích Hoạt' : 'Không Kích Hoạt' ) + 
+                    '</button>';
+
+                    var btn_status = document.querySelector('tr[data-product-id="' + response.Menu_ID + '"]');
+                    var btn_status_column = btn_status.querySelector('td[data-column="status"]');
+                    var btn_status_button = btn_status_column.querySelector('button');
+                    if (btn_status_button) {
+                      btn_status_button.remove();
+                    }
+                    btn_status_column.insertAdjacentHTML('beforeend', htmlStatus);
+                    Swal.fire({
+                      icon: 'success',
+                      title: 'Thông Báo',
+                      timer: 1000,
+                      text: response.message,
+                    });
+                  } else {
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'Oops...',
+                      text: response.message,
+                    });
+                  }
+                },
+                error: function(response) {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Thông Báo Lỗi',
+                    text: response.message,
+                  });
+                }
+              });
+            }
+            else{
+              Swal.fire({
+                icon: 'error',
+                title: 'Thông Báo Lỗi', 
+                text: 'Không update được status',
+              })
+            }
+            
+          });
+        //xử lý sự kiện update status
+
+        // Search data in textbox table - start
+        $('#search-MenuID, #search-MenuName,#search-MenuAddress,#search-MenuIcon, #search-MenuLevel,#search-MenuCreate,#search-MenuCreateName, #search-MenuDate,#search-MenuTime,.db-status')
+        .off('keydown')
+        .on('keydown', function (event) {
+          if (event.keyCode === 13) { // Nếu nhấn phím Enter
+              event.preventDefault(); // Tránh việc reload lại trang
+              $('#search-MenuID').blur(); // Mất focus khỏi textbox tìm kiếm
+              $('#search-MenuName').blur();
+              $('#search-MenuAddress').blur();
+              $('#search-MenuIcon').blur();
+              $('#search-MenuLevel').blur();
+              $('#search-MenuCreate').blur();
+              $('#search-MenuCreateName').blur();
+              var formattedDate ="";
+              var date = $('#search-MenuDate').val();
+              if(date){
+                var parts = date.split("-");
+                formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0];
+              }
+              // Lấy giá trị của filters
+              var filters = {
+                id: $('#search-MenuID').val().toLowerCase().trim(),
+                name: $('#search-MenuName').val().toLowerCase().trim(),
+                address: $('#search-MenuAddress').val().toLowerCase().trim(),
+                icon: $('#search-MenuIcon').val().toLowerCase().trim(),
+                level: $('#search-MenuLevel').val().toLowerCase().trim(),
+                create: $('#search-MenuCreate').val().toLowerCase().trim(),
+                createname: $('#search-MenuCreateName').val().toLowerCase().trim(),
+                date: formattedDate,
+                time: $('#search-MenuTime').val().toLowerCase().trim(),
+                status: $('.db-status').val().toLowerCase().trim(),
+              };
+              if(data_temp){
+                display_Menu(data_temp, currentPage, itemsPerPage, filters, data_temp);
+                // auth_role();
+                return;
+              }
+          }
+        });
+
+        $(document).off('click', '.btn-remove-filter').on('click', '.btn-remove-filter', function() {
+          $('#search-MenuID').val('');
+          $('#search-MenuName').val('');
+          $('#search-MenuAddress').val('');
+          $('#search-MenuIcon').val('');
+          $('#search-MenuLevel').val('');
+          $('#search-MenuCreate').val('');
+          $('#search-MenuCreate').val('');
+          $('#search-MenuDate').val('');
+          $('#search-MenuTime').val('');
+          $('.db-status').val('');
+          reset_data();  
+        });
+        
+        function reset_data(){
+          $('#search-MenuID').blur(); // Mất focus khỏi textbox tìm kiếm
+          $('#search-MenuName').blur();
+          $('#search-MenuAddress').blur();
+          $('#search-MenuIcon').blur();
+          $('#search-MenuLevel').blur();
+          $('#search-MenuCreate').blur();
+          $('#search-MenuCreateName').blur();
+
+          var formattedDate ="";
+          var date = $('#search-MenuDate').val();
+          if(date){
+            var parts = date.split("-");
+            formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0];
+          }
+          // Lấy giá trị của filters
+          var filters = {
+            id: $('#search-MenuID').val().toLowerCase().trim(),
+            name: $('#search-MenuName').val().toLowerCase().trim(),
+            address: $('#search-MenuAddress').val().toLowerCase().trim(),
+            icon: $('#search-MenuIcon').val().toLowerCase().trim(),
+            level: $('#search-MenuLevel').val().toLowerCase().trim(),
+            create: $('#search-MenuCreate').val().toLowerCase().trim(),
+            createname: $('#search-MenuCreateName').val().toLowerCase().trim(),
+            date: $('#search-MenuDate').val().toLowerCase().trim(),
+            time: $('#search-MenuTime').val().toLowerCase().trim(),
+            status: $('.db-status').val().toLowerCase().trim(),
+          };
+          if(data_temp){
+            display_Menu(data_temp, currentPage, itemsPerPage, filters, data_temp);
+            // auth_role();
+            return;
+          }
+        }   
+        // Search data in textbox table - end
+
+        function add_row_menu(product){
+            $('#product-table tbody').prepend('<tr data-product-id="'+product.Menu_ID+'">' +
+            '<td data-column="id">#' + product.Menu_ID + '</td>' +           
+            '<td data-column="name">' + product.Menu_Name + '</td>' +
+            '<td data-column="add">' + (product.Menu_Adress ? product.Menu_Adress : 'No Data') + '</td>' +
+            '<td data-column="icon">' + product.Menu_Icon + '</td>' +
+            '<td data-column="level">' + product.Menu_Level + '</td>' +
+            '<td data-column="username">' + product.Menu_CreateID + '</td>' +
+            '<td data-column="fullname">' + product.Menu_CreateBy + '</td>' +         
+            '<td data-column="date">' + product.Menu_Date + '</td>' +
+            '<td data-column="time">' + product.Menu_Time + '</td>' +
+            '<td data-column="status"><button data-group-id="' + product.Menu_ID + '" data-group-status="' + product.Menu_Status + '" type="button" class="btn btn-'+(product.Menu_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-menu-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
+            (product.Menu_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
+            '</button></td>' +
+            '<td>' +
+            (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-menu" name="Update[]" value="' + product.Menu_ID + '"><i class="ti-pencil text-danger"></i></button>' : '') +
+            (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-menu" name="delete[]" value="' + product.Menu_ID + '"><i class="ti-trash text-danger"></i></button>' : '') +
+            '</td>' +
+          '</tr>');
+          var list = {
+            'Menu_ID'  : product.Menu_ID,
+            'Menu_Name': product.Menu_Name,
+            'Menu_Adress'      : product.Menu_Adress,
+            'Menu_Icon' : product.Menu_Icon,
+            'Menu_Level' : product.Menu_Level,
+            'Menu_CreateBy' : product.Menu_CreateBy,
+            'Menu_CreateBy': product.Menu_CreateBy,
+            'Menu_Date': product.Menu_Date,
+            'Menu_Time': product.Menu_Time,
+            'Menu_Status': product.Menu_Status,
+          };
+          data_temp.push(list);
+        }
+
+    //xử lý sự kiện close modal
+      $('.close').click(function(event) {
+        $('#CreatMenuModal').modal('hide');
+        $('#UpdateMenuModal').modal('hide');
+        $('#ImportExcelModal').modal('hide');
+      });
+    //xử lý sự kiện close modal
+
+    // Xử lý sự kiện khi người dùng chọn checkbox và nhấn nút Delete
+      $(document).on('click', '.delete-menu', function() {
+        var MenuID = $(this).val();
+        const swalWithBootstrapButtons = Swal.mixin({
+          customClass: {
+            confirmButton: 'btn btn-success btn-success-cus',
+            cancelButton: 'btn btn-danger btn-danger-cus'
+          },
+          buttonsStyling: false
+        })
+        
+        swalWithBootstrapButtons.fire({
+          title: 'Are you sure?',
+          text: "Bạn muốn xóa Menu "+ MenuID + " ?",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, delete it!',
+          cancelButtonText: 'No, cancel!',
+          reverseButtons: true
+        }).then((result) => {
+          if (result.isConfirmed) {
+            event.preventDefault();          
+            var parentRow = $(this).closest('tr');
+            delete_menu(MenuID, parentRow);      
+          } 
+        })
+      });
+
+      function delete_menu(MenuID, parentRow){
+        $.ajax({
+          url: '/xoa-menu/',
+          dataType: 'json',
+          method: 'POST',
+          data: {
+            'MenuID': MenuID,
+          },
+          success: function(response) {
+            if (response.success) {
+              parentRow.remove();
+              Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                timer: 1000,
+                text: response.message,
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: response.message,
+              });
+            }
+          },
+          error: function(response) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Thông Báo Lỗi',
+              text: response.message,
+            });
+          }
+        });
+      }
+    // Xử lý sự kiện khi người dùng chọn checkbox và nhấn nút Delete
+
+    // Xử lý sự kiện khi người dùng nhấn nút Create
+      $('.addMenu').click(function(event) {
+        $('#CreatMenuModal').modal('show');
+      });
+
+      $('#create-menu-button').click(function(event) {
+        event.preventDefault(); // Prevent default form submission      
+        var Menu_Name = document.querySelector('#input_name').value;
+        var Menu_Add = document.querySelector('#input_address').value;
+        var Menu_Icon = document.querySelector('#input_icon').value;
+        var Menu_Level = document.querySelector('#input_level').value;
+        var Menu_status = document.querySelector('#input_status').value;
+        if(Menu_Name == '' || Menu_Icon == '' ||Menu_Level == '' ||Menu_status == '' ){
+          Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: 'Nhập đầy đủ các trường có *',
+          });
+        }
+        else{
+          create_menu(Menu_Name,Menu_Add,Menu_Icon,Menu_Level,Menu_status);
+        }
+        
+      });
+
+      function create_menu(Menu_Name,Menu_Add,Menu_Icon,Menu_Level,Menu_status){
+        $.ajax({
+          url: '/tao-menu/',
+          dataType: 'json',
+          method: 'POST',
+          data: {
+            'Menu_Name'     : Menu_Name,
+            'Menu_Adress'   : Menu_Add,
+            'Menu_Icon'     : Menu_Icon,
+            'Menu_Level'    : Menu_Level,
+            'Menu_status'   : Menu_status,
+          },
+          success: function(response) {
+            if (response.success) {     
+              $('#CreatMenuModal').modal('hide');  
+              add_row_menu(response);
+              // auth_role();
+                       
+              Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                timer: 1000,
+                text: response.message,
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: response.message,
+              });
+            }
+          },
+          error: function(response) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Thông Báo Lỗi',
+              text: response.message,
+            });
+          }
+        });
+      }
+     
+  }
+    // Xử lý sự kiện khi người dùng nhấn nút Create
+
+  // Xử lý sự kiện khi người dùng nhấn nút Update
+    $(document).on('click', '.update-menu', function() {
+      if( $('#UpdateMenuModal').modal('show'))
+        {       
+          var MenuID = $(this).val();
+          LoadDataUpdate_Menu(MenuID);           
+        }
+    });
+
+  // load data form update product
+    function LoadDataUpdate_Menu(MenuID){    
+      $.ajax({
+        url: '/data-update-menu/',
+        dataType: 'json',
+        method: 'POST',
+        data: {'MenuID': MenuID},
+        success: function(response) {
+          if(response.success){
+            var input = document.querySelector('#UpdateMenuModal');
+            var input_ID = input.querySelector('#input_ID');
+            input_ID.value = response.Menus[0].Menu_ID;
+            var input_Name = input.querySelector('#input_name');
+            input_Name.value = response.Menus[0].Menu_Name;
+
+            var input_address = input.querySelector('#input_address');
+            input_address.value = response.Menus[0].Menu_Adress;
+            var input_icon = input.querySelector('#input_icon');
+            input_icon.value = response.Menus[0].Menu_Icon;
+            var input_level = input.querySelector('#input_level');
+            input_level.value = response.Menus[0].Menu_Level;
+
+            var input_status = input.querySelectorAll('#input_status option');            
+            input_status.forEach(function(sta){
+              var status = sta.getAttribute('value');
+              var menuStatus = response.Menus[0].Menu_Status;                         
+              if (status.toLowerCase() === String(menuStatus).toLowerCase()) {
+                sta.setAttribute('selected', 'selected');
+              } else {
+                sta.removeAttribute('selected');
+              }
+            });
+          }
+          else{
+            Swal.fire({
+              icon: 'error',
+              title: 'Thông Báo Lỗi',
+              text: response.message,
+            });
+          }
+        },
+        error: function(rs, e) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi',
+            text: 'Lỗi',
+          });
+        }
+    });
+    }
+
+    $(document).on('click', '#update-menu-button', function() {
+    // $('#Update-company-button').click(function(event) {
+      // $(document).on('click', 'update-company-button', function() {
+      var modal = document.querySelector('#UpdateMenuModal');
+      var input_ID = modal.querySelector('#input_ID').value;
+      var input_Name = modal.querySelector('#input_name').value;
+      var input_address = modal.querySelector('#input_address').value;
+      var input_icon = modal.querySelector('#input_icon').value;
+      var input_level = modal.querySelector('#input_level').value;
+      var input_status = modal.querySelector('#input_status').value;
+    
+      if (input_ID && input_Name && input_icon && input_level && input_status) {
+        update_menu(input_ID , input_Name , input_address , input_icon , input_level , input_status);  
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi', 
+          text: 'Nhập thông tin vào các trường có *',
+        });
+      }
+    }); 
+
+    function update_menu(Menu_ID , Menu_Name , Menu_Address , Menu_Icon , Menu_Level , Menu_Status){
+      var status_new = (Menu_Status == "True" ? "true" : "false")
+      $.ajax({
+            url: '/cap-nhat-menu/',
+            dataType: 'json',
+            method: 'POST',
+            data: {
+              'MenuID': Menu_ID,
+              'MenuName': Menu_Name,
+              'MenuAdress': Menu_Address,
+              'MenuIcon': Menu_Icon,
+              'MenuLevel': Menu_Level,
+              'status': (Menu_Status == "True" ? "True" : "False"),
+              
+            },
+            success: function(response) {
+              if (response.success) {
+                update_info_group(response, status_new);
+                $('#UpdateMenuModal').modal('hide');
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'Thông Báo',
+                    timer: 1000,
+                    text: response.message,
+                  });
+              } else {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Oops...',
+                  text: response.message,
+                });
+              }
+            },
+            error: function(response) {
+              Swal.fire({
+                icon: 'error',
+                title: 'Thông Báo Lỗi',
+                text: response.message,
+              });
+            }
+          });
+    }
+
+    function update_info_group(Menu_Data,status_new){
+      var isEditTrue = IsAdmin === true || (Dash_Role_Data.length > 2 && Dash_Role_Data[1].Status === 'True');
+        // Lấy danh sách tất cả các phần tử tr có thuộc tính data-product-id
+        var productRows = document.querySelectorAll('tr[data-product-id]');
+
+        // Lặp qua từng phần tử tr
+        productRows.forEach(function(row) {
+          // Lấy giá trị của thuộc tính data-product-id
+          var MenuID = parseInt(row.getAttribute('data-product-id'));
+
+          // Kiểm tra xem productId có khớp với sản phẩm bạn đang quan tâm không
+          if (MenuID === Menu_Data.Menu_ID) {
+            // Cập nhật thông tin của phần tử
+            var nameElement = row.querySelector('[data-column="name"]');
+            var statusElement = row.querySelector('[data-column="status"]');
+            var addElement = row.querySelector('[data-column="add"]');
+            var iconElement = row.querySelector('[data-column="icon"]');
+            var levelElement = row.querySelector('[data-column="level"]');
+            nameElement.textContent =  Menu_Data.Menu_Name;
+            addElement.textContent =  Menu_Data.Menu_Adress ? Menu_Data.Menu_Adress : 'No Data' ;
+            iconElement.textContent =  Menu_Data.Menu_Icon;
+            levelElement.textContent =  Menu_Data.Menu_Level;
+            
+
+            var htmlStatus = '<button data-group-id="' + Menu_Data.Menu_ID + '" data-group-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-menu-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
+            (status_new === "true" ? 'Kích Hoạt' : 'Không Kích Hoạt' ) + 
+            '</button>';
+            var buttonStatusElement = statusElement.querySelector('button');
+            if (buttonStatusElement) {
+              buttonStatusElement.remove();
+            }
+            statusElement.insertAdjacentHTML('beforeend', htmlStatus);
+          }
+        });
+    }
+    // Xử lý sự kiện khi người dùng nhấn nút Update 
+
+}
+//########### Danh Sách Group Role End ########### 
 
 //########### Cập Nhật profile ###########  
 if (window.location.pathname === '/cap-nhat-thong-tin-ca-nhan/') {
@@ -11409,6 +13032,119 @@ if (window.location.pathname === '/cap-nhat-thong-tin-ca-nhan/') {
     });
   }
 }
+
+if (window.location.pathname === '/cap-nhat-mat-khau/') {
+  //kiểm tra trạng thái user
+  $.ajax({
+    url: '/check-status-user/',
+    dataType: 'json',
+    method: 'POST',
+    success: function(response) {   
+      var sta = document.querySelector('#input_status');
+      var oldPass = document.querySelector('#input_old_pass');
+      var label_oldPass = document.querySelector('.label_old_pass');
+      if (response.success){
+        //có password
+        sta.value = 'True';
+        oldPass.style.display = 'block';
+        label_oldPass.style.display = 'block'; 
+      }
+      else{
+        //không có password
+        sta.value = 'False';
+        oldPass.style.display = 'none';
+        label_oldPass.style.display = 'none';
+      }  
+    },
+    error: function(response) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Thông Báo Lỗi',
+        text: response.message,
+      });
+    }
+  });
+
+  $(document).on('click', '#Update-Pass-button', function() {
+    var sta = document.querySelector('#input_status').value;
+    if (sta == 'True'){
+      var oldPass = document.querySelector('#input_old_pass').value;
+      var newPass = document.querySelector('#input_new_pass').value;
+      var confirmPass = document.querySelector('#input_confirm_pass').value;
+      if(oldPass == '' || newPass == '' || confirmPass == ''){
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: 'Nhập đầy đủ các trường có *',
+        });
+        return;
+      }   
+    }
+    else{
+      var oldPass = '';
+      var newPass = document.querySelector('#input_new_pass').value;
+      var confirmPass = document.querySelector('#input_confirm_pass').value;
+      if(newPass == '' || confirmPass == ''){
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: 'Nhập đầy đủ các trường có *',
+        });
+        return;
+      }
+    }
+    //Kiểm tra pass và confirm pass có trùng khớp không
+    if (newPass !== confirmPass) {
+      Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: 'Mật khẩu vá mật khẩu xác nhận không trùng khớp',
+      });
+      return;
+    }
+
+    //xử lý cập nhật mật khẩu
+    $.ajax({
+      url: '/change-pass/',
+      dataType: 'json',
+      method: 'POST',
+      data: {
+        'Status': sta,
+        'OldPass': oldPass,
+        'NewPass': newPass,
+      },
+      success: function(response) {   
+        if(response.success){
+          Swal.fire({
+            icon: 'success',
+            title: 'Thông Báo',
+            text: response.message,
+          });
+          setTimeout(function() {
+            window.location.href = "/cap-nhat-mat-khau/";
+          }, 1000);
+        }
+        else{
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi',
+            text: response.message,
+          });
+        }
+      },
+      error: function(response) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: response.message,
+        });
+      }
+    });
+  
+  });
+
+}
 //########### Cập Nhật profile ###########  
 
+//########### Danh Sách Template - Document ###########  
 //################################################## PAGE TICKET HELPDESK - END ##################################################  

@@ -8,7 +8,7 @@
   <!-- Required meta tags -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>Star Admin2 </title>
+  <title>Service Desk Portal - SDP</title>
   {% comment %} Login Google {% endcomment %}
   <meta name="google-signin-client_id" content="76045418295-6f2usr0sr610lm51rvph28uutjmilm6s.apps.googleusercontent.com">
   <!-- plugins:css -->
@@ -81,10 +81,10 @@
                       Keep me signed in
                     </label>
                   </div>
-                  <a href="#" class="auth-link text-black">Forgot password?</a>
+                  <a href="/reset-pass/" class="auth-link text-black">Forgot password?</a>
                 </div>
                 <div class="my-3">
-                  <button type="submit" class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn" data-dismiss="modal" id="login-system">LOGIN</button>
+                  <button type="submit" class="btn btn-block btn-success btn-lg font-weight-medium auth-form-btn" data-dismiss="modal" id="login-system">LOGIN</button>
                   <button type="button" class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn" id="login-button" onclick="microsoft_login()"><i class="ti-microsoft-alt"> MICROSOFT</i></button>
                   {% comment %} <a class="btn btn-block btn-primary btn-lg font-weight-medium auth-form-btn" href="../../index.html">LOGIN</a> {% endcomment %}
                 </div>
@@ -97,7 +97,7 @@
                   </button> {% endcomment %}
                 </div>
                 <div class="text-center mt-4 fw-light">
-                  Don't have an account? <a href="register-2.html" class="text-primary">Create</a>
+                  {% comment %} Don't have an account? <a href="register-2.html" class="text-primary">Create</a> {% endcomment %}
                 </div>
               </form>
             </div>

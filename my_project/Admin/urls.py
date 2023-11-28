@@ -67,7 +67,7 @@ urlpatterns = [
     path('danh-sach-attach-file/', views.load_attachment, name='load_attachment'),                       #Attachment Page - Trang hiển thị nhóm
     path('danh-sach-data-attach-file/', views.load_Attachment_Json, name='load_Attachment_Json'),        #Attachment data - hiển thị danh sách nhóm dạng json
     path('cap-nhat-attachment/', views.Update_Attachment, name='Update_Attachment'),                     #Attachment Update - chỉnh sửa Nhóm
-    path('xoa-dinh-kem/', views.Delete_Company, name='Delete_Company'),                                  #Attachment Delete - xóa Nhóm
+    path('xoa-dinh-kem/', views.Delete_Attachment, name='Delete_Attachment'),                                  #Attachment Delete - xóa Nhóm
     path('data-update-attachment/', views.Data_Update_Attachment, name='Data_Update_Attachment'),        #Attachment Update - chỉnh sửa Nhóm
     #------------- Group-------------------------
 
@@ -92,8 +92,10 @@ urlpatterns = [
     path('page-404/', views.page_404, name='page_404'),
     path('cap-nhat-thong-tin-ca-nhan/', views.Update_Profile, name='Update_Profile'),
     path('kiem-tra-cong-ty/', views.Check_Company, name='Check_Company'),
-    # path('import_excel_user/', views.import_excel_user, name='import_excel_user'),
-    # path('export_excel_user/', views.export_excel_user, name='export_excel_user'),
+    path('reset-pass-user/', views.Reset_pass_User, name='Reset_pass_User'),
+    path('check-status-user/', views.Check_Status_User, name='Check_Status_User'),
+    path('cap-nhat-mat-khau/', views.Update_Pass_User, name='Update_Pass_User'),
+    path('change-pass/', views.Update_Pass_By_User, name='Update_Pass_By_User'),
     #------------- User-------------------------
 
     #------------- User-------------------------
@@ -143,11 +145,6 @@ urlpatterns = [
     path('danh-sach-phan-quyen/', views.load_authorize, name='load_authorize'),                             #authorize Page - Trang hiển thị nhóm
     path('danh-sach-data-phan-quyen/', views.load_Authorize_Json, name='load_Authorize_Json'),              #authorize data - hiển thị danh sách nhóm dạng json
     path('phan-quyen-nguoi-dung/', views.Create_Authorize, name='Create_Authorize'),                        #authorize Create - Tạo Nhóm
-    # path('xoa-quyen/', views.Delete_Role, name='Delete_Role'),                                            #authorize Delete - xóa Nhóm
-    # path('data-update-role/', views.Data_Update_Role, name='Data_Update_Role'),                           #authorize Update - chỉnh sửa Nhóm
-    # path('cap-nhat-quyen/', views.Update_Role, name='Update_Role'),                                       #authorize Update - chỉnh sửa Nhóm
-    path('role-data-user/', views.load_Authorize_data, name='load_Authorize_data'),                         #authorize Page - Trang hiển thị nhóm
-    path('menu-data/', views.role_menu, name='role_menu'),
     #------------- Authorize -------------------------
 
     #------------- Authorize Role -------------------------
@@ -171,7 +168,22 @@ urlpatterns = [
     path('role-quyen/', views.check_role, name='check_role'),
     path('phan-quyen-authorize/', views.Auth_Authorize, name='Auth_Authorize'),
     path('role-authorize/', views.check_authorize, name='check_authorize'),
+    path('phan-quyen-menu/', views.Auth_Menu, name='Auth_Menu'),
+    path('role-menu/', views.check_menu, name='check_menu'),
+    path('role-template/', views.check_template, name='check_template'),
+    path('role-document/', views.check_document, name='check_document'),
     #------------- Authorize Role -------------------------
+
+    #-------------Menu-------------------------
+    path('danh-sach-menu/', views.load_menu, name='load_menu'),                                         #Role Page - Trang hiển thị nhóm
+    path('danh-sach-data-menu/', views.load_Menu_Json, name='load_Menu_Json'),                          #Role data - hiển thị danh sách nhóm dạng json
+    path('tao-menu/', views.Create_Menu, name='Create_Menu'),                                           #Role Create - Tạo Nhóm
+    path('xoa-menu/', views.Delete_Menu, name='Delete_Menu'),                                           #authorize Delete - xóa Nhóm
+    path('data-update-menu/', views.Data_Update_Menu, name='Data_Update_Menu'),                         #authorize Update - chỉnh sửa Nhóm
+    path('cap-nhat-menu/', views.Update_Menu, name='Update_Menu'),                                      #authorize Update - chỉnh sửa Nhóm
+    path('role-data-user/', views.load_Authorize_data, name='load_Authorize_data'),                     #authorize Page - Trang hiển thị nhóm
+    path('menu-data/', views.role_menu, name='role_menu'),
+    #-------------Menu-------------------------
 
     #------------- Office 365 Automation -------------------------
     # path('test-mail1/', views.check_emails, name='check_emails'),
@@ -197,8 +209,14 @@ urlpatterns = [
     path('login/callback/', views.microsoft_login_token, name='login_callback'),                        #Login Microsoft - trang đăng nhập Microsoft
     path('google/callback/', views.google_login, name='google_login'),                                  #Login google - trang đăng nhập google
     path('facebook/callback/', views.facebook_login, name='facebook_login'),                            #Login facebook - trang đăng nhập facebook
+    path('reset-pass/', views.forgot_pass, name='forgot_pass'),                                         #forgot pass - quên mật khẩu
+    path('change-pass_login/', views.Reset_Pass, name='Reset_Pass'),                                    #forgot pass - quên mật khẩu
     #------------- Login------------------------
 
+    #------------- Dashboard-----------------------
+    path('bieu-mau/', views.Template, name='Template'),                                                  #Ticket Page - Trang hiển thị yêu cầu
+    path('tai-lieu/', views.Document, name='Document'),                                                  #Ticket Page - Trang hiển thị yêu cầu
+    #------------- Dashboard-----------------------
 
 
 

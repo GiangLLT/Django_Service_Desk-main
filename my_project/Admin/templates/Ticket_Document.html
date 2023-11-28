@@ -1,0 +1,140 @@
+
+{% extends 'Admin_Helpdesk.html' %}
+
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Trang Chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Danh Sách Tài Liệu</span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper ">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="top-title">
+                {% comment %} <h4 class="card-title card-title-edit">DANH SÁCH BIỂU MẪU</h4> {% endcomment %}
+              </div>           
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <div class="mt-4">
+                      <div class="accordion accordion-multi-colored" id="accordion-6" role="tablist">
+                        <div class="card">
+                          <div class="card-header" role="tab" id="heading-16">
+                            <h6 class="mb-0">
+                              <a data-bs-toggle="collapse" href="#collapse-16" aria-expanded="false" aria-controls="collapse-16" class="collapsed">
+                                Cách tạo tài khoản trên SDP (Service Desk Portal)?
+                              </a>
+                            </h6>
+                          </div>
+                          <div id="collapse-16" class="collapse" role="tabpanel" aria-labelledby="heading-16" data-bs-parent="#accordion-6" style="">
+                            <div class="card-body">
+                              <div class="row">
+                                {% comment %} <div class="col-3">
+                                  <img src="../../../../images/samples/300x300/10.jpg" class="mw-100" alt="image">                              
+                                </div> {% endcomment %}
+                                <div class="col-12">
+                                  <p class="mb-0">
+                                    Hiện tại có 2 cách tạo tài khoản trên SDP:</br>
+                                    <b>Cách 1:</b></br>
+                                    - Đăng nhập bằng tài khoản Email (Eoffice của Microsoft), hệ thống sẽ tự động tạo tài khoản SDP dựa trên Email.</br>
+                                    <b>Cách 2:</b></br>
+                                    - Nếu không có tài khoản Email, liên hệ trực tiếp IT để được hỗ trợ tạo tài khoản.</br>
+                                  </p>                             
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header" role="tab" id="heading-17">
+                              <h6 class="mb-0">
+                                <a data-bs-toggle="collapse" href="#collapse-17" aria-expanded="false" aria-controls="collapse-17" class="collapsed">
+                                  Cách tạo Ticket (Yêu cầu hỗ trợ) trên SDP (Service Desk Portal)?
+                                </a>
+                              </h6>
+                            </div>
+                            <div id="collapse-17" class="collapse" role="tabpanel" aria-labelledby="heading-16" data-bs-parent="#accordion-6" style="">
+                              <div class="card-body">
+                                <div class="row">
+                                  <div class="col-12">
+                                    <p class="mb-0">
+                                      Hiện tại có 2 cách tạo yêu cầu hỗ trợ trên SDP:</br>
+                                      <b>Cách 1:</b></br>
+                                      -Tạo trực tiếp trên web SDP.</br>
+                                      <b>Cách 2:</b></br>
+                                      - Gửi mail yêu cầu hỗ trợ đến IT và CC đến email noreply-hrm@bamboocap.com.vn. Hệ thống SDP sẽ tự động tạo yêu cầu trên Web.</br>
+
+                                      </br>Xem và Download file hướng dẫn chi tiết tại: <a href='' alt='file hướng dẫn'> Download file hướng dẫn</a>
+                                    </p>                             
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        {% comment %} <div class="card">
+                          <div class="card-header" role="tab" id="heading-17">
+                            <h6 class="mb-0">
+                              <a class="collapsed" data-bs-toggle="collapse" href="#collapse-17" aria-expanded="false" aria-controls="collapse-17">
+                                I can’t sign in to my account
+                              </a>
+                            </h6>
+                          </div>
+                          <div id="collapse-17" class="collapse" role="tabpanel" aria-labelledby="heading-17" data-bs-parent="#accordion-6" style="">
+                            <div class="card-body">
+                                <p>If while signing in to your account you see an error message, you can do the following</p>
+                              <ol class="pl-3 mt-4">
+                                <li>Check your network connection and try again</li>
+                                <li>Make sure your account credentials are correct while signing in</li>
+                                <li>Check whether your account is accessible in your region</li>
+                              </ol>
+                              <br>
+                              <p class="text-danger">
+                                <i class="ti-alert-octagon me-2"></i>If the problem persists, you can contact our support.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="card">
+                          <div class="card-header" role="tab" id="heading-18">
+                            <h6 class="mb-0">
+                              <a class="collapsed" data-bs-toggle="collapse" href="#collapse-18" aria-expanded="false" aria-controls="collapse-18">
+                                Can I add money to the wallet?
+                              </a>
+                            </h6>
+                          </div>
+                          <div id="collapse-18" class="collapse" role="tabpanel" aria-labelledby="heading-18" data-bs-parent="#accordion-6" style="">
+                            <div class="card-body">
+                              <p class="mb-0">You can add money to the wallet for any future transaction from your bank account using net-banking, or credit/debit card transaction. The money in the wallet can be used for an easier and faster transaction.</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header" role="tab" id="heading-19">
+                              <h6 class="mb-0">
+                                <a class="collapsed" data-bs-toggle="collapse" href="#collapse-19" aria-expanded="false" aria-controls="collapse-19">
+                                  Can I add money to the wallet?
+                                </a>
+                              </h6>
+                            </div>
+                            <div id="collapse-19" class="collapse" role="tabpanel" aria-labelledby="heading-19" data-bs-parent="#accordion-6" style="">
+                              <div class="card-body">
+                                <p class="mb-0">You can add money to the wallet for any future transaction from your bank account using net-banking, or credit/debit card transaction. The money in the wallet can be used for an easier and faster transaction.</p>
+                              </div>
+                            </div>
+                          </div>
+                      </div> {% endcomment %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+    </div>
+
+{% endblock %}

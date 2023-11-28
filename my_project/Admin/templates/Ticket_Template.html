@@ -1,0 +1,76 @@
+{% extends 'Admin_Helpdesk.html' %}
+
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Trang Chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Danh Sách Biểu Mẫu</span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper ">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="top-title">
+                <h4 class="card-title card-title-edit">DANH SÁCH BIỂU MẪU</h4>
+              </div>           
+
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="product-table" class="table table-hover">
+                            <thead>
+                              <tr class="tr-table">
+                                <th>#</th>
+                                <th>TÊN BIỂU MẪU</th>                                                       
+                                <th>DIỄN GIẢI</th>                                                       
+                                <th>LINK DOWNLOAD</th>
+                              </tr>
+                             </thead>                          
+                            <tbody>
+                                <tr>
+                                    <td data-column="id">#0000000001</td>
+                                    <td data-column="name">Template Import Users</td>
+                                    <td data-column="desc">Biểu Mẫu Import Nhân Viên</td>
+                                    <td data-column="link"><a href="{% static 'Asset/File-Template/Import_User.xlsx' %}" alt="link">Download</a></td>
+                                </tr>
+                                <tr>
+                                    <td data-column="id">#0000000002</td>
+                                    <td data-column="name">Template Import Company</td>
+                                    <td data-column="desc">Biểu Mẫu Import Công Ty</td>
+                                    <td data-column="link"><a href="{% static 'Asset/File-Template/Import_Company.xlsx' %}" alt="link">Download</a></td>
+                                </tr>
+                                <tr>
+                                    <td data-column="id">#0000000003</td>
+                                    <td data-column="name">Template Import Assign</td>
+                                    <td data-column="desc">Biểu Mẫu Import Người Thực Hiện</td>
+                                    <td data-column="link"><a href="{% static 'Asset/File-Template/Import_Assign.xlsx' %}" alt="link">Download</a></td>
+                                </tr>
+                                <tr>
+                                    <td data-column="id">#0000000004</td>
+                                    <td data-column="name">Template Import Group Role</td>
+                                    <td data-column="desc">Biểu Mẫu Import Nhóm Quyền</td>
+                                    <td data-column="link"><a href="{% static 'Asset/File-Template/Import_GroupRole.xlsx' %}" alt="link">Download</a></td>
+                                </tr>
+                                <tr>
+                                    <td data-column="id">#0000000005</td>
+                                    <td data-column="name">Template Import Role</td>
+                                    <td data-column="desc">Biểu Mẫu Import Quyền</td>
+                                    <td data-column="link"><a href="{% static 'Asset/File-Template/Import_Role.xlsx' %}" alt="link">Download</a></td>
+                                </tr>
+                            </tbody>                          
+                          </table>                    
+                    </div>                                 
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+    </div>
+
+{% endblock %}
