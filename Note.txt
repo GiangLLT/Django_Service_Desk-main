@@ -44,5 +44,3 @@ git config --global core.safecrlf false
 
 git config --global --add safe.directory C:/inetpub/wwwroot/Django_Service_Desk-main
 
-test 11111111111111
-
