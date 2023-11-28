@@ -213,5 +213,14 @@ class Authorization_User(models.Model):
     class Meta:
         db_table = 'Authorization_User'
 
+class Ticket_Mapping(models.Model):
+    Ticket_Mapping_ID = models.AutoField(primary_key=True)
+    Ticket_ID = models.ForeignKey(Ticket, on_delete=models.CASCADE, db_column='Ticket_ID')
+    Email_ID  = models.CharField(max_length=255)
+    Comment_ID = models.IntegerField()
+    Ticket_Mapping_Status = models.BooleanField()
+    class Meta:
+        db_table = 'Ticket_Mapping'
+
 
 

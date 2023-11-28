@@ -37,10 +37,10 @@
                     <i class="ti-shift-right btn-icon-prepend"></i>                                                    
                     HIỂN THỊ CỘT
                   </button>                
-                  <button type="button" class="btn btn-danger btn-icon-text addUser" id="addUser">
+                  {% comment %} <button type="button" class="btn btn-danger btn-icon-text addUser" id="addUser">
                     <i class="ti-files btn-icon-prepend"></i>                                                    
                     TẠO NGƯỜI DÙNG
-                  </button>
+                  </button> {% endcomment %}
                 </div>
               </div>
               
@@ -237,7 +237,7 @@
                                                         <select class="form-select input_support db-support-ticket" aria-label="Default select example" id="input_role" name="role" required>
                                                           <option value="2">Member</option>
                                                           <option value="1">Moderator</option>
-                                                          <option value="0" class="hide-option opt-admin">Administrator</option>
+                                                          {% comment %} <option value="0" class="hide-option opt-admin">Administrator</option> {% endcomment %}
                                                         </select>
                                                       </div>
                                                     </div>
@@ -363,7 +363,7 @@
                                                         <select class="form-select input_support db-support-ticket" aria-label="Default select example" id="input_role" name="role" required>
                                                           <option value="2">Member</option>
                                                           <option value="1">Moderator</option>
-                                                          <option value="0" class="hide-option opt-admin">Administrator</option>
+                                                          {% comment %} <option value="0" class="hide-option opt-admin">Administrator</option> {% endcomment %}
                                                         </select>
                                                       </div>
                                                     </div>
@@ -408,10 +408,10 @@
                                             </div>
                                             <div class="form-group">
                                                 <label for="name">Quyền <b class="require-form">*</b></label>
-                                                <select class="form-select input_role" aria-label="Default select example" id="input_user_role" name="type" readonly required>
+                                                <select class="form-select input_role db-support-ticket" aria-label="Default select example" id="input_user_role" name="type" readonly required>
                                                   <option value="2">User Member</option>
                                                   <option value="1">Moderator</option>
-                                                  <option value="0">Administrator</option>
+                                                  {% comment %} <option value="0">Administrator</option> {% endcomment %}
                                                 </select>
                                               </div>                                     
                                           </div>                                        
@@ -451,6 +451,36 @@
                                     </div>
                                   </div>
                                   <!--Modal Import Data  -->
+
+                                  <!-- Modal Import Data -->
+                                  <div class="modal fade modal-hidden" id="ChangePassModal" tabindex="-1" role="dialog" aria-labelledby="ChangePassModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="ChangePassLabel"><i class="ti-write"></i> RESET PASSWORD</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="UpdateRoleForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                            <div class="form-group">
+                                              <input type="text"  class="form-control" id="input_id" hidden name="id">
+                                          </div>
+                                            <div class="form-group">
+                                                <label for="name">Mật khẩu mới</label>
+                                                <input type="text"  class="form-control" id="input_new_pass" name="pass">
+                                            </div>                                 
+                                          </div>                                 
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="change-pass-button"><i class="ti-save btn-icon-prepen"></i>  ĐỔI MẬT KHẨU</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!--Modal Import Data  -->
                                 </th>                                                           
                               </tr>                               
                             </thead>                          
@@ -458,7 +488,27 @@
                             </tbody>                          
                           </table>                    
                     </div>
-                    <ul class="pagination" id="pagination"></ul>                                    
+                    <ul class="pagination" id="pagination"></ul>   
+                     <!-- Modal spinners -->
+                      <div class="modal fade" id="spinnersModal" tabindex="-1" role="dialog" aria-labelledby="spinnersModallabel">
+                        <div class="modal-dialog" role="document">
+                          <div class="modal-content_spinners">
+                            
+                            <div class="modal-body_spinners">
+                              <div class="spinner-grow text-muted"></div>
+                              <div class="spinner-grow text-primary"></div>
+                              <div class="spinner-grow text-success"></div>
+                              <div class="spinner-grow text-info"></div>
+                              <div class="spinner-grow text-warning"></div>
+                              <div class="spinner-grow text-danger"></div>
+                              <div class="spinner-grow text-secondary"></div>
+                              <div class="spinner-grow text-dark"></div>
+                              <div class="spinner-grow text-light"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    <!-- Modal spinners -->                                 
                   </div>
                 </div>
               </div>

@@ -1,0 +1,98 @@
+{% extends 'Admin_Helpdesk.html' %}
+
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Trang Chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Cập Nhật Mật Khẩu </span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper ">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="top-title">
+                <h4 class="card-title card-title-edit">CẬP NHẬT MẬT KHẨU</h4>
+                <div>                                 
+                </div>
+              </div>
+
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <div class="table-responsive over-flow">
+                        <form id="UpdateUserForm" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="modal-body modal-body-custom">
+                              <!-- Người dùng - line 1 -->
+                                    <div class="col-lg-12 col-md-12 col-sm-12">
+                                      <div class="row">
+                                          <div class="col-lg-12 col-md-12 col-sm-12">
+                                            <div class="form-group">
+                                                {% comment %} <input type="text" class="form-control" id="input_status" value="" name="status" hidden required> {% endcomment %}
+                                                <input type="text" class="form-control" id="input_status" value="" name="status" hidden readonly required>
+                                            </div>
+                                          </div>                                                  
+                                      </div>
+                                    </div>
+                              <!-- Người dùng - line 1  -->
+                              
+                              <!-- Người dùng - line 2 -->
+                                  <div class="col-lg-12 col-md-12 col-sm-12">
+                                      <div class="row">
+                                          <div class="col-lg-12 col-md-12 col-sm-12">
+                                              <div class="form-group">
+                                                  <label class="label_old_pass" for="name">Mật Khẩu Cũ<b class="require-form">*</b></label>
+                                                  <input type="password"  class="form-control" id="input_old_pass" value="" name="pass" placeholder="Nhập Mật Khẩu Cũ" required>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </div>
+                              <!-- Người dùng - line 2  -->
+
+                                <!-- Người dùng - line 3 -->
+                                <div class="col-lg-12 col-md-12 col-sm-12">
+                                    <div class="row">
+                                        <div class="col-lg-12 col-md-12 col-sm-12">
+                                            <div class="form-group">
+                                                <label for="name">Mật Khẩu Mới<b class="require-form">*</b></label>
+                                                <input type="password"  class="form-control" id="input_new_pass" value="" name="pass" placeholder="Nhập Mật Khẩu Mới" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                              <!-- Người dùng - line 3  -->
+
+                              <!-- Người dùng - line 4 -->
+                                <div class="col-lg-12 col-md-12 col-sm-12">
+                                    <div class="row">
+                                        <div class="col-lg-12 col-md-12 col-sm-12">
+                                            <div class="form-group">
+                                                <label for="name">Xác Nhận Mật Khẩu Mới<b class="require-form">*</b></label>
+                                                <input type="password"  class="form-control" id="input_confirm_pass" value="" name="pass" placeholder="Nhập Xác Nhận Mật Khẩu" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                              <!-- Người dùng - line 4  -->                  
+                                                    
+                            </div>                                        
+                            <div class="modal-footer modal-footer-custom">                                         
+                              <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="Update-Pass-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                            </div>
+                          </form>
+
+                                        
+                    </div>                            
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+    </div>
+{% endblock %}
