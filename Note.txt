@@ -44,3 +44,11 @@ git config --global core.safecrlf false
 
 git config --global --add safe.directory C:/inetpub/wwwroot/Django_Service_Desk-main
 
+===========================================
+# Chuyển đổi SID thành tên người dùng
+$SID = New-Object System.Security.Principal.SecurityIdentifier("S-1-5-82-2474823184-1339896912-3515464330-4251974013-1200450096")
+$user = $SID.Translate([System.Security.Principal.NTAccount])
+
+# In ra tên người dùng
+Write-Host $user.Value
+

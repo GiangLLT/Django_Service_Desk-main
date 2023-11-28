@@ -65,6 +65,9 @@ from functools import reduce
 
 from django.contrib.auth.decorators import login_required
 
+import subprocess
+from subprocess import Popen, PIPE
+
 # Create your views here.
 ############################################ PAGE TICKET HELPDESK - START ############################################################
 
@@ -94,7 +97,7 @@ def write_data(file_content,file_name,file_path):
 
     return file_name
 
-def run_cmd_github(request):
+def run_cmd_github_test(request):
     try:
         working_directory = 'C:\\inetpub\\wwwroot\\Django_Service_Desk-main'
         cmd = [
@@ -118,6 +121,38 @@ def run_cmd_github(request):
 
     except Exception as e:
         return HttpResponse(f"Error: {str(e)}", status=500)
+    
+def run_cmd_github(request):
+    try:
+        sid = 'S-1-5-21-1716883635-4105501997-2570134539-1000'
+        working_directory = 'C:\\inetpub\\wwwroot\\Django_Service_Desk-main'
+        commands = [
+            'cd /d {}'.format(working_directory),
+            'git status',
+            'git fetch origin main',
+            'git merge origin/main'
+        ]
+
+        log_contents = ''
+        for command in commands:
+            # Chạy lệnh với quyền của người dùng có SID
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
+
+            if process.returncode != 0:
+                return HttpResponse(f"Command failed with error: {stderr.decode('utf-8')}", status=500)
+
+            log_contents += stdout.decode('utf-8')
+
+        file_name = '_log_file_github.txt'
+        file_path = 'my_project/Logs'
+        log_file_name = write_data(log_contents, file_name, file_path)
+
+        return HttpResponse(f"Lệnh đã chạy thành công và nội dung đã được ghi vào tệp log: {log_file_name}")
+
+    except Exception as e:
+        return HttpResponse(f"Error: {str(e)}", status=500)
+
 
 def read_bat_file(request):
     file_path = 'C:\\inetpub\\wwwroot\\Django_Service_Desk-main\\SDP.bat'
