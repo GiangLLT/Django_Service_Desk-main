@@ -104,6 +104,7 @@ def run_cmd_github_test(request):
             ['cd', working_directory],
             ['git', 'status'],
             ['git', 'fetch', 'origin', 'main'],
+            
             ['git', 'merge', 'origin/main']
         ]
         log_contents = ''
@@ -898,7 +899,9 @@ def call_graph_api(request):
                     if Mail_status == '':
                         reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])
                         send_email_new_ticket(request,email_id, email_from,Context['Ticket_ID'],Context['Slug_Title'],Context['Email_Assign'],email_body)
-                    read_email(access_token,email_id)  
+                    readTrue = read_email(access_token,email_id)  
+                    if readTrue:
+                        move_email(access_token,email_id)
             else:
                 if(mailid):
                     del request.session['mail_id']
@@ -911,168 +914,6 @@ def call_graph_api(request):
     # time.sleep(5)
     return JsonResponse({'success': 'Success'}, status=200)
     # return redirect('/get-code/')
-
-# def call_graph_api(request):    
-#     mailid = ''
-#     emails = []
-#     authorization_code = request.GET.get('code')
-#     full_host = request.build_absolute_uri('/') 
-
-#     session_data = request.session.get('mail_id', {})
-#     if session_data:
-#         mailid = session_data.get('Mail_ID')
-#         access_token = session_data.get('access_token')
-#     else:
-#         # mailid = request.session.get('mail_id')  
-#         access_token = get_access_token(authorization_code,full_host)
-    
-#     if access_token == None :
-#         return JsonResponse({'error': 'token is empty'}, status=400)
-    
-#     # Tính thời gian ngày hôm nay và ngày hôm trước
-#     today = datetime.datetime.utcnow().date()
-#     yesterday = today - timedelta(days=1)
-
-#     # Đường dẫn thư mục trên máy chủ để lưu các tệp đính kèm
-#     # attachment_dir = '/static/Asset/Attachment-Upload/'
-#     attachment_dir = os.path.join(settings.BASE_DIR , 'static', 'Asset', 'Attachment-Upload')
-#     attachment_dir_img = os.path.join(settings.BASE_DIR , 'static', 'Asset', 'Attachment-Image')
-#     if(mailid):
-#         response = requests.get(
-#             # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
-#             f'https://graph.microsoft.com/v1.0/me/messages/{mailid}',
-#             headers={'Authorization': f'Bearer {access_token}'}
-#         )
-#         if response.status_code == 200:
-#          data_email = response.json()
-#          emails.append(data_email)
-#     else:
-#         prefix = '[SDP]'
-#         response = requests.get(
-#             # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
-#             f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
-#             headers={'Authorization': f'Bearer {access_token}'}
-#         )
-#         emails = response.json().get('value', [])
-    
-#     if emails:
-#         for email in emails:
-#             email_from = email['from']['emailAddress']['address']  # Địa chỉ email người gửi
-#             user = Users.objects.filter(Mail = email_from, User_Status = True).first()
-#             if user:
-#                 email_id = email['id']  # ID của email
-#                 email_subject = email['subject']  # Tiêu đề email          
-#                 # Lấy danh sách người nhận
-#                 recipients = email['toRecipients']
-#                 recipient_addresses = [recipient['emailAddress']['address'] for recipient in recipients]
-
-#                 # Lấy danh sách người được CC
-#                 cc_recipients = email.get('ccRecipients', [])
-#                 cc_addresses = [cc['emailAddress']['address'] for cc in cc_recipients]
-
-#                 email_body = email['body']['content']  # Nội dung email
-
-#                 #function create Ticket by mail 
-#                 email_group_ticket = check_group_ticket(email_subject,email_body)           
-#                 email_type_ticket = 1 #Type Hỗ Trợ
-#                 email_company_ticket = user.Company_ID  
-
-#                 # if 'inReplyTo' in email:
-#                 #     # Lấy email ID của email gốc
-#                 #     original_email_id = email['inReplyTo']['id']  
-#                 Context = Create_Ticket_Mail(request,email_id, email_subject, email_body,email_type_ticket,email_company_ticket,email_group_ticket,email_from,recipients)
-#                 if Context:
-#                     email_attachments = email['hasAttachments']  # Danh sách đính kèm
-#                     # Xử lý danh sách đính kèm
-#                     # if email_attachments:
-#                     # attachment_names = []
-#                     attachment_url = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/attachments'
-#                     attachment_response = requests.get(
-#                         attachment_url,
-#                         headers={'Authorization': f'Bearer {access_token}'}
-#                     )               
-#                     attachments = attachment_response.json().get('value', [])
-#                     if attachments:
-#                         #image
-#                         soup = BeautifulSoup(email_body, 'html.parser')
-#                         img_tags = soup.find_all('img')
-#                         for img_tag in img_tags:
-#                             src = img_tag.get('src', '')
-#                             if src.startswith('cid:'):
-#                                 content_id = src[4:]
-
-#                                 for attachment in attachments:
-#                                     if attachment['contentType'].startswith('image/') and attachment['contentId'] == content_id:
-#                                         img_data = attachment['contentBytes']
-
-#                                         img_filename = f'{content_id}.png'  # Tên tệp hình ảnh
-#                                         img_path = os.path.join(attachment_dir_img, img_filename)  # Đường dẫn tới tệp hình ảnh trên máy chủ
-
-#                                         with open(img_path, 'wb') as img_file:
-#                                             img_file.write(base64.b64decode(img_data))
-                                        
-#                                         with open(img_path, 'rb') as img_file:
-#                                             img_base64 = base64.b64encode(img_file.read()).decode('utf-8')
-#                                             # img_src = f'data:{attachment["contentType"]};base64,{img_base64}'
-#                                             img_src = f'/static/Asset/Attachment-Image/{content_id}.png'
-#                                             img_tag['src'] = img_src
-#                                         break
-#                         ticket = Ticket.objects.get(Ticket_ID = Context['Ticket_ID']) 
-#                         if ticket:
-#                             ticket.Ticket_Desc = str(soup)    
-#                             ticket.save()                                   
-#                         #attachment file
-#                         for attachment in attachments:
-#                             if not attachment['contentType'].startswith('image/'):
-#                                 ticketID = Context['Ticket_ID']
-#                                 attachment_id   = attachment['id']
-#                                 attachment_name = attachment['name']
-#                                 # attachment_type = attachment['contentType']
-#                                 # attachment_size = attachment['size']
-#                                 # attachment_names.append(attachment_name)
-
-#                                 attachment_item = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/attachments/{attachment_id}'
-#                                 attachment_item_response = requests.get(
-#                                     attachment_item,
-#                                     headers={'Authorization': f'Bearer {access_token}'}
-#                                 )
-#                                 attachment_data = attachment_item_response.content
-#                                 # Xây dựng đường dẫn lưu tệp trên máy chủ
-#                                 current_datetime = datetime.datetime.now()
-#                                 numeric_date = current_datetime.strftime('%d%m%Y')
-#                                 numeric_time = current_datetime.strftime('%H%M')
-#                                 attachment_name_full = str(ticketID) + '_' + numeric_date + '_' + numeric_time + '_' + attachment_name
-#                                 attachment_path = os.path.join(attachment_dir, attachment_name_full)
-
-#                                 # Lưu tệp đính kèm vào máy chủ
-#                                 with open(attachment_path, 'wb') as attachment_file:
-#                                     attachment_file.write(attachment_data)
-                                
-#                                 #create attachment data
-#                                 create_attachment_mail(ticketID,attachment_name_full)
-
-#                     # reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])             
-
-#                     # else:
-#                     #     #gửi mail thống báo lỗi không thành công.
-#                     #     mail = "Gửi mail thông báo"
-#                     if(mailid):
-#                         del request.session['mail_id']
-#                     reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])
-#                     send_email_new_ticket(request,email_id, email_from,Context['Ticket_ID'],Context['Slug_Title'],Context['Email_Assign'])
-#                     # read_email(access_token,email_id)  
-#             else:
-#                 if(mailid):
-#                     del request.session['mail_id']
-#                 email_id = email['id']  # ID của email
-#                 subject = "[SDP] Thông báo lỗi - User Chưa có trên hệ thống"    
-#                 reply_email_NoExitUser(request, access_token, email_id, email_from, subject)           
-#         return JsonResponse({'success': 'Success'}, status=200)
-#     else:
-#         return JsonResponse({'error': 'No email data'}, status=400)
-#     # time.sleep(5)
-#     return JsonResponse({'success': 'Success'}, status=200)
-#     # return redirect('/get-code/')
 
 def check_group_ticket(title_ticket,email_body):
     try:
@@ -1104,6 +945,21 @@ def read_email(access_token,email_id):
         return True
     else:
         return False    
+
+def move_email(access_token,email_id):
+    # Di chuyển email dựa trên ID
+    move_url = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/move'
+    move_data = {'destinationId': 'DONE'}  # Thay 'Done' bằng ID thư mục Done thực tế
+    move_headers = {'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'}
+    move_response = requests.post(move_url, json=move_data, headers=move_headers)
+
+    if move_response.status_code == 200:
+        return True
+        # print(f'Successfully moved message {email_id_to_move} to Done folder')
+    else:
+        return False
+        # print(f'Failed to move message {email_id_to_move}: {move_response.text}')
+
 #CHEKC MAIL OFFICE 365
 
 #FUNCTION CREATE TICKET 
@@ -8481,5 +8337,165 @@ def get_user_info_microsoft(access_token):
 
 ############################################ OTHER - END ############################################################
 
+# def call_graph_api(request):    
+#     mailid = ''
+#     emails = []
+#     authorization_code = request.GET.get('code')
+#     full_host = request.build_absolute_uri('/') 
 
+#     session_data = request.session.get('mail_id', {})
+#     if session_data:
+#         mailid = session_data.get('Mail_ID')
+#         access_token = session_data.get('access_token')
+#     else:
+#         # mailid = request.session.get('mail_id')  
+#         access_token = get_access_token(authorization_code,full_host)
+    
+#     if access_token == None :
+#         return JsonResponse({'error': 'token is empty'}, status=400)
+    
+#     # Tính thời gian ngày hôm nay và ngày hôm trước
+#     today = datetime.datetime.utcnow().date()
+#     yesterday = today - timedelta(days=1)
+
+#     # Đường dẫn thư mục trên máy chủ để lưu các tệp đính kèm
+#     # attachment_dir = '/static/Asset/Attachment-Upload/'
+#     attachment_dir = os.path.join(settings.BASE_DIR , 'static', 'Asset', 'Attachment-Upload')
+#     attachment_dir_img = os.path.join(settings.BASE_DIR , 'static', 'Asset', 'Attachment-Image')
+#     if(mailid):
+#         response = requests.get(
+#             # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+#             f'https://graph.microsoft.com/v1.0/me/messages/{mailid}',
+#             headers={'Authorization': f'Bearer {access_token}'}
+#         )
+#         if response.status_code == 200:
+#          data_email = response.json()
+#          emails.append(data_email)
+#     else:
+#         prefix = '[SDP]'
+#         response = requests.get(
+#             # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+#             f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+#             headers={'Authorization': f'Bearer {access_token}'}
+#         )
+#         emails = response.json().get('value', [])
+    
+#     if emails:
+#         for email in emails:
+#             email_from = email['from']['emailAddress']['address']  # Địa chỉ email người gửi
+#             user = Users.objects.filter(Mail = email_from, User_Status = True).first()
+#             if user:
+#                 email_id = email['id']  # ID của email
+#                 email_subject = email['subject']  # Tiêu đề email          
+#                 # Lấy danh sách người nhận
+#                 recipients = email['toRecipients']
+#                 recipient_addresses = [recipient['emailAddress']['address'] for recipient in recipients]
+
+#                 # Lấy danh sách người được CC
+#                 cc_recipients = email.get('ccRecipients', [])
+#                 cc_addresses = [cc['emailAddress']['address'] for cc in cc_recipients]
+
+#                 email_body = email['body']['content']  # Nội dung email
+
+#                 #function create Ticket by mail 
+#                 email_group_ticket = check_group_ticket(email_subject,email_body)           
+#                 email_type_ticket = 1 #Type Hỗ Trợ
+#                 email_company_ticket = user.Company_ID  
+
+#                 # if 'inReplyTo' in email:
+#                 #     # Lấy email ID của email gốc
+#                 #     original_email_id = email['inReplyTo']['id']  
+#                 Context = Create_Ticket_Mail(request,email_id, email_subject, email_body,email_type_ticket,email_company_ticket,email_group_ticket,email_from,recipients)
+#                 if Context:
+#                     email_attachments = email['hasAttachments']  # Danh sách đính kèm
+#                     # Xử lý danh sách đính kèm
+#                     # if email_attachments:
+#                     # attachment_names = []
+#                     attachment_url = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/attachments'
+#                     attachment_response = requests.get(
+#                         attachment_url,
+#                         headers={'Authorization': f'Bearer {access_token}'}
+#                     )               
+#                     attachments = attachment_response.json().get('value', [])
+#                     if attachments:
+#                         #image
+#                         soup = BeautifulSoup(email_body, 'html.parser')
+#                         img_tags = soup.find_all('img')
+#                         for img_tag in img_tags:
+#                             src = img_tag.get('src', '')
+#                             if src.startswith('cid:'):
+#                                 content_id = src[4:]
+
+#                                 for attachment in attachments:
+#                                     if attachment['contentType'].startswith('image/') and attachment['contentId'] == content_id:
+#                                         img_data = attachment['contentBytes']
+
+#                                         img_filename = f'{content_id}.png'  # Tên tệp hình ảnh
+#                                         img_path = os.path.join(attachment_dir_img, img_filename)  # Đường dẫn tới tệp hình ảnh trên máy chủ
+
+#                                         with open(img_path, 'wb') as img_file:
+#                                             img_file.write(base64.b64decode(img_data))
+                                        
+#                                         with open(img_path, 'rb') as img_file:
+#                                             img_base64 = base64.b64encode(img_file.read()).decode('utf-8')
+#                                             # img_src = f'data:{attachment["contentType"]};base64,{img_base64}'
+#                                             img_src = f'/static/Asset/Attachment-Image/{content_id}.png'
+#                                             img_tag['src'] = img_src
+#                                         break
+#                         ticket = Ticket.objects.get(Ticket_ID = Context['Ticket_ID']) 
+#                         if ticket:
+#                             ticket.Ticket_Desc = str(soup)    
+#                             ticket.save()                                   
+#                         #attachment file
+#                         for attachment in attachments:
+#                             if not attachment['contentType'].startswith('image/'):
+#                                 ticketID = Context['Ticket_ID']
+#                                 attachment_id   = attachment['id']
+#                                 attachment_name = attachment['name']
+#                                 # attachment_type = attachment['contentType']
+#                                 # attachment_size = attachment['size']
+#                                 # attachment_names.append(attachment_name)
+
+#                                 attachment_item = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/attachments/{attachment_id}'
+#                                 attachment_item_response = requests.get(
+#                                     attachment_item,
+#                                     headers={'Authorization': f'Bearer {access_token}'}
+#                                 )
+#                                 attachment_data = attachment_item_response.content
+#                                 # Xây dựng đường dẫn lưu tệp trên máy chủ
+#                                 current_datetime = datetime.datetime.now()
+#                                 numeric_date = current_datetime.strftime('%d%m%Y')
+#                                 numeric_time = current_datetime.strftime('%H%M')
+#                                 attachment_name_full = str(ticketID) + '_' + numeric_date + '_' + numeric_time + '_' + attachment_name
+#                                 attachment_path = os.path.join(attachment_dir, attachment_name_full)
+
+#                                 # Lưu tệp đính kèm vào máy chủ
+#                                 with open(attachment_path, 'wb') as attachment_file:
+#                                     attachment_file.write(attachment_data)
+                                
+#                                 #create attachment data
+#                                 create_attachment_mail(ticketID,attachment_name_full)
+
+#                     # reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])             
+
+#                     # else:
+#                     #     #gửi mail thống báo lỗi không thành công.
+#                     #     mail = "Gửi mail thông báo"
+#                     if(mailid):
+#                         del request.session['mail_id']
+#                     reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])
+#                     send_email_new_ticket(request,email_id, email_from,Context['Ticket_ID'],Context['Slug_Title'],Context['Email_Assign'])
+#                     # read_email(access_token,email_id)  
+#             else:
+#                 if(mailid):
+#                     del request.session['mail_id']
+#                 email_id = email['id']  # ID của email
+#                 subject = "[SDP] Thông báo lỗi - User Chưa có trên hệ thống"    
+#                 reply_email_NoExitUser(request, access_token, email_id, email_from, subject)           
+#         return JsonResponse({'success': 'Success'}, status=200)
+#     else:
+#         return JsonResponse({'error': 'No email data'}, status=400)
+#     # time.sleep(5)
+#     return JsonResponse({'success': 'Success'}, status=200)
+#     # return redirect('/get-code/')
 

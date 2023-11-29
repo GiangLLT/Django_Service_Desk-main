@@ -1,0 +1,114 @@
+Sub OpenChromeWithURL(item As Outlook.MailItem)
+    On Error Resume Next ' B? qua l?i n?u có
+    
+    Dim outlookApp As Object
+    Dim namespace As Object
+    Dim inbox As Object
+    Dim sdpFolder As Object
+    Dim items As Object
+    Dim mail As Object
+    Dim httpRequest As Object
+    Dim url As String
+    Dim mailID As String
+    
+    ' T?o d?i tu?ng Outlook
+    Set outlookApp = CreateObject("Outlook.Application")
+    ' Truy c?p d?i tu?ng Namespace
+    Set namespace = outlookApp.GetNamespace("MAPI")
+    
+    ' L?y thu m?c Inbox
+    Set inbox = namespace.GetDefaultFolder(6) ' 6 là mã s? cho Inbox
+    
+    ' L?c thu m?c SDP trong Inbox
+    For Each folder In inbox.Folders
+        If folder.Name = "SDP" Then
+            Set sdpFolder = folder
+            Exit For
+        End If
+    Next folder
+    
+    ' Ki?m tra xem thu m?c SDP có t?n t?i không
+    If Not sdpFolder Is Nothing Then
+        ' L?y t?t c? các m?c trong thu m?c SDP
+        Set items = sdpFolder.items
+        
+        ' T?o d?i tu?ng WinHTTP
+        Set httpRequest = CreateObject("WinHttp.WinHttpRequest.5.1")
+        ' T?t ki?m tra ch?ng ch? (Option 4)
+        'httpRequest.Option(4) = 0
+        httpRequest.option(6) = 0
+        
+        ' Ð?a ch? URL c?a API
+        'url = "http://localhost:8000/api-load-mail/"
+        url = "https://0bde-115-78-94-191.ngrok-free.app/api-load-mail/"
+        
+        ' Ki?m tra t?ng m?c trong thu m?c SDP
+        For Each mail In items
+            ' Ki?m tra xem email có chua d?c và có tiêu d? ch?a "[SDP]" không
+            If mail.UnRead And InStr(1, mail.Subject, "[SDP]", vbTextCompare) > 0 Then
+                'Debug.Print "================================================================================================================"
+                'Debug.Print "Subject: " & mail.Subject
+                'Debug.Print "ReceivedTime: " & mail.ReceivedTime
+                'Debug.Print "Sender: " & mail.SenderName
+                'Debug.Print "EntryID: " & mail.EntryID
+                'Debug.Print "================================================================================================================"
+                
+                'Lay Mail ID
+                mailID = mail.EntryID
+                SendMailIDToAPI httpRequest, url, mailID
+                'mail.UnRead = False
+            End If
+        Next mail
+    Else
+        MsgBox "Không tìm th?y thu m?c SDP trong Inbox."
+    End If
+    
+    ' Gi?i phóng b? nh?
+    Set outlookApp = Nothing
+    Set namespace = Nothing
+    Set inbox = Nothing
+    Set sdpFolder = Nothing
+    Set items = Nothing
+    Set mail = Nothing
+    Set httpRequest = Nothing
+    
+    On Error GoTo 0 ' B?t l?i thông báo l?i
+End Sub
+
+Sub SendMailIDToAPI(httpRequest As Object, url As String, mailID As String)
+    On Error Resume Next ' B? qua l?i n?u có
+
+    Dim postData As String
+    Dim responseText As String
+
+    ' Chu?n b? d? li?u c?n g?i
+    postData = "{""Mail_ID"": """", ""Status"": ""True""}"
+    'Debug.Print postData
+
+    ' G?i HTTP POST request d?n API
+    With httpRequest
+        .Open "POST", url, False
+        '.setRequestHeader "User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)"
+        .setRequestHeader "Content-Type", "application/json"
+        .Send postData
+
+        ' Ki?m tra xem có l?i nào x?y ra không
+        If Err.Number <> 0 Then
+            ' Hi?n th? thông báo l?i
+            MsgBox "Error: " & Err.Description
+            ' Ð?t l?i l?i
+            Err.Clear
+        Else
+            ' L?y ph?n h?i t? API
+            responseText = .responseText
+            ' In ra ph?n h?i t? API (d? ki?m tra)
+            'MsgBox "Success: " & responseText
+            Debug.Print responseText
+        End If
+    End With
+
+    On Error GoTo 0 ' B?t thông báo l?i tr? l?i
+End Sub
+
+
+

@@ -52,3 +52,20 @@ $user = $SID.Translate([System.Security.Principal.NTAccount])
 # In ra tên người dùng
 Write-Host $user.Value
 
+
+
+============================================================
+Name: EnableUnsafeClientMailRules
+
+Sub OpenChromeWithURL(item As Outlook.MailItem)
+    Dim chromePath As String
+    Dim url As String
+
+    chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
+
+    url = "https://localhost/get-code/"
+
+    Shell """" & chromePath & """" & " --new-tab " & url, vbNormalFocus
+End Sub
+
+
