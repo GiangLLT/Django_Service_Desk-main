@@ -1207,6 +1207,7 @@ if (window.location.pathname === '/danh-sach-yeu-cau/') {
 
 
     //event load file upload multiple 
+    
     document.getElementById('file-input').addEventListener('change', function() {
       var files = this.files;
       var fileSizeLimit = 10 * 1024 * 1024; //10MB
@@ -1342,6 +1343,70 @@ if (window.location.pathname === '/danh-sach-yeu-cau/') {
         })
       }   
     });
+
+    //load data from outlook mail
+    $(document).on('click', '#LoadMailTicket', function() {
+      const swalWithBootstrapButtons = Swal.mixin({
+        customClass: {
+          confirmButton: 'btn btn-success btn-success-cus',
+          cancelButton: 'btn btn-danger btn-danger-cus'
+        },
+        buttonsStyling: false
+      })
+      
+      swalWithBootstrapButtons.fire({
+        title: 'Are you sure?',
+        text: "Bạn muốn xóa lấy dữ liệu từ mail outlook ?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'No, cancel!',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          event.preventDefault();       
+          Load_Data_Mail();      
+        } 
+      })
+    });
+
+    function Load_Data_Mail(){
+      $.ajax({
+        url: '/api-load-mail/',
+        type: 'POST',
+        processData: false,
+        contentType: false,
+        data: JSON.stringify({
+          'Mail_ID': '',
+          'Status': 'True',
+      }),
+        success: function(response) {
+          if(response.success){
+            Swal.fire({
+              icon: 'success',
+              title: 'Thông Báo',
+              timer: 1000,
+              text: response.message,
+            });
+          }
+          else{
+            Swal.fire({
+              icon: 'error',
+              title: 'Thông Báo Lỗi',
+              text: response.message,
+            });
+          }
+        },
+        error: function(xhr, status, error) {
+          // Xử lý lỗi
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi',
+            text: error,
+          });
+        }
+      });
+    }
 
 function create_ticket(title,companyOptions,groupOptions,supportOptions,supNameOptions,typeOptions,detail, files){
   $.ajax({
@@ -1901,12 +1966,25 @@ function Load_data(companys, Tgroups, User_support, Users_Company){
       var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
       var isAddTrue = IsAdmin === true   ||  Dash_Role_Data[2].Status === 'True';
       var isAdminTrue = IsAdmin === true ||  Dash_Role_Data[4].Status === 'True';
+      var isLoadMailTrue = IsAdmin === true ||  Dash_Role_Data[5].Status === 'True';
       if (isAddTrue == true){
         var addTicketButton = document.querySelector('.addTicket');
         if (addTicketButton == null){
           $('.top-title div').append(
             '<button type="button" class="btn btn-danger btn-icon-text addTicket" id="addTicket">' +
             '<i class="ti-files btn-icon-prepend"></i>TẠO TICKET' +
+            '</button>'
+          );
+        } 
+      }
+
+      if (isLoadMailTrue == true){
+        var addLoadMailButton = document.querySelector('.LoadMailTicket');
+        if (addLoadMailButton == null){
+          var exportButton = $('#export');
+          exportButton.after(
+            '<button type="button" class="btn btn-danger btn-icon-text LoadMailTicket" id="LoadMailTicket" style="margin-left:3px">' +
+            '<i class="ti-email btn-icon-prepend"></i>LOAD MAIL DATA' +
             '</button>'
           );
         } 

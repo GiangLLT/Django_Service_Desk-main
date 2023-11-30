@@ -275,10 +275,13 @@ def api_load_mail(request):
                         response_data = response.content.decode('utf-8')  # Giải mã dữ liệu từ bytes sang str
                         response_json = json.loads(response_data)  # Chuyển đổi thành đối tượng JSON
 
-                        if 'success' in response_json and response_json['success'] == 'Success':
-                            return JsonResponse({'success': 'Success'}, status=200)
+                        if 'success' in response_json and response_json['success'] == True:
+                            # return JsonResponse({'success': 'Success'}, status=200)
+                            # return JsonResponse({'success': True, 'message': 'Create data Success'}, status=200)
+                            return JsonResponse({'success': True, 'message': 'Create data Success'})
                         else:
-                            return JsonResponse({'Error': response_json['error']}, status=400)
+                            return JsonResponse({'success': response_json['success'],'message': response_json['message']})
+                            # return JsonResponse({'Error': response_json['error']}, status=400)
                     else:
                         if request.session.get('mail_id'):
                             del request.session['mail_id']
@@ -764,14 +767,20 @@ def call_graph_api(request):
          emails.append(data_email)
     else:
         prefix = '[SDP]'
-        response = requests.get(
-            # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
-            f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
-            headers={'Authorization': f'Bearer {access_token}'}
-        )
-        emails = response.json().get('value', [])
-    
+        folder_mail = 'Inbox'
+        folder_mail_sub = 'SDP'
+        folderID = folder_email(access_token,folder_mail,folder_mail_sub)
+        if folderID:
+            response = requests.get(
+                # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+                # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+                f'https://graph.microsoft.com/v1.0/me/mailFolders/{folderID}/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+                headers={'Authorization': f'Bearer {access_token}'}
+            )
+            emails = response.json().get('value', [])   
     if emails:
+        folder_mail_sub_move = 'DONE'
+        folderID_move = folder_email(access_token,folder_mail,folder_mail_sub_move)
         for email in emails:
             Mail_status = ''
             email_from = email['from']['emailAddress']['address']  # Địa chỉ email người gửi
@@ -900,17 +909,21 @@ def call_graph_api(request):
                         reply_email(request, access_token, email_id, email_from, Context['Ticket_ID'], Context['Slug_Title'])
                         send_email_new_ticket(request,email_id, email_from,Context['Ticket_ID'],Context['Slug_Title'],Context['Email_Assign'],email_body)
                     readTrue = read_email(access_token,email_id)  
-                    if readTrue:
-                        move_email(access_token,email_id)
+                    if readTrue is not True:
+                        folder_mail_move = 'DONE'
+                        folderID_move = folder_email(access_token,folder_mail,folder_mail_move)
+                        if folderID_move:
+                            move_email(access_token,email_id,folderID_move)
             else:
                 if(mailid):
                     del request.session['mail_id']
                 email_id = email['id']  # ID của email
                 subject = "[SDP] Thông báo lỗi - User Chưa có trên hệ thống"    
                 reply_email_NoExitUser(request, access_token, email_id, email_from, subject)           
-        return JsonResponse({'success': 'Success'}, status=200)
+        return JsonResponse({'success': True,'message': 'Create data Success'}, status=200)
     else:
-        return JsonResponse({'error': 'No email data'}, status=400)
+        # return JsonResponse({'error': 'No email data'}, status=400)
+        return JsonResponse({'success': False ,'message': 'No email data'}, status=400)
     # time.sleep(5)
     return JsonResponse({'success': 'Success'}, status=200)
     # return redirect('/get-code/')
@@ -946,20 +959,55 @@ def read_email(access_token,email_id):
     else:
         return False    
 
-def move_email(access_token,email_id):
+def move_email(access_token,email_id,folderID):
     # Di chuyển email dựa trên ID
     move_url = f'https://graph.microsoft.com/v1.0/me/messages/{email_id}/move'
-    move_data = {'destinationId': 'DONE'}  # Thay 'Done' bằng ID thư mục Done thực tế
+    move_data = {'destinationId': folderID}  # Thay 'Done' bằng ID thư mục Done thực tế
     move_headers = {'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'}
     move_response = requests.post(move_url, json=move_data, headers=move_headers)
 
-    if move_response.status_code == 200:
+    if move_response.status_code == 201:
         return True
         # print(f'Successfully moved message {email_id_to_move} to Done folder')
     else:
         return False
         # print(f'Failed to move message {email_id_to_move}: {move_response.text}')
 
+def folder_email(access_token,folder_name,folder_mail_sub):
+    folder_url = 'https://graph.microsoft.com/v1.0/me/mailFolders'
+    response = requests.get(folder_url, headers={'Authorization': f'Bearer {access_token}'})
+    folders = response.json().get('value', [])
+
+    sdp_folder_id = None
+    for folder in folders:
+        if folder.get('displayName') == folder_name:
+            sdp_folder_id = folder.get('id')
+            break
+
+    if sdp_folder_id is None:
+        return ''
+    else:
+        if folder_mail_sub:
+            sub_folder_id = get_inbox_subfolders(access_token, sdp_folder_id,folder_mail_sub)
+            return sub_folder_id
+        else:
+            return sdp_folder_id
+
+def get_inbox_subfolders(access_token, inbox_folder_id,folder_mail_sub):
+    url = f'https://graph.microsoft.com/v1.0/me/mailFolders/{inbox_folder_id}/childFolders'
+    headers = {'Authorization': f'Bearer {access_token}'}
+
+    response = requests.get(url, headers=headers)
+    folders_sub = response.json().get('value', [])
+    sub_folder_id = None
+    if folders_sub:
+        for folder in folders_sub:
+            if folder.get('displayName') == folder_mail_sub:
+                sub_folder_id = folder.get('id')
+                break
+        return sub_folder_id
+    else:
+        return ''
 #CHEKC MAIL OFFICE 365
 
 #FUNCTION CREATE TICKET 
@@ -6829,6 +6877,7 @@ def Auth_Role_Ticket(request):
                 {'TCode': 'ZTC_Add','Role': 'Add','Status': 'False'},
                 {'TCode': 'ZTC_Del','Role': 'Delete','Status': 'False'},
                 {'TCode': 'ZTC_Admin','Role': 'Admin View','Status': 'False'},
+                {'TCode': 'ZTC_LoadMail','Role': 'Load Mail','Status': 'False'},
             ]
             Sing_Role = Role_Single.objects.filter(Role_Group_ID = 3, Role_Status = True)
             if Sing_Role:
