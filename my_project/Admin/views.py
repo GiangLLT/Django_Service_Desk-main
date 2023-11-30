@@ -234,10 +234,10 @@ def get_github_data_for_file(request):
         
 @csrf_exempt
 def push_to_dev(request):
-    if request.method == 'POST':
+    # if request.method == 'POST':
         try:
             # Đường dẫn tới thư mục chứa repository Git của bạn
-            repo_path = 'https://github.com/GiangLLT/Django_Service_Desk-main.git'
+            repo_path = 'C:\Data\Document\Another_Code\Python_helpdesk\Python_Django'
 
             # Khởi tạo đối tượng Repo
             repo = git.Repo(repo_path)
@@ -255,15 +255,15 @@ def push_to_dev(request):
             return HttpResponse("Push to Dev branch success!", status=200)
         except Exception as e:
             return HttpResponse(f"Error: {e}", status=500)
-    else:
-        return HttpResponse("Method not allowed", status=405)
+    # else:
+    #     return HttpResponse("Method not allowed", status=405)
 
 @csrf_exempt
 def push_to_main_and_merge(request):
     if request.method == 'POST':
         try:
             # Đường dẫn tới thư mục chứa repository Git của bạn
-            repo_path = 'https://github.com/GiangLLT/Django_Service_Desk-main.git'
+            repo_path = 'C:\Data\Document\Another_Code\Python_helpdesk\Python_Django'
 
             # Khởi tạo đối tượng Repo
             repo = git.Repo(repo_path)
