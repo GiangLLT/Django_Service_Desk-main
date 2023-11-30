@@ -234,10 +234,14 @@ def get_github_data_for_file(request):
         
 @csrf_exempt
 def push_to_dev(request):
-    if request.method == 'POST':
+    # if request.method == 'POST':
         try:
+            now_date = datetime.datetime.now()
+            commit_date = now_date.strftime('%d%m%Y')
+            commit_time = now_date.strftime('%H%M')
+            commit_name = f'Auto commit to Dev branch from Django - {commit_date} - {commit_time}'
             # Đường dẫn tới thư mục chứa repository Git của bạn
-            repo_path = 'https://github.com/GiangLLT/Django_Service_Desk-main.git'
+            repo_path = 'C:\Data\Document\Another_Code\Python_helpdesk\Python_Django'
 
             # Khởi tạo đối tượng Repo
             repo = git.Repo(repo_path)
@@ -248,28 +252,32 @@ def push_to_dev(request):
 
             # Commit và push lên nhánh Dev
             repo.git.add(all=True)
-            repo.git.commit('-m', 'Auto commit to Dev branch from Django')
+            repo.git.commit('-m', commit_name)
             origin = repo.remote(name='origin')
             origin.push()
 
             return HttpResponse("Push to Dev branch success!", status=200)
         except Exception as e:
             return HttpResponse(f"Error: {e}", status=500)
-    else:
-        return HttpResponse("Method not allowed", status=405)
+    # else:
+    #     return HttpResponse("Method not allowed", status=405)
 
 @csrf_exempt
 def push_to_main_and_merge(request):
-    if request.method == 'POST':
+    # if request.method == 'POST':
         try:
+            now_date = datetime.datetime.now()
+            commit_date = now_date.strftime('%d%m%Y')
+            commit_time = now_date.strftime('%H%M')
+            commit_name = f'Auto commit to Dev branch from Django - {commit_date} - {commit_time}'
             # Đường dẫn tới thư mục chứa repository Git của bạn
-            repo_path = 'https://github.com/GiangLLT/Django_Service_Desk-main.git'
+            repo_path = 'C:\Data\Document\Another_Code\Python_helpdesk\Python_Django'
 
             # Khởi tạo đối tượng Repo
             repo = git.Repo(repo_path)
 
             # Chuyển đến nhánh Main
-            main_branch = repo.branches['Main']
+            main_branch = repo.branches['main']
             main_branch.checkout()
 
             # Merge từ nhánh Dev
@@ -278,15 +286,15 @@ def push_to_main_and_merge(request):
 
             # Commit và push lên nhánh Main
             repo.git.add(all=True)
-            repo.git.commit('-m', 'Auto commit to Main branch from Django')
+            repo.git.commit('-m', commit_name)
             origin = repo.remote(name='origin')
             origin.push()
 
             return HttpResponse("Push to Main and merge with Dev success!", status=200)
         except Exception as e:
             return HttpResponse(f"Error: {e}", status=500)
-    else:
-        return HttpResponse("Method not allowed", status=405)
+    # else:
+    #     return HttpResponse("Method not allowed", status=405)
 
 ################################################### GITHUB ##################### 
 

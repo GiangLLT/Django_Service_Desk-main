@@ -9,6 +9,9 @@ urlpatterns = [
     path('logs_github/', views.write_data, name='write_data'),
     path('run_cmd_github/', views.run_cmd_github, name='run_cmd_github'),
     path('run_file_bat_github/', views.read_bat_file, name='read_bat_file'),
+
+    path('github_auto_dev/', views.push_to_dev, name='push_to_dev'),
+    path('github_auto_main/', views.push_to_main_and_merge, name='push_to_main_and_merge'),
     #------------- API -----------------------
      path('api-test/', views.api_test, name='api_test'),
      path('api-load-mail/', views.api_load_mail, name='api_load_mail'),
