@@ -10135,7 +10135,7 @@ function formatFileSize(size) {
         var Group_Name = document.querySelector('#input_group_name').value;
         var MenuID = document.querySelector('#input_grouprole_menu').value;
         var Menu_Add = document.querySelector('#input_group_add').value;
-        if(Group_Name !== '' || MenuID !== '' || Menu_Add !== ''){
+        if(Group_Name == '' || MenuID == '' || Menu_Add == ''){
           Swal.fire({
             icon: 'error',
             title: 'Oops...',
