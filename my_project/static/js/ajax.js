@@ -959,7 +959,7 @@ if (window.location.pathname === '/danh-sach-yeu-cau/') {
       Swal.fire({
         icon: 'error',
         title: 'Thông Báo',
-        text: response.message,
+        text: e,
       });
     }
   });
