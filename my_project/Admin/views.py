@@ -287,7 +287,7 @@ def push_to_main_and_merge(request):
             # Commit và push lên nhánh Main
             repo.git.add(all=True)
             repo.git.commit('-m', commit_name)
-            origin = repo.remote(name='origin main')
+            origin = repo.remote(name='origin')
             origin.push()
 
             return HttpResponse("Push to Main and merge with Dev success!", status=200)
