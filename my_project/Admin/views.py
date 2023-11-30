@@ -269,7 +269,8 @@ def push_to_main_and_merge(request):
             now_date = datetime.datetime.now()
             commit_date = now_date.strftime('%d%m%Y')
             commit_time = now_date.strftime('%H%M')
-            commit_name = f'Auto commit to Dev branch from Django - {commit_date} - {commit_time}'
+            # commit_name = f'Auto commit to Dev branch from Django - {commit_date} - {commit_time}'
+            commit_name = f'Auto commit to Dev branch from Django'
             # Đường dẫn tới thư mục chứa repository Git của bạn
             repo_path = 'C:\Data\Document\Another_Code\Python_helpdesk\Python_Django'
 
