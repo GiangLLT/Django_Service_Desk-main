@@ -45,6 +45,11 @@ git config --global core.safecrlf false
 git config --global --add safe.directory C:/inetpub/wwwroot/Django_Service_Desk-main
 
 git reset --hard origin/main
+git pull origin main
+
+
+pip freeze > requirements.txt
+pip install -r requirements.txt
 
 
 ===========================================
