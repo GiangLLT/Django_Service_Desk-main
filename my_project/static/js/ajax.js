@@ -1866,7 +1866,7 @@ function update_info_ticket(Ticket_Data){
     var productRows = document.querySelectorAll('tr[data-product-id]');
 
     // Lặp qua từng phần tử tr
-    productRows.forEach(function(row) {error: Cmd('git') failed due to: exit code(1) cmdline: git commit -m Auto commit to Dev branch from Django - 30112023 - 1418 stdout: 'On branch main Your branch is ahead of 'origin/main' by 2 commits. (use "git push" to publish your local commits) nothing to commit, working tree clean'
+    productRows.forEach(function(row) {
       // Lấy giá trị của thuộc tính data-product-id
       var productId = row.getAttribute('data-product-id');
 

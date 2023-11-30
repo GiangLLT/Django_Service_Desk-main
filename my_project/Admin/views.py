@@ -296,6 +296,9 @@ def push_to_main_and_merge(request):
             origin = repo.remote(name='origin')
             origin.push('Dev')
 
+            dev_branch = repo.branches['Dev']
+            dev_branch.checkout()
+
             return HttpResponse("Push to Main and merge with Dev success!", status=200)
         except Exception as e:
             return HttpResponse(f"Error: {e}", status=500)
