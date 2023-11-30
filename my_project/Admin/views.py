@@ -294,7 +294,7 @@ def push_to_main_and_merge(request):
             repo.git.add(all=True)
             repo.git.commit('-m', commit_name)
             origin = repo.remote(name='origin')
-            origin.push('main')
+            origin.push('Dev')
 
             return HttpResponse("Push to Main and merge with Dev success!", status=200)
         except Exception as e:
