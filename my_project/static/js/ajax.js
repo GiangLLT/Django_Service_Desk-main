@@ -955,11 +955,11 @@ if (window.location.pathname === '/danh-sach-yeu-cau/') {
         window.location.href = '/dashboard/';
       }    
     },
-    error: function(rs, e) {
+    error: function(rs, error) {
       Swal.fire({
         icon: 'error',
         title: 'Thông Báo',
-        text: e,
+        text: error,
       });
     }
   });
