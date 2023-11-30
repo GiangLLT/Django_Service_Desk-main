@@ -268,10 +268,10 @@ def push_to_dev(request):
 def push_to_main_and_merge(request):
     # if request.method == 'POST':
         try:
-            now_date = datetime.datetime.now()
-            commit_date = now_date.strftime('%d%m%Y')
-            commit_time = now_date.strftime('%H%M')
-            commit_name = f'Auto commit to Dev branch from Django - {commit_date} - {commit_time}'
+            # now_date = datetime.datetime.now()
+            # commit_date = now_date.strftime('%d%m%Y')
+            # commit_time = now_date.strftime('%H%M')
+            # commit_name = f'Auto commit to Dev branch from Django - {commit_date} - {commit_time}'
             # Đường dẫn tới thư mục chứa repository Git của bạn
             repo_path = 'C:\Data\Document\Another_Code\Python_helpdesk\Python_Django'
 
@@ -292,9 +292,9 @@ def push_to_main_and_merge(request):
 
             # Commit và push lên nhánh Main
             repo.git.add(all=True)
-            repo.git.commit('-m', commit_name)
+            # repo.git.commit('-m', commit_name)
             origin = repo.remote(name='origin')
-            origin.push('Dev')
+            origin.push('main')
 
             dev_branch = repo.branches['Dev']
             dev_branch.checkout()
