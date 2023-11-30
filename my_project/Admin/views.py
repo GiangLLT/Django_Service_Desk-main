@@ -68,9 +68,16 @@ from django.contrib.auth.decorators import login_required
 import subprocess
 from subprocess import Popen, PIPE
 
+import git
+
 # Create your views here.
 ############################################ PAGE TICKET HELPDESK - START ############################################################
 
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+
+################################################### GITHUB ##################### 
 def write_data(file_content,file_name,file_path):
     # Tạo một đối tượng FileSystemStorage để quản lý việc lưu trữ
     fs = FileSystemStorage(location=settings.MEDIA_ROOT)
@@ -224,6 +231,68 @@ def get_github_data_for_file(request):
             return JsonResponse({"message": "All GitHub files downloaded successfully"})
         else:
             return JsonResponse({"error": f"Failed to fetch data from GitHub. Status code: {response.status_code}"}, status=400)
+        
+@csrf_exempt
+def push_to_dev(request):
+    if request.method == 'POST':
+        try:
+            # Đường dẫn tới thư mục chứa repository Git của bạn
+            repo_path = 'https://github.com/GiangLLT/Django_Service_Desk-main.git'
+
+            # Khởi tạo đối tượng Repo
+            repo = git.Repo(repo_path)
+
+            # Chuyển đến nhánh Dev
+            dev_branch = repo.branches['Dev']
+            dev_branch.checkout()
+
+            # Commit và push lên nhánh Dev
+            repo.git.add(all=True)
+            repo.git.commit('-m', 'Auto commit to Dev branch from Django')
+            origin = repo.remote(name='origin')
+            origin.push()
+
+            return HttpResponse("Push to Dev branch success!", status=200)
+        except Exception as e:
+            return HttpResponse(f"Error: {e}", status=500)
+    else:
+        return HttpResponse("Method not allowed", status=405)
+
+@csrf_exempt
+def push_to_main_and_merge(request):
+    if request.method == 'POST':
+        try:
+            # Đường dẫn tới thư mục chứa repository Git của bạn
+            repo_path = 'https://github.com/GiangLLT/Django_Service_Desk-main.git'
+
+            # Khởi tạo đối tượng Repo
+            repo = git.Repo(repo_path)
+
+            # Chuyển đến nhánh Main
+            main_branch = repo.branches['Main']
+            main_branch.checkout()
+
+            # Merge từ nhánh Dev
+            dev_branch = repo.branches['Dev']
+            repo.git.merge(dev_branch)
+
+            # Commit và push lên nhánh Main
+            repo.git.add(all=True)
+            repo.git.commit('-m', 'Auto commit to Main branch from Django')
+            origin = repo.remote(name='origin')
+            origin.push()
+
+            return HttpResponse("Push to Main and merge with Dev success!", status=200)
+        except Exception as e:
+            return HttpResponse(f"Error: {e}", status=500)
+    else:
+        return HttpResponse("Method not allowed", status=405)
+
+################################################### GITHUB ##################### 
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 ################################################### API #####################  
 @csrf_exempt
@@ -324,6 +393,10 @@ def get_authorization_code_API():
         return access_token
 ################################################### API #####################  
 
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+
 ################################################### REAL TIME #####################  
 def generate_code_verifier(length=32):
     characters = string.ascii_letters + string.digits + '-._~'
@@ -392,6 +465,9 @@ def handle_incoming_email(request):
     return JsonResponse({"message": "Invalid request."})
 ################################################### REAL TIME #####################  
 
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 ################################################### Login O365, system #####################  
 def Login_function(request):
