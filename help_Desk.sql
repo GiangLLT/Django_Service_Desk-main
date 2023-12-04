@@ -4,6 +4,14 @@ select * from user_system
 select * from Tgroup
 select * from ticket
 
+DBCC CHECKIDENT ('Comment', RESEED, 0)
+GO
+
+ALTER DATABASE SDP_HelpDesk_Dev SET SINGLE_USER WITH ROLLBACK IMMEDIATE
+GO
+ALTER DATABASE SDP_HelpDesk_Dev SET MULTI_USER
+GO
+
 BCG_HelDesk
 
 --Table session --
@@ -37,6 +45,12 @@ CREATE TABLE User_System
 	FOREIGN KEY (Company_ID) REFERENCES Company(Company_ID)
 );
 GO
+
+INSERT INTO User_System (ID_User, Company_ID , Mail, Password,  FullName, displayName,Birthday,Acc_Type,User_Type,Address,Jobtitle,Phone,Avatar,ID_Create,Name_Create,Date_Create,Time_Create,User_Status)
+VALUES ('U000000001', '1', 'system@bamboocap.com.vn', 'Abc@123','System' , 'System', '', 'System', '0', '', '', '', '', 'U000000001',N'Lê Lộc Trường Giang','2023-10-17','14:00:00' , 1)
+INSERT INTO User_System (ID_User, Company_ID , Mail, Password,  FullName, displayName,Birthday,Acc_Type,User_Type,Address,Jobtitle,Phone,Avatar,ID_Create,Name_Create,Date_Create,Time_Create,User_Status)
+VALUES ('U000000002', '1', 'giang.llt@bamboocap.com.vn', '','System' , 'System', '', 'System', '0', '', '', '', '', 'U000000001',N'Lê Lộc Trường Giang','2023-10-17','14:00:00' , 1)
+
 
 CREATE TABLE Company (
     Company_ID		int PRIMARY KEY IDENTITY(1,1) NOT NULL ,
@@ -124,10 +138,6 @@ CREATE TABLE Attachment (
 	FOREIGN KEY (Ticket_ID) REFERENCES Ticket(Ticket_ID)
 );
 GO
-INSERT INTO User_System (ID_User, Company_ID , Mail, Password,  FullName, displayName,Birthday,Acc_Type,User_Type,Address,Jobtitle,Phone,Avatar,ID_Create,Name_Create,Date_Create,Time_Create,User_Status)
-VALUES ('U000000001', '1', 'system@bamboocap.com.vn', 'Abc@123','System' , 'System', '', 'System', '0', '', '', '', '', 'U000000001',N'Lê Lộc Trường Giang','2023-10-17','14:00:00' , 1)
-INSERT INTO User_System (ID_User, Company_ID , Mail, Password,  FullName, displayName,Birthday,Acc_Type,User_Type,Address,Jobtitle,Phone,Avatar,ID_Create,Name_Create,Date_Create,Time_Create,User_Status)
-VALUES ('U000000002', '1', 'giang.llt@bamboocap.com.vn', '','System' , 'System', '', 'System', '0', '', '', '', '', 'U000000001',N'Lê Lộc Trường Giang','2023-10-17','14:00:00' , 1)
 
 CREATE TABLE Comment (
     Comment_ID		int PRIMARY KEY IDENTITY(1,1) NOT NULL ,
