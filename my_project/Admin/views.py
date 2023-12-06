@@ -321,9 +321,9 @@ def push_to_main_and_merge(request):
         return HttpResponse({'success': False, 'message': "Method not allowed"})
 
 def github_file_list(request):
-    github_username = 'GiangLLT'
-    repo_name = 'Django_Service_Desk-main'
-    token = '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'
+    github_username = settings.GITHUB_USERNAME
+    repo_name = settings.GITHUB_REPO_NAME
+    token = settings.GITHUB_TOKEN
     api_url_dev = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=Dev'
     api_url_main = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=main'
 
