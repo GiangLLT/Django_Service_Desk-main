@@ -193,7 +193,7 @@
   width: 300px;
   max-width: 400px;
 }
-.db-company,.db-group,.db-type,.db-status, .db-User_Type{
+.db-company,.db-group,.db-type,.db-status, .db-User_Type, .db-CommitDev, .db-CommitMain{
   width: 100%;
   height: 2rem;
   border: 1px solid #dee2e6;
@@ -1506,3 +1506,100 @@ margin-left: -5px;
 } 
 
 /* #################### Css Menu Page Menu ####################*/
+
+/* .table-github {
+  margin-bottom: 20px;
+} */
+.custom-table{
+  width: 100% !important;
+}
+.table-github{
+    margin-bottom: 15px;
+    border-bottom: 3px #C82A2E dashed;
+    padding-bottom: 10px
+}
+/* .table-github:hover{
+  background: #C0C1D4;
+}
+.table-github:hover .tr-table-git{
+  background: #C0C1D4;
+} */
+.table-github:last-child{
+  border-bottom: none;
+}
+.tr-table-git{
+  background-image: linear-gradient(135deg, #C0C0C0, white);
+}
+
+.line-2 {
+  display: none;
+}
+
+.toggle-btn {
+  cursor: pointer;
+  color: red;
+  text-decoration: none;
+  list-style-type: none;
+  text-align: center !important;
+}
+
+.toggle-btn li {
+  font-size: 25px !important;
+  list-style-type: none;
+}
+
+.toggle-btn:hover {
+  color: red;
+}
+
+.tr-table-git{
+  text-align: center;
+  color: #C82A2E;
+}
+.tr-table-git-content{
+  text-align: center;
+}
+.tr-table-git-content img{
+  width: 50px;
+  height: 50px;
+  border-radius: 100%;
+}
+.tr-table-git .tr-table-th{
+  width: 35% !important;
+}
+.tr-table-git .tr-table-th-fun{
+  width: 10% !important;
+  text-align: center !important;
+}
+.tr-table-l2{
+  width: 25% !important;
+}
+.btn-check-sucess{
+  list-style-type: none;
+  font-size: 25px !important;
+  color: #4CAF50;
+}
+.btn-check-error{
+  list-style-type: none;
+  font-size: 25px !important;
+  color: red;
+}
+
+.custom-br{
+  margin-bottom: 10px; /* điều chỉnh theo nhu cầu */
+}
+
+/* Tạo một đường line nhỏ dưới mỗi <br> */
+.custom-br{
+  display: block;
+  content: "";
+  margin-bottom: 10px; /* điều chỉnh theo nhu cầu */
+  margin-top: 20px; /* điều chỉnh theo nhu cầu */
+  border-top: 4px dashed #C82A2E; /* màu và độ dày của đường line */
+}
+.toggle-line{
+  background: transparent !important;
+    color: red !important;
+    border: none !important;
+    height: 20px ;
+}

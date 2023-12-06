@@ -1,0 +1,169 @@
+{% extends 'Admin_Helpdesk.html' %}
+
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Trang Chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Danh Sách Commit Github </span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper ">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="top-title">
+                <h4 class="card-title card-title-edit">DANH SÁCH COMMIT GITHUB</h4>
+                {% comment %} <button type="button" class="btn btn-danger btn-icon-text addGroup" id="addGroup">
+                  <i class="ti-files btn-icon-prepend"></i>                                                    
+                  TẠO NHÓM
+                </button> {% endcomment %}
+              </div>
+              
+              {% comment %} <p class="card-description">A basic data list T001</p> {% endcomment %}
+              {% comment %} <div id="js-grid" class="pt-3"></div> {% endcomment %}
+
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    {% comment %} <h4 class="card-title">Hoverable Table</h4>
+                    <p class="card-description">
+                      Add class <code>.table-hover</code>
+                    </p> {% endcomment %}
+                    <div class="table-responsive">
+                        <div class="git-header">
+                            <table id="product-table" class="table table-hover">
+                                <thead>
+                                  <tr class="tr-table">
+                                    <th>COMMIT MASSAGE</th>
+                                    <th>COMMIT EMAIL</th>                                                       
+                                    <th>COMMIT MAIN</th>
+                                    <th>COMMIT DATE</th>
+                                    <th>CHỨC NĂNG</th>
+                                  </tr>
+                                  <tr>
+                                    {% comment %} Search box {% endcomment %}
+                                    <th>
+                                      <input type="text" class="form-control" id="search-CommitMes" name="search-CommitMes" placeholder="Nhập Message">
+                                    </th>
+                                    <th>
+                                      <input type="Email" class="form-control" id="search-CommitName" name="search-CommitName"  placeholder="Nhập Email">
+                                    </th>
+                                    {% comment %} <th>
+                                      <select class="db-CommitDev">
+                                        <option value="">Tất Cả</option>
+                                        <option value="true">Commited</option>
+                                        <option value="false">Uncommited</option>
+                                      </select>
+                                    </th>                                {% endcomment %}
+                                    <th>
+                                      <select class="db-CommitMain">
+                                        <option value="">Tất Cả</option>
+                                        <option value="true">Commited</option>
+                                        <option value="false">Uncommited</option>
+                                      </select>
+                                    </th>
+                                    <th>
+                                      <input type="date" class="form-control" id="search-CommitDate" name="search-CommitDate">
+                                    </th>
+                                    {% comment %} Search box {% endcomment %}
+                                    <th>
+                                      <button type="button" class="btn btn-danger btn-icon-text btn-remove-filter" id="">
+                                        <i class="ti-files btn-icon-prepend"></i>                                                    
+                                        XÓA FILTER
+                                      </button>
+                                </thead>
+                            </table>
+                        </div>
+                        {% comment %} <div class="git-content">                        
+                            <div class="table-github">
+                                <div class="line-1">
+                                    <table class="custom-table">
+                                        <thead>
+                                            <tr class="tr-table-git">
+                                                <th class="tr-table-th">COMMIT SHA</th>
+                                                <th class="tr-table-th">COMMIT MESSAGE</th>     
+                                                <th class="tr-table-th-fun">DEV</th>     
+                                                <th class="tr-table-th-fun">MAIN</th>     
+                                                <th class="tr-table-th-fun">FUNCTION</th>                                                    
+                                            </tr> 
+                                        </thead>
+                                        <tbody>
+                                            <tr class="tr-table-git-content">
+                                                <td class="tr-table-th">c39fcc25a180669a9f0fc8e2334f6c863a8dda8f1</td>
+                                                <td class="tr-table-th">Service Desk - outlook script ver 2.3</td> 
+                                                <td class="tr-table-th-fun"><li class="mdi mdi-check-circle btn-check-sucess"></li></td> 
+                                                <td class="tr-table-th-fun"><li class="mdi mdi-alert-outline btn-check-error"></li></td> 
+                                                <td class="toggle-btn tr-table-th-fun" onclick="toggleLines('1')"><button type="button" class="btn btn-danger btn-icon-text toggle-line" id="toggle-line"><li class="ti-arrow-circle-down"></li><button></td>                                                      
+                                            </tr> 
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="line-2">
+                                    <table class="custom-table">
+                                        <thead >
+                                            <tr class="tr-table-git">
+                                                <th class="tr-table-l2">AVATAR</th>                                                 
+                                                <th class="tr-table-l2">COMMIT NAME</th>
+                                                <th class="tr-table-l2">COMMIT EMAIL</th>                                                 
+                                                <th class="tr-table-l2">COMMIT DATE</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="tr-table-git-content">
+                                                <td class="tr-table-l2"><img src="https://avatars.githubusercontent.com/u/131423727?v=4"></td>                                                   
+                                                <td class="tr-table-l2">GiangLLT</td>  
+                                                <td class="tr-table-l2">lepham1622@gmail.com</td>                                                   
+                                                <td class="tr-table-l2">30/11/2023 10:32:56</td>                                                                                                   
+                                            </tr> 
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div> {% endcomment %}
+                        </div>                             
+                    </div>
+                    <ul class="pagination" id="pagination"></ul>    
+                    <!-- Modal spinners -->
+                    {% comment %} <div class="modal fade" id="spinnersModal" tabindex="-1" role="dialog" aria-labelledby="spinnersModallabel">
+                      <div class="modal-dialog" role="document">
+                        <div class="modal-content_spinners">
+                          
+                          <div class="modal-body_spinners">
+                            <div class="spinner-grow text-muted"></div>
+                            <div class="spinner-grow text-primary"></div>
+                            <div class="spinner-grow text-success"></div>
+                            <div class="spinner-grow text-info"></div>
+                            <div class="spinner-grow text-warning"></div>
+                            <div class="spinner-grow text-danger"></div>
+                            <div class="spinner-grow text-secondary"></div>
+                            <div class="spinner-grow text-dark"></div>
+                            <div class="spinner-grow text-light"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div> {% endcomment %}
+                  <!-- Modal spinners -->                                 
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+    </div>
+    <script>
+        function toggleLines(lineNumber) {
+            const line1 = document.querySelector(`.table-github:nth-child(${lineNumber}) .line-1`);
+            const line2 = document.querySelector(`.table-github:nth-child(${lineNumber}) .line-2`);
+
+            
+            if (line2.style.display === 'none') {
+                line2.style.display = 'block';
+            } else {
+                line2.style.display = 'none';
+            }
+        }
+    </script>
+
+{% endblock %}

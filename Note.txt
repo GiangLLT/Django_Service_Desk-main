@@ -75,3 +75,6 @@ Sub OpenChromeWithURL(item As Outlook.MailItem)
 
     Shell """" & chromePath & """" & " --new-tab " & url, vbNormalFocus
 End Sub
+
+
+Ver 1.0 ........

@@ -1,0 +1,280 @@
+{% extends 'Admin_Helpdesk.html' %}
+
+{%load static %}
+{% load humanize %}
+
+{% block content %}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item"><a href="/trang-chu">Trang Chủ</a></li>
+        <li class="breadcrumb-item active" aria-current="page"><span>Danh Sách Nhóm </span></li>
+      </ol>
+    </nav>
+    <div class="content-wrapper ">
+      <div class="row grid-margin">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body">
+              <div class="top-title">
+                <h4 class="card-title card-title-edit">DANH SÁCH NHÓM</h4>
+                {% comment %} <button type="button" class="btn btn-danger btn-icon-text addGroup" id="addGroup">
+                  <i class="ti-files btn-icon-prepend"></i>                                                    
+                  TẠO NHÓM
+                </button> {% endcomment %}
+              </div>
+              
+              {% comment %} <p class="card-description">A basic data list T001</p> {% endcomment %}
+              {% comment %} <div id="js-grid" class="pt-3"></div> {% endcomment %}
+
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    {% comment %} <h4 class="card-title">Hoverable Table</h4>
+                    <p class="card-description">
+                      Add class <code>.table-hover</code>
+                    </p> {% endcomment %}
+                    <div class="table-responsive">
+
+                        <table id="product-table" class="table table-hover">
+                            <thead>
+                              <tr class="tr-table">
+                                <th>#</th>
+                                <th>TÊN NHÓM</th>                                                       
+                                <th>NGƯỜI TẠO</th>
+                                <th>NGÀY TẠO</th>
+                                <th>GIỜ TẠO</th>
+                                <th>TÌNH TRẠNG</th>
+                                <th>CHỨC NĂNG</th>
+                              </tr>
+                              <tr>
+                                {% comment %} Search box {% endcomment %}
+                                <th>
+                                  <input type="text" class="form-control" id="search-GroupID" name="search-GroupID" placeholder="#">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-GroupName" name="search-GroupName"  placeholder="Tên Nhóm">
+                                </th>
+                                <th>
+                                  <input type="text" class="form-control" id="search-GroupCreate" name="search-GroupCreate"  placeholder="Người Tạo">
+                                </th>                               
+                                <th>
+                                  <input type="date" class="form-control" id="search-GroupDate" name="search-GroupDate" >
+                                </th>
+                                <th>
+                                  <input type="time" class="form-control" id="search-GroupTime" name="search-GroupTime">
+                                </th>
+                                <th>
+                                  <select class="db-status">
+                                    <option value="">Tất Cả</option>
+                                    <option value="true">Kích Hoạt</option>
+                                    <option value="false">Không Kích Hoạt</option>
+                                  </select>
+                                </th>
+                                {% comment %} Search box {% endcomment %}
+                                <th>
+                                  <button type="button" class="btn btn-danger btn-icon-text btn-remove-filter" id="">
+                                    <i class="ti-files btn-icon-prepend"></i>                                                    
+                                    XÓA FILTER
+                                  </button>
+                                  
+                                  <!-- Modal Create Group -->
+                                  <div class="modal fade modal-hidden" id="CreateGroupModal" tabindex="-1" role="dialog" aria-labelledby="CreateGroupModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="CreateGroupModalLabel"><i class="ti-write"></i> TẠO MỚI NHÓM</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="CreateGroupForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                            <div class="form-group">
+                                              <label for="name">Tên Nhóm <b class="require-form">*</b></label>
+                                              <input type="text" class="form-control" id="input_group_name" name="name" placeholder="Tên Nhóm" required>
+                                            </div>                                        
+                                          </div>                                         
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="create-group-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal Create Group  -->   
+                                  
+                                  <!-- Modal Update Group -->
+                                  <div class="modal fade modal-hidden" id="UpdateGroupModal" tabindex="-1" role="dialog" aria-labelledby="UpdateGroupModallabel" aria-hidden="true" style="display: none;">
+                                    <div class="modal-dialog" role="document">
+                                      <div class="modal-content">
+                                        <div class="modal-header header-modal">
+                                          <h5 class="modal-title title-modal" id="UpdateGroupModalLabel"><i class="ti-write"></i> CẬP NHẬT NHÓM</h5>
+                                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <i class="ti-close"></i>
+                                          </button>
+                                        </div>
+                                        <form id="UpdateGroupForm" enctype="multipart/form-data">
+                                          {% csrf_token %}
+                                          <div class="modal-body modal-body-custom">
+                                            <div class="form-group">
+                                                <label for="name">Mã Công Ty <b class="require-form">*</b></label>
+                                                <input type="text" class="form-control" id="input_group_id" name="id" readonly required>
+                                              </div>
+                                            <div class="form-group">
+                                              <label for="name">Tên Công Ty <b class="require-form">*</b></label>
+                                              <input type="text" class="form-control" id="input_group_name" name="name" required>
+                                            </div>   
+                                            <div class="form-group">
+                                                <label for="name">Trạng Thái <b class="require-form">*</b></label>
+                                                <select class="form-select input_status" aria-label="Default select example" id="input_group_status" name="type" readonly required>
+                                                  <option value="true">Kích Hoạt</option>
+                                                  <option value="false">Không Kích Hoạt</option>
+                                                </select>
+                                              </div>                                     
+                                          </div>                                        
+                                          <div class="modal-footer modal-footer-custom">                                         
+                                            <button type="button" class="btn btn-outline-danger btn-fw btn-MD" id="Update-group-button"><i class="ti-save btn-icon-prepen"></i> LƯU THÔNG TIN</button>
+                                          </div>
+                                        </form>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <!-- Modal Update Group  -->                                   
+                                </th>                                                           
+                              </tr>                               
+                            </thead>                          
+                            <tbody>
+                                {% comment %} <div class="table-github">
+                                    <div class="line-1">
+                                        <table>
+                                            <thead>
+                                                <tr class="tr-table">
+                                                    <th style="width:20%">COMMIT SHA</th>
+                                                    <th style="width:20%">COMMIT MESSAGE</th>     
+                                                    <th style="width:30%">FUNCTION</th>     
+                                                                                                      
+                                                </tr> 
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td style="width:50%">c39fcc25a180669a9f0fc8e2334f6c863a8dda8f</td>
+                                                    <td style="width:50%">Service Desk - outlook script ver 2.4</td>
+                                                    <td class="toggle-btn" onclick="toggleLines('1')">Toggle Line 2</td>                                                      
+                                                </tr> 
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="line-2">
+                                        <table>
+                                            <thead>
+                                                <tr class="tr-table">
+                                                    <th style="width:25%">COMMIT EMAIL</th>
+                                                    <th style="width:20%">BRANCH DEV</th>                                                       
+                                                    <th style="width:25%">DEV COMMIT DATE</th>
+                                                    <th style="width:20%">BRANCH MAIN</th>
+                                                    <th style="width:25%">MAIN COMMIT DATE</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>lepham1622@gmail.com</td>
+                                                    <td>Commited</td>                                                       
+                                                    <td>30/11/2023 10:32:56</td>                                                       
+                                                    <td>Commited</td>                                                       
+                                                    <td>30/11/2023 10:32:56</td>                                                       
+                                                </tr> 
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% comment %} <div class="toggle-btn" onclick="toggleLines('1')">Toggle Line 2</div> {% endcomment %}
+                                {% comment %} </div> {% endcomment %}
+                            
+                                <div class="table-github">
+                                        <div class="line-1">
+                                            <table>
+                                                <thead>
+                                                    <tr class="tr-table">
+                                                        <th style="width:50%">COMMIT SHA</th>
+                                                        <th style="width:50%">COMMIT MESSAGE</th>     
+                                                        <th style="width:50%">FUNCTION</th>                                                    
+                                                    </tr> 
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td style="width:50%">c39fcc25a180669a9f0fc8e2334f6c863a8dda8f1</td>
+                                                        <td style="width:50%">Service Desk - outlook script ver 2.3</td> 
+                                                        <td class="toggle-btn" onclick="toggleLines('2')">Toggle Line 2</td>                                                      
+                                                    </tr> 
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="line-2">
+                                            <table >
+                                                <thead class="tr-table">
+                                                    <tr class="tr-table">
+                                                        <th style="width:25%">COMMIT EMAIL</th>
+                                                        <th style="width:20%">BRANCH DEV</th>                                                       
+                                                        <th style="width:25%">DEV COMMIT DATE</th>
+                                                        <th style="width:20%">BRANCH MAIN</th>
+                                                        <th style="width:30%">MAIN COMMIT DATE</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>lepham1622@gmail.com</td>
+                                                        <td>Commited</td>                                                       
+                                                        <td>30/11/2023 10:32:56</td>                                                       
+                                                        <td>Commited</td>                                                       
+                                                        <td>30/11/2023 10:32:56</td>                                                       
+                                                    </tr> 
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                </div>
+                            </tbody>                          
+                        </table>                    
+                    </div>
+                    <ul class="pagination" id="pagination"></ul>    
+                    <!-- Modal spinners -->
+                    {% comment %} <div class="modal fade" id="spinnersModal" tabindex="-1" role="dialog" aria-labelledby="spinnersModallabel">
+                      <div class="modal-dialog" role="document">
+                        <div class="modal-content_spinners">
+                          
+                          <div class="modal-body_spinners">
+                            <div class="spinner-grow text-muted"></div>
+                            <div class="spinner-grow text-primary"></div>
+                            <div class="spinner-grow text-success"></div>
+                            <div class="spinner-grow text-info"></div>
+                            <div class="spinner-grow text-warning"></div>
+                            <div class="spinner-grow text-danger"></div>
+                            <div class="spinner-grow text-secondary"></div>
+                            <div class="spinner-grow text-dark"></div>
+                            <div class="spinner-grow text-light"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div> {% endcomment %}
+                  <!-- Modal spinners -->                                 
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+    </div>
+
+    <script>
+        function toggleLines(lineNumber) {
+            const line1 = document.querySelector(`.table-github:nth-child(${lineNumber}) .line-1`);
+            const line2 = document.querySelector(`.table-github:nth-child(${lineNumber}) .line-2`);
+
+            
+            if (line2.style.display === 'none') {
+                line2.style.display = 'table';
+            } else {
+                line2.style.display = 'none';
+            }
+        }
+    </script>
+
+{% endblock %}

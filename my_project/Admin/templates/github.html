@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub File List</title>
+</head>
+<body>
+    <h1>GitHub File List</h1>
+
+    <h2>Files on Branch "dev"</h2>
+    <ul>
+        {% for commit_dev in commits_dev %}
+            <li>Commit: {{ commit_dev.sha }} - Files:
+                <ul>
+                    <li>Committer email: {{ commit_dev.email }}</li>
+                    <li>Commit Message: {{ commit_dev.message }}</li>
+                    <li>Dev Commit Date: {{ commit_dev.commit_date_str}}</li>
+                    <li>Branch Dev: Commited</li>
+                    
+                    {% for commit_main in commits_main %}
+                        {% if commit_dev.sha == commit_main.sha %}
+                            <li>Branch Main: Commited</li>
+                            <li>Main Commit Date: {{ commit_main.commit_date_str }}</li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                </ul>
+            </li>
+        </br>
+        {% endfor %}
+    </ul>
+
+    {% comment %} <h2>Files on Branch "main"</h2>
+    <ul>
+        {% for commit in commits_main %}
+            <li>Commit: {{ commit.sha }} - Files:
+                <ul>
+                    {% for file in commit.files %}
+                        <li>{{ file.filename }}</li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
+    </ul> {% endcomment %}
+</body>
+</html>

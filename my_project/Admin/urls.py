@@ -12,6 +12,10 @@ urlpatterns = [
 
     path('github_auto_dev/', views.push_to_dev, name='push_to_dev'),
     path('github_auto_main/', views.push_to_main_and_merge, name='push_to_main_and_merge'),
+
+    # path('github_list_file_test/', views.github_file_list, name='github_file_list'),
+    path('github_list_file/', views.github_file_list, name='github_file_list'),
+    path('danh-sach-github/', views.Load_Github, name='Load_Github'),
     #------------- API -----------------------
      path('api-test/', views.api_test, name='api_test'),
      path('api-load-mail/', views.api_load_mail, name='api_load_mail'),
@@ -175,7 +179,9 @@ urlpatterns = [
     path('role-menu/', views.check_menu, name='check_menu'),
     path('role-template/', views.check_template, name='check_template'),
     path('role-document/', views.check_document, name='check_document'),
-    #------------- Authorize Role -------------------------
+    path('phan-quyen-github/', views.Auth_Role_Github, name='Auth_Role_Github'),
+    path('role-github/', views.check_Github, name='check_Github'),
+    #------------- Authorize Role ----- --------------------
 
     #-------------Menu-------------------------
     path('danh-sach-menu/', views.load_menu, name='load_menu'),                                         #Role Page - Trang hiển thị nhóm

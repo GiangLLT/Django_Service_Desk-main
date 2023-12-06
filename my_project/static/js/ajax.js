@@ -13224,5 +13224,733 @@ if (window.location.pathname === '/cap-nhat-mat-khau/') {
 }
 //########### Cập Nhật profile ###########  
 
+//########### Danh Sách Commit Github Start ###########  
+if (window.location.pathname === '/danh-sach-github/') {
+  var currentPage = 1;
+  var itemsPerPage = 5;
+  var IsAdmin = '';
+  var Dash_Role_Data =[];
+
+  //Check Role
+  $.ajax({
+    url: '/role-github/',
+    dataType: 'json',
+    success: function(response) {
+      if(response.success){
+        Load_Github();
+      }
+      else{
+        window.location.href = '/dashboard/';
+      }    
+    },
+    error: function(rs, e) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Thông Báo',
+        text: response.message,
+      });
+    }
+  });
+
+  // load data product
+  function Load_Github(){
+    $.ajax({
+      url: '/github_list_file/',
+      dataType: 'json',
+      success: function(context) {
+          var filters = {
+              mes: $('#search-CommitMes').val().toLowerCase().trim(),
+              name: $('#search-CommitName').val().toLowerCase().trim(),
+              // main: $('#search-CommitMain').val().toLowerCase().trim(),
+              date: $('#search-CommitDate').val().toLowerCase().trim(),
+            };
+            // Load_data(context.companys, context.tgroups, context.users)
+            // display_Group(context.data, currentPage, itemsPerPage,filters, context.data)
+            auth_role(context.commits_dev, currentPage, itemsPerPage,filters, context.commits_dev);
+            setTimeout(function() {
+              $('#spinnersModal').modal('hide');
+            }, 1000);
+      },
+      error: function(rs, e) {
+          alert('Oops! something went wrong');
+      }
+    });
+  }
+
+  //authorization page
+  function auth_role(data, currentPage, itemsPerPage,filters,data){
+    $.ajax({
+      url: '/phan-quyen-github/',
+      dataType: 'json',
+      method: 'POST',
+      success: function(response) {
+        if (response.success) {
+          IsAdmin = response.IsAdmin;  
+          Dash_Role_Data = response.Roles;
+          display_Github(data, currentPage, itemsPerPage,filters, data)
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: response.message,
+          });
+        }
+      },
+      error: function(response) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi',
+          text: response.message,
+        });
+      }
+    });
+  }
+
+    // Load data
+      function display_Github(products, currentPage, itemsPerPage, filters, data_temp) {
+      //   var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+      //   var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+      //   var isAddTrue = IsAdmin === true   ||  Dash_Role_Data[2].Status === 'True';
+      //   if (isAddTrue == true){
+      //   var addGroupButton = document.querySelector('.addGroup');
+      //   if (addGroupButton == null){
+      //     $('.top-title').append(
+      //       '<button type="button" class="btn btn-danger btn-icon-text addGroup" id="addGroup">'+
+      //       '<i class="ti-files btn-icon-prepend"></i>TẠO NHÓM '+
+      //       '</button>'
+      //     );
+      //   } 
+      // }
+
+        $('.table-responsive').empty();
+        var filteredProducts = products.filter(function(product) {
+            var mesMatch = filters.mes === '' || product.message.toString().toLowerCase().includes(filters.mes);
+            var nameMatch = filters.name === '' || product.Name.toLowerCase().indexOf(filters.name) > -1;
+            var dateMatch = filters.date === '' || product.commit_date.toString().toLowerCase().indexOf(filters.date) > -1;
+            // var mainMatch = filters.main === '' || product.TGroup_Status.toString().toLowerCase().indexOf(filters.main) > -1;
+
+            return mesMatch && nameMatch && dateMatch ;
+          });
+
+          if(filteredProducts !== null || filteredProducts !== '')
+          {
+            products = filteredProducts
+          }
+
+        for (var i = (currentPage - 1) * itemsPerPage; i < currentPage * itemsPerPage && i < products.length; i++) {
+          var product = products[i];
+          // Mã HTML bạn muốn chèn vào
+          $('.table-responsive').append('<div class="git-content">' +
+            '<div class="table-github">' +
+            '<div class="line-1">' +
+            '<table class="custom-table">' +
+            '<thead>' +
+            '<tr class="tr-table-git">' +
+            '<th class="tr-table-th">COMMIT SHA</th>' +
+            '<th class="tr-table-th">COMMIT MESSAGE</th>' +
+            '<th class="tr-table-th-fun">DEV</th>' +
+            '<th class="tr-table-th-fun">MAIN</th>' +
+            '<th class="tr-table-th-fun">FUNCTION</th>' +
+            '</tr>' +
+            '</thead>' +
+            '<tbody>' +
+            '<tr class="tr-table-git-content" data-sha="'+product.sha+'">' +
+            '<td class="tr-table-th">'+product.sha+'</td>' +
+            '<td class="tr-table-th">'+product.message+'</td>' +
+            '<td class="tr-table-th-fun"><li class="mdi mdi-check-circle btn-check-sucess"></li></td>' +
+            '<td class="tr-table-th-fun">'+ (product.main == 'True' ? '<li class="mdi mdi-check-circle btn-check-sucess"></li></td>' : '<li class="mdi mdi-alert-outline btn-check-error"></li>')+'</td>' +
+            '<td data-sha="'+product.sha+'" class="toggle-btn tr-table-th-fun"><button type="button" class="btn btn-danger btn-icon-text toggle-line" id="toggle-line"><li class="ti-arrow-circle-down"></li></button></td>' +
+            '</tr>' +
+            '</tbody>' +
+            '</table>' +
+            '</div>' +
+            '<div class="line-2" data-sha="'+product.sha+'">' +
+            '<table class="custom-table">' +
+            '<thead>' +
+            '<tr class="tr-table-git">' +
+            '<th class="tr-table-l2">AVATAR</th>' +
+            '<th class="tr-table-l2">COMMIT NAME</th>' +
+            '<th class="tr-table-l2">COMMIT EMAIL</th>' +
+            '<th class="tr-table-l2">COMMIT DATE</th>' +
+            '</tr>' +
+            '</thead>' +
+            '<tbody>' +
+            '<tr class="tr-table-git-content">' +
+            '<td class="tr-table-l2"><img src="'+product.avatar+'"></td>' +
+            '<td class="tr-table-l2">'+product.Name+'</td>' +
+            '<td class="tr-table-l2">'+product.email+'</td>' +
+            '<td class="tr-table-l2">'+product.commit_date+'</td>' +
+            '</tr>' +
+            '</tbody>' +
+            '</table>' +
+            '</div>' +
+            '</div>');
+            // Chèn mã HTML vào cuối .table-responsive
+            // $('.table-responsive').append(gitContentHtml);
+        }
+      
+        var numPages = Math.ceil(products.length / itemsPerPage);
+        var pagination = $('#pagination');
+        pagination.empty();
+        
+        // Add First button
+        pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="1">&laquo;</a></li>');
+        
+        // for (var i = 1; i <= numPages; i++) {
+        //   var activeClass = (i === currentPage) ? "active" : "";
+        //   pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>');
+        // }
+        for (var i = 1; i <= numPages; i++) {
+          var activeClass = (i === currentPage) ? "active" : "";
+          var pageLink = '<li class="page-item ' + activeClass + '"><a class="page-link" href="#" data-page="' + i + '">' + i + '</a></li>';
+          
+          if (i <= 4 || i > numPages - 4 || (i >= currentPage - 1 && i <= currentPage + 1)) {
+              pagination.append(pageLink);
+          } else if (i === 5 && currentPage > 6) { // Hiển thị "..." trước các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          } else if (i === numPages - 4 && currentPage < numPages - 5) { // Hiển thị "..." sau các trang ở giữa
+              pagination.append('<li class="page-item disabled"><span class="page-link">...</span></li>');
+          }
+        }
+        
+        // Add Last button
+        pagination.append('<li class="page-item"><a class="page-link" href="#" data-page="' + numPages + '">&raquo;</a></li>');
+      
+        pagination.find('.page-link').click(function(event) {
+            event.preventDefault();
+      
+            var page = $(this).data('page');
+            display_Github(products, page, itemsPerPage, filters, data_temp);
+        });
+        
+        // Handle First and Last button click event - start
+        pagination.find('.page-item:first-child .page-link').click(function(event) {
+          event.preventDefault();
+          
+          if (currentPage > 1) {
+            display_Github(products, 1, itemsPerPage, filters, data_temp);
+          }
+          else
+          {
+            display_Github(products, currentPage, itemsPerPage, filters, data_temp);
+          }
+        });
+        pagination.find('.page-item:last-child .page-link').click(function(event) {
+          event.preventDefault();
+          
+          if (currentPage < numPages) {
+            display_Github(products, numPages, itemsPerPage, filters, data_temp);
+          }
+          else
+          {
+            display_Github(products, currentPage, itemsPerPage, filters, data_temp);
+          }
+        });
+        // Handle First and Last button click event - end
+        
+        //xử lý sự kiện update status
+        $(document).on('click', '.btn-group-status', function() {
+            var comp   = $(this);
+            var status = comp.attr('data-group-status');
+            var id     = comp.attr('data-group-id');
+            var status_new = (status === "true" ? "false" : "true");
+            if(status){
+              $.ajax({
+                url: '/cap-nhat-nhom/',
+                dataType: 'json',
+                method: 'POST',
+                data: {
+                  'status': (status === "true" ? "False" : "True"),
+                  'GroupID': id,
+                },
+                success: function(response) {
+                  if (response.success) {     
+                    var htmlStatus = '<button data-group-id="' + response.TGroup_ID + '" data-group-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-group-status">'+  
+                    (status_new === "true" ? 'Kích Hoạt' : 'Không Kích Hoạt' ) + 
+                    '</button>';
+
+                    var btn_status = document.querySelector('tr[data-product-id="' + response.TGroup_ID + '"]');
+                    var btn_status_column = btn_status.querySelector('td[data-column="status"]');
+                    var btn_status_button = btn_status_column.querySelector('button');
+                    if (btn_status_button) {
+                      btn_status_button.remove();
+                    }
+                    btn_status_column.insertAdjacentHTML('beforeend', htmlStatus);
+                    Swal.fire({
+                      icon: 'success',
+                      title: 'Thông Báo',
+                      timer: 1000,
+                      text: response.message,
+                    });
+                  } else {
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'Oops...',
+                      text: response.message,
+                    });
+                  }
+                },
+                error: function(response) {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Thông Báo Lỗi',
+                    text: response.message,
+                  });
+                }
+              });
+            }
+            else{
+              Swal.fire({
+                icon: 'error',
+                title: 'Thông Báo Lỗi', 
+                text: 'Không update được status',
+              })
+            }
+            
+          });
+        //xử lý sự kiện update status
+
+        // Search data in textbox table - start
+        $('#search-GroupID, #search-GroupName, #search-GroupCreate,#search-GroupDate,#search-GroupTime,.db-status')
+        .off('keydown')
+        .on('keydown', function (event) {
+          if (event.keyCode === 13) { // Nếu nhấn phím Enter
+              event.preventDefault(); // Tránh việc reload lại trang
+              $('#search-GroupID').blur(); // Mất focus khỏi textbox tìm kiếm
+              $('#search-GroupName').blur();
+              $('#search-GroupCreate').blur();
+              var formattedDate ="";
+              var date = $('#search-GroupDate').val();
+              if(date){
+                var parts = date.split("-");
+                formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0];
+              }
+              // Lấy giá trị của filters
+              var filters = {
+                  id: $('#search-GroupID').val().toLowerCase().trim(),
+                  group: $('#search-GroupName').val().toLowerCase().trim(),
+                  create: $('#search-GroupCreate').val().toLowerCase().trim(),
+                  date: (formattedDate ? formattedDate : ''),
+                  time: $('#search-GroupTime').val().toLowerCase().trim(),
+                  status: $('.db-status').val().toLowerCase().trim(),
+              };
+              if(data_temp){
+                display_Group(data_temp, currentPage, itemsPerPage, filters, data_temp);
+              }
+          }
+        });
+
+        $(document).off('click', '.btn-remove-filter').on('click', '.btn-remove-filter', function() {
+          $('#search-GroupID').val('');
+          $('#search-GroupName').val('');
+          $('#search-GroupCreate').val('');
+          $('#search-GroupDate').val('');
+          $('#search-GroupTime').val('');
+          $('.db-status').val('');
+          reset_data();  
+        });
+        
+        function reset_data(){
+          $('#search-GroupID').blur(); // Mất focus khỏi textbox tìm kiếm
+              $('#search-GroupName').blur();
+              $('#search-GroupCreate').blur();
+              var formattedDate ="";
+              var date = $('#search-GroupDate').val();
+              if(date){
+                var parts = date.split("-");
+                formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0];
+              }
+              // Lấy giá trị của filters
+              var filters = {
+                  id: $('#search-GroupID').val().toLowerCase().trim(),
+                  group: $('#search-GroupName').val().toLowerCase().trim(),
+                  create: $('#search-GroupCreate').val().toLowerCase().trim(),
+                  date: (formattedDate ? formattedDate : ''),
+                  time: $('#search-GroupTime').val().toLowerCase().trim(),
+                  status: $('.db-status').val().toLowerCase().trim(),
+              };
+              if(data_temp){
+                display_Group(data_temp, currentPage, itemsPerPage, filters, data_temp);
+              }
+        }
+        // Search data in textbox table - end
+
+        //function button status update  - start
+          var statusButtons = document.querySelectorAll('.btn-status');
+          statusButtons.forEach(function(button) {
+            button.addEventListener('click', function() {     
+                $('#StatusModal').modal('show');
+                if( $('#StatusModal').modal('show'))
+                {
+                  var value = this.getAttribute('status-value');
+                  var ticketID = this.getAttribute('data-ticket-status');
+                  var id = document.querySelector('.ticket-ID');
+                  id.textContent =  ticketID;    
+                  var statusOptions = document.querySelectorAll('#input_model_status option');
+                  statusOptions.forEach(function(option) {
+                    if (option.value === value) {
+                      option.setAttribute('selected', 'selected');
+                    } else {
+                      option.removeAttribute('selected');
+                    }
+                  });
+                }         
+            });
+          });
+
+          $('#status-button').click(function(event){
+            var ticket = document.querySelector('.ticket-ID');
+            if(ticket){
+              var ticketid = ticket.innerText;
+              var new_status = $('#input_model_status').val();
+              var new_name = $('#input_model_status option:selected').text();
+              ticket_update_status(ticketid, new_status, new_name);   
+              // auth_role();         
+            }            
+          });
+
+          function ticket_update_status(ticketid, new_status, new_name) {
+            $.ajax({
+              url: '/cap-nhat-ticket-status/',
+              dataType: 'json',
+              method: 'POST',
+              data: {
+                'ticketid': ticketid,
+                'new_status': new_status,
+              },
+              success: function(response) {
+                if (response.success) {
+                  $('#StatusModal').modal('hide');
+                  // Cập nhật lại giá trị status-value của button
+                  var btn_ticket = $('.btn-status[data-ticket-status="' + ticketid + '"]');
+                  btn_ticket.attr('status-value', new_status);
+                  btn_ticket.text(new_name);
+                  // Xóa tất cả các lớp hiện tại của nút
+                  btn_ticket.removeClass('btn-success btn-warning btn-primary btn-danger');
+
+                  // Thêm lớp mới dựa trên giá trị trạng thái
+                  if (new_status === '0') {
+                    btn_ticket.addClass('btn-success');
+                  } else if (new_status === '1') {
+                    btn_ticket.addClass('btn-primary');
+                  }
+                  else if (new_status === '2') {
+                    btn_ticket.addClass('btn-warning');
+                  }
+                  else if (new_status === '3') {
+                    btn_ticket.addClass('btn-danger');
+                  }
+
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'Thông Báo',
+                    timer: 1000,
+                    text: response.message,
+                  });
+                } else {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: response.message,
+                  });
+                }
+              },
+              error: function(response) {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Thông Báo Lỗi',
+                  text: response.message,
+                });
+              }
+            });
+          }    
+          //function button status update ticket - end  
+      }
+
+    //xử lý sự kiện close modal
+      $('.close').click(function(event) {
+        $('#CreateGroupModal').modal('hide');
+        $('#UpdateGroupModal').modal('hide');
+      });
+    //xử lý sự kiện close modal
+
+    // Xử lý sự kiện khi người dùng chọn checkbox và nhấn nút Delete
+      $(document).on('click', '.delete-group', function() {
+        var GroupID = $(this).val();
+        const swalWithBootstrapButtons = Swal.mixin({
+          customClass: {
+            confirmButton: 'btn btn-success btn-success-cus',
+            cancelButton: 'btn btn-danger btn-danger-cus'
+          },
+          buttonsStyling: false
+        })
+        
+        swalWithBootstrapButtons.fire({
+          title: 'Are you sure?',
+          text: "Bạn muốn xóa Nhóm "+ GroupID + " ?",
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Yes, delete it!',
+          cancelButtonText: 'No, cancel!',
+          reverseButtons: true
+        }).then((result) => {
+          if (result.isConfirmed) {
+            event.preventDefault();          
+            var parentRow = $(this).closest('tr');
+            delete_Group(GroupID, parentRow);      
+          } 
+        })
+      });
+
+      function delete_Group(GroupID, parentRow){
+        $.ajax({
+          url: '/xoa-nhom/',
+          dataType: 'json',
+          method: 'POST',
+          data: {
+            'GroupID': GroupID,
+          },
+          success: function(response) {
+            if (response.success) {
+              parentRow.remove();
+              Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                timer: 1000,
+                text: response.message,
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: response.message,
+              });
+            }
+          },
+          error: function(response) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Thông Báo Lỗi',
+              text: response.message,
+            });
+          }
+        });
+      }
+    // Xử lý sự kiện khi người dùng chọn checkbox và nhấn nút Delete
+
+    // Xử lý sự kiện khi người dùng nhấn nút Create
+    $(document).on('click', '.addGroup', function() {
+      // $('.addGroup').click(function(event) {
+        $('#CreateGroupModal').modal('show');
+      });
+      $(document).on('click', '#create-group-button', function() {
+      // $('#create-group-button').click(function(event) {
+        event.preventDefault(); // Prevent default form submission      
+        var Group_Name = document.querySelector('#input_group_name').value;
+        create_group(Group_Name);
+      });
+      function create_group(Group_Name){
+        $.ajax({
+          url: '/tao-nhom/',
+          dataType: 'json',
+          method: 'POST',
+          data: {
+            'Group_Name': Group_Name,
+          },
+          success: function(response) {
+            if (response.success) {     
+              // var data_Company = document.querySelector('#product-table tbody').find('tr[data-product-id="' + response.Company_ID + '"]'); 
+              // var companyName =  data_Company.querySelector('td[data-column="company"]');
+              // companyName.textContent = response.Company_Name;
+              add_row_group(response);
+              $('#CreateGroupModal').modal('hide');           
+              Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                timer: 1000,
+                text: response.message,
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: response.message,
+              });
+            }
+          },
+          error: function(response) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Thông Báo Lỗi',
+              text: response.message,
+            });
+          }
+        });
+      }
+      function add_row_group(product){
+        var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+        var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
+        $('#product-table tbody').prepend('<tr data-product-id="'+product.TGroup_ID+'">' +
+        '<td data-column="id">#' + product.TGroup_ID + '</td>' +           
+        '<td data-column="TGroup">' + product.TGroup_Name + '</td>' +
+        '<td data-column="username">' + product.TGroup_User_Name + '</td>' +         
+        '<td data-column="date">' + product.TGroup_Date + '</td>' +
+        '<td data-column="time">' + product.TGroup_Time + '</td>' +
+        '<td data-column="status"><button data-group-id="' + product.TGroup_ID + '" data-group-status="' + product.TGroup_Status + '" type="button" class="btn btn-'+(product.TGroup_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-group-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
+        (product.TGroup_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
+        '</button></td>' +
+        '<td>' +
+        (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-group" name="Update[]" value="' + product.TGroup_ID + '"><i class="ti-pencil text-danger"></i></button>': '') +
+        (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-group" name="delete[]" value="' + product.TGroup_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
+        '</td>' +
+      '</tr>');
+      }
+    // Xử lý sự kiện khi người dùng nhấn nút Create
+
+
+    // Xử lý sự kiện khi người dùng nhấn nút Update
+    $(document).on('click', '.update-group', function() {
+      $('#UpdateGroupModal').modal('show');
+      if( $('#UpdateGroupModal').modal('show'))
+      {       
+        var GroupID = $(this).val();
+        LoadDataUpdate_Group(GroupID);           
+      }
+    });
+
+  // load data form update product
+    function LoadDataUpdate_Group(GroupID){    
+      $.ajax({
+        url: '/data-update-group/',
+        dataType: 'json',
+        method: 'POST',
+        data: {'GroupID': GroupID},
+        success: function(response) {
+          if(response.success){
+            var input = document.querySelector('#UpdateGroupModal');
+            var input_ID = input.querySelector('#input_group_id');
+            input_ID.value = response.Groups[0].TGroup_ID;
+            var input_Name = input.querySelector('#input_group_name');
+            input_Name.value = response.Groups[0].TGroup_Name;
+
+            var input_status = input.querySelectorAll('#input_group_status option');            
+            input_status.forEach(function(sta){
+              var status = sta.getAttribute('value');
+              var groupStatus = response.Groups[0].TGroup_Status;                         
+              if (status === String(groupStatus)) {
+                sta.setAttribute('selected', 'selected');
+              } else {
+                sta.removeAttribute('selected');
+              }
+            });
+          }
+          else{
+            Swal.fire({
+              icon: 'error',
+              title: 'Thông Báo Lỗi',
+              text: response.message,
+            });
+          }
+        },
+        error: function(rs, e) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi',
+            text: 'Lỗi',
+          });
+        }
+    });
+    }
+
+    $(document).on('click', '#Update-group-button', function() {
+    // $('#Update-company-button').click(function(event) {
+      // $(document).on('click', 'update-company-button', function() {
+      var modal = document.querySelector('#UpdateGroupModal');
+      var input_ID = modal.querySelector('#input_group_id').value;
+      var input_Name = modal.querySelector('#input_group_name').value;
+      var input_status = modal.querySelector('#input_group_status').value;
+    
+      if (input_ID && input_Name && input_status) {
+        update_group(input_ID, input_Name, input_status);  
+      } else {
+        Swal.fire({
+          icon: 'error',
+          title: 'Thông Báo Lỗi', 
+          text: 'Nhập thông tin vào các trường có *',
+        });
+      }
+    });
+    
+
+    function update_group(GroupID, GroupName,status){
+      var status_new = (status == "true" ? "true" : "false")
+      $.ajax({
+            url: '/cap-nhat-nhom/',
+            dataType: 'json',
+            method: 'POST',
+            data: {
+              'GroupID': GroupID,
+              'status': (status == "true" ? "True" : "False"),
+              'GroupName': GroupName,
+            },
+            success: function(response) {
+              if (response.success) {
+                update_info_group(response, status_new);
+                $('#UpdateGroupModal').modal('hide');
+                  Swal.fire({
+                    icon: 'success',
+                    title: 'Thông Báo',
+                    timer: 1000,
+                    text: response.message,
+                  });
+              } else {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Oops...',
+                  text: response.message,
+                });
+              }
+            },
+            error: function(response) {
+              Swal.fire({
+                icon: 'error',
+                title: 'Thông Báo Lỗi',
+                text: response.message,
+              });
+            }
+          });
+    }
+
+    function update_info_group(Group_Data,status_new){
+      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+        // Lấy danh sách tất cả các phần tử tr có thuộc tính data-product-id
+        var productRows = document.querySelectorAll('tr[data-product-id]');
+
+        // Lặp qua từng phần tử tr
+        productRows.forEach(function(row) {
+          // Lấy giá trị của thuộc tính data-product-id
+          var GroupID = parseInt(row.getAttribute('data-product-id'));
+
+          // Kiểm tra xem productId có khớp với sản phẩm bạn đang quan tâm không
+          if (GroupID === Group_Data.TGroup_ID) {
+            // Cập nhật thông tin của phần tử
+            var groupElement = row.querySelector('[data-column="TGroup"]');
+            var statusElement = row.querySelector('[data-column="status"]');
+            groupElement.textContent =  Group_Data.TGroup_Name;
+            var htmlStatus = '<button data-group-id="' + Group_Data.TGroup_ID + '" data-group-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-group-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
+            (status_new === "true" ? 'Kích Hoạt' : 'Không Kích Hoạt' ) + 
+            '</button>';
+            var buttonStatusElement = statusElement.querySelector('button');
+            if (buttonStatusElement) {
+              buttonStatusElement.remove();
+            }
+            statusElement.insertAdjacentHTML('beforeend', htmlStatus);
+          }
+        });
+    }
+    // Xử lý sự kiện khi người dùng nhấn nút Update 
+}
+//########### Danh Sách Commit Github End ########### 
+
 //########### Danh Sách Template - Document ###########  
 //################################################## PAGE TICKET HELPDESK - END ##################################################  

@@ -161,7 +161,6 @@ def run_cmd_github(request):
     except Exception as e:
         return HttpResponse(f"Error: {str(e)}", status=500)
 
-
 def read_bat_file(request):
     file_path = 'C:\\inetpub\\wwwroot\\Django_Service_Desk-main\\SDP.bat'
     log_contents = ''
@@ -305,13 +304,91 @@ def push_to_main_and_merge(request):
     # else:
     #     return HttpResponse("Method not allowed", status=405)
 
+def github_file_list(request):
+    github_username = 'GiangLLT'
+    repo_name = 'Django_Service_Desk-main'
+    pat = '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'  # Thay YOUR_PERSONAL_ACCESS_TOKEN bằng PAT của bạn
+
+    api_url_dev = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=Dev'
+    api_url_main = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=main'
+
+    headers = {
+        "Authorization": f"Bearer {pat}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    try:
+        response_dev = requests.get(api_url_dev, headers=headers)
+        response_main = requests.get(api_url_main, headers=headers)
+
+        # Kiểm tra xem response có thành công không (status code 200)
+        response_dev.raise_for_status()
+        response_main.raise_for_status()
+        commits_dev = response_dev.json()
+        commits_main = response_main.json()
+
+        commits_dev_info = [{'sha': commit['sha'],
+                             'Name': commit['commit']['committer']['name'],
+                             'email': commit['commit']['committer']['email'],
+                             'avatar': commit['author']['avatar_url'],
+                             'message': commit['commit']['message'],
+                             'commit_date': datetime.datetime.strptime(commit['commit']['committer']['date'], '%Y-%m-%dT%H:%M:%SZ')}
+                            for commit in commits_dev]
+
+        commits_main_info = [{'sha': commit['sha']}
+                             for commit in commits_main]
+        # commits_main_info = [{'sha': commit['sha'],
+        #                       'email': commit['commit']['committer']['email'],
+        #                       'message': commit['commit']['message'],
+        #                       'commit_date': datetime.datetime.strptime(commit['commit']['committer']['date'], '%Y-%m-%dT%H:%M:%SZ')}
+        #                      for commit in commits_main]
+        
+        for commit_info in commits_dev_info:
+            commit_info['commit_date_str'] = commit_info['commit_date'].strftime('%d/%m/%Y %H:%M:%S')
+            commit_info['main'] = 'False'
+            for commit_main in commits_main_info:
+                if commit_info['sha'] == commit_main['sha']:
+                    commit_info['main'] = 'True'
+                    break
+
+        # for commit_info in commits_main_info:
+        #     commit_info['commit_date_str'] = commit_info['commit_date'].strftime('%d/%m/%Y %H:%M:%S')
+
+        context = { 
+        'commits_dev': commits_dev_info}    
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error: {e}")
+        commits_dev_info = []
+        commits_main_info = []
+        # Xử lý lỗi khi không thể lấy thông tin từ GitHub API
+    return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    # return render(request, 'github.html', {'commits_dev': commits_dev_info, 'commits_main': commits_main_info})
+
+def Load_Github(request):
+    try:
+        cookie_system_data     = GetCookie(request, 'cookie_system_data')
+        cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+        if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
+            # status = check_document(request)
+            # if status == True:
+                return render(request, 'Ticket_Github.html')
+            # else:
+            #     return redirect('/dashboard/')
+        else:
+            return redirect('/')
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
 ################################################### GITHUB ##################### 
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 
-################################################### API #####################  
+################################################### API ########################
 @csrf_exempt
 def api_test(request):
     if request.method == 'POST':
@@ -7854,6 +7931,86 @@ def check_document(request):
                 'message': f'Lỗi: {str(ex)}',
         })
 #FUNCTION CHECK DOCUMENT TEMPLATE
+
+#FUNCTION CHECK GITHUB
+@csrf_exempt
+def Auth_Role_Github(request):
+    try:
+        if request.method == 'POST':
+            userinfo =  request.session['UserInfo']
+            ID_user  =  userinfo['ID_user']
+            if int(userinfo['Acc_type']) < 1:
+                IsAdmin = True
+            else:
+                IsAdmin = False
+            
+            current_date = datetime.datetime.now()
+            Dash_Role_Data = [
+                {'TCode': 'ZGH_LoadGithub','Role': 'Load','Status': 'False'},
+            ]
+            Sing_Role = Role_Single.objects.filter(Role_Group_ID = 21, Role_Status = True)
+            if Sing_Role:
+                for s in Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                        ID_user =  ID_user, 
+                        Role_ID = s.Role_ID,
+                        Authorization_From__lte=current_date,
+                        Authorization_To__gte=current_date, 
+                        Authorization_Status = True).order_by('-Authorization_To').first() 
+                    if auth:
+                        for item_role in Dash_Role_Data:
+                            tcode = item_role['TCode']
+                            if tcode in auth.Role_ID.Role_Name:
+                                item_role['Status'] = 'True'
+            context = { 
+                'success': True,
+                'IsAdmin': IsAdmin,
+                'Roles': Dash_Role_Data,
+            }
+        return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Lỗi: {str(ex)}',
+        })
+    
+def check_Github(request):
+    try:
+        userinfo = request.session.get('UserInfo')
+        if userinfo:
+            idUser = userinfo['ID_user']
+            typeUser = userinfo['Acc_type']
+            if typeUser > 0:
+                current_date = datetime.datetime.now()
+                Sing_Role = Role_Single.objects.filter(Role_Group_ID = 21, Role_Status = True).values('Role_ID')
+                if Sing_Role:
+                    auth = Authorization_User.objects.filter(
+                                ID_user =  idUser, 
+                                Role_ID__in = Sing_Role.values('Role_ID'),
+                                Authorization_From__lte=current_date,
+                                Authorization_To__gte=current_date, 
+                                Authorization_Status = True) 
+                    if auth:
+                         return JsonResponse({
+                            'success': True,
+                            # 'Status':  True,
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                            # 'Status':  False,
+                        })     
+            else:
+                 return JsonResponse({
+                        'success': True,
+                        # 'Status':  True,
+                })
+    except Exception as ex:
+        return JsonResponse({
+                'success': False,
+                'message': f'Lỗi: {str(ex)}',
+        })
+#FUNCTION CHECK GITHUB 
 ################################################### PAGE AUTHORIZE ROLE #######################
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
