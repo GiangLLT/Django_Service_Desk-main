@@ -77,4 +77,4 @@ Sub OpenChromeWithURL(item As Outlook.MailItem)
 End Sub
 
 
-Ver 1.1 ........
+Ver 1.2 ........v1.2
