@@ -259,8 +259,8 @@ def push_to_dev(request):
                 # Commit và push lên nhánh hiện tại (có thể là Dev hoặc đã chuyển về Dev trước đó)
                 repo.git.add(all=True)
                 repo.git.commit('-m', commit_name)
-                origin = repo.remote(name='Dev')
-                origin.push()
+                origin = repo.remote(name='origin')
+                origin.push('Dev')
                 return HttpResponse({'success': True, 'message': "Push to {current_branch} branch success!"})
             else:
                 return HttpResponse({'success': False, 'message': "Push to {current_branch} branch Failed!"})
