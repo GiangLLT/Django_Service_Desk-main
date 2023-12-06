@@ -261,17 +261,17 @@ def push_to_dev(request):
                 repo.git.commit('-m', commit_name)
                 origin = repo.remote(name='origin')
                 origin.push('Dev')
-                return HttpResponse({'success': True, 'message': "Push to {current_branch} branch success!"})
+                return JsonResponse({'success': True, 'message': "Push to {current_branch} branch success!"})
             else:
-                return HttpResponse({'success': False, 'message': "Push to {current_branch} branch Failed!"})
+                return JsonResponse({'success': False, 'message': "Push to {current_branch} branch Failed!"})
             
             # return HttpResponse(f"Push to {current_branch} branch success!", status=200)
         except Exception as e:
-            return HttpResponse({'success': False, 'message': {e}})
+            return JsonResponse({'success': False, 'message': e})
             # return HttpResponse(f"Error: {e}", status=500)
     else:
         # return HttpResponse("Method not allowed", status=405)
-        return HttpResponse({'success': False, 'message': "Method not allowed"})
+        return JsonResponse({'success': False, 'message': "Method not allowed"})
     
 @csrf_exempt
 def push_to_main_and_merge(request):
@@ -310,20 +310,20 @@ def push_to_main_and_merge(request):
                 dev_branch = repo.branches['Dev']
                 dev_branch.checkout()
                 # return HttpResponse("Push to Main and merge with Dev success!", status=200)
-                return HttpResponse({'success': True, 'message': "Push to Main and merge with Dev success!"})
+                return JsonResponse({'success': True, 'message': "Push to Main and merge with Dev success!"})
             else:
-                return HttpResponse({'success': False, 'message': "Push to Main and merge with Dev failed!"})
+                return JsonResponse({'success': False, 'message': "Push to Main and merge with Dev failed!"})
         except Exception as e:
             # return HttpResponse(f"Error: {e}", status=500)
-            return HttpResponse({'success': False, 'message': {e}})
+            return JsonResponse({'success': False, 'message': e })
     else:
         # return HttpResponse("Method not allowed", status=405)
-        return HttpResponse({'success': False, 'message': "Method not allowed"})
+        return JsonResponse({'success': False, 'message': "Method not allowed"})
 
 def github_file_list(request):
-    github_username = 'GiangLLT'
-    repo_name = 'Django_Service_Desk-main'
-    token = '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'
+    github_username = settings.GITHUB_USERNAME
+    repo_name = settings.GITHUB_REPO_NAME
+    token = settings.GITHUB_TOKEN
     api_url_dev = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=Dev'
     api_url_main = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=main'
 

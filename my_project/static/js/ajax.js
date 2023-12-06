@@ -13565,11 +13565,11 @@ if (window.location.pathname === '/danh-sach-github/') {
               });
             }
           },
-          error: function(response) {
+          error: function(rs, e) {
             Swal.fire({
               icon: 'error',
               title: 'Thông Báo Lỗi',
-              text: response.message,
+              text: e,
             });
           }
         });
