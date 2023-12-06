@@ -52,13 +52,6 @@
                                     <th>
                                       <input type="Email" class="form-control" id="search-CommitName" name="search-CommitName"  placeholder="Nhập Email">
                                     </th>
-                                    {% comment %} <th>
-                                      <select class="db-CommitDev">
-                                        <option value="">Tất Cả</option>
-                                        <option value="true">Commited</option>
-                                        <option value="false">Uncommited</option>
-                                      </select>
-                                    </th>                                {% endcomment %}
                                     <th>
                                       <select class="db-CommitMain">
                                         <option value="">Tất Cả</option>
@@ -75,11 +68,12 @@
                                         <i class="ti-files btn-icon-prepend"></i>                                                    
                                         XÓA FILTER
                                       </button>
+                                      
                                 </thead>
                             </table>
                         </div>
-                        {% comment %} <div class="git-content">                        
-                            <div class="table-github">
+                        <div class="git-content">                        
+                            {% comment %} <div class="table-github">
                                 <div class="line-1">
                                     <table class="custom-table">
                                         <thead>
@@ -122,12 +116,12 @@
                                         </tbody>
                                     </table>
                                 </div>
-                            </div> {% endcomment %}
-                        </div>                             
+                            </div>{% endcomment %}  
+                        </div>                            
                     </div>
                     <ul class="pagination" id="pagination"></ul>    
                     <!-- Modal spinners -->
-                    {% comment %} <div class="modal fade" id="spinnersModal" tabindex="-1" role="dialog" aria-labelledby="spinnersModallabel">
+                    <div class="modal fade" id="spinnersModal" tabindex="-1" role="dialog" aria-labelledby="spinnersModallabel">
                       <div class="modal-dialog" role="document">
                         <div class="modal-content_spinners">
                           
@@ -144,7 +138,7 @@
                           </div>
                         </div>
                       </div>
-                    </div> {% endcomment %}
+                    </div>
                   <!-- Modal spinners -->                                 
                   </div>
                 </div>
@@ -152,18 +146,4 @@
             </div>
           </div>
     </div>
-    <script>
-        function toggleLines(lineNumber) {
-            const line1 = document.querySelector(`.table-github:nth-child(${lineNumber}) .line-1`);
-            const line2 = document.querySelector(`.table-github:nth-child(${lineNumber}) .line-2`);
-
-            
-            if (line2.style.display === 'none') {
-                line2.style.display = 'block';
-            } else {
-                line2.style.display = 'none';
-            }
-        }
-    </script>
-
 {% endblock %}

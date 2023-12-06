@@ -307,8 +307,7 @@ def push_to_main_and_merge(request):
 def github_file_list(request):
     github_username = 'GiangLLT'
     repo_name = 'Django_Service_Desk-main'
-    pat = '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'  # Thay YOUR_PERSONAL_ACCESS_TOKEN bằng PAT của bạn
-
+    pat = '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'
     api_url_dev = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=Dev'
     api_url_main = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=main'
 
@@ -337,30 +336,29 @@ def github_file_list(request):
 
         commits_main_info = [{'sha': commit['sha']}
                              for commit in commits_main]
-        # commits_main_info = [{'sha': commit['sha'],
-        #                       'email': commit['commit']['committer']['email'],
-        #                       'message': commit['commit']['message'],
-        #                       'commit_date': datetime.datetime.strptime(commit['commit']['committer']['date'], '%Y-%m-%dT%H:%M:%SZ')}
-        #                      for commit in commits_main]
         
-        for commit_info in commits_dev_info:
-            commit_info['commit_date_str'] = commit_info['commit_date'].strftime('%d/%m/%Y %H:%M:%S')
-            commit_info['main'] = 'False'
-            for commit_main in commits_main_info:
-                if commit_info['sha'] == commit_main['sha']:
-                    commit_info['main'] = 'True'
-                    break
-
-        # for commit_info in commits_main_info:
-        #     commit_info['commit_date_str'] = commit_info['commit_date'].strftime('%d/%m/%Y %H:%M:%S')
-
-        context = { 
-        'commits_dev': commits_dev_info}    
+        if commits_dev_info and commits_main_info:       
+            for commit_info in commits_dev_info:
+                commit_info['commit_date_str'] = commit_info['commit_date'].strftime('%d/%m/%Y %H:%M:%S')
+                commit_info['main'] = 'False'
+                for commit_main in commits_main_info:
+                    if commit_info['sha'] == commit_main['sha']:
+                        commit_info['main'] = 'True'
+                        break
+            context = { 
+            'success' : True,
+            'commits_dev': commits_dev_info}  
+        else:
+             context = { 
+            'success' : False,
+            'message': 'No data'}                             
 
     except requests.exceptions.RequestException as e:
-        print(f"Error: {e}")
         commits_dev_info = []
         commits_main_info = []
+        context = { 
+            'success' : False,
+            'message': e}
         # Xử lý lỗi khi không thể lấy thông tin từ GitHub API
     return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
     # return render(request, 'github.html', {'commits_dev': commits_dev_info, 'commits_main': commits_main_info})

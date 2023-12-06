@@ -13227,7 +13227,7 @@ if (window.location.pathname === '/cap-nhat-mat-khau/') {
 //########### Danh Sách Commit Github Start ###########  
 if (window.location.pathname === '/danh-sach-github/') {
   var currentPage = 1;
-  var itemsPerPage = 5;
+  var itemsPerPage = 10;
   var IsAdmin = '';
   var Dash_Role_Data =[];
 
@@ -13258,11 +13258,12 @@ if (window.location.pathname === '/danh-sach-github/') {
       url: '/github_list_file/',
       dataType: 'json',
       success: function(context) {
+      if(context.success){
           var filters = {
               mes: $('#search-CommitMes').val().toLowerCase().trim(),
-              name: $('#search-CommitName').val().toLowerCase().trim(),
-              // main: $('#search-CommitMain').val().toLowerCase().trim(),
+              name: $('#search-CommitName').val().toLowerCase().trim(),             
               date: $('#search-CommitDate').val().toLowerCase().trim(),
+              main: $('.db-CommitMain').val().toLowerCase().trim(),
             };
             // Load_data(context.companys, context.tgroups, context.users)
             // display_Group(context.data, currentPage, itemsPerPage,filters, context.data)
@@ -13270,9 +13271,13 @@ if (window.location.pathname === '/danh-sach-github/') {
             setTimeout(function() {
               $('#spinnersModal').modal('hide');
             }, 1000);
+        }
+        else{
+          alert(context.message);
+        }
       },
       error: function(rs, e) {
-          alert('Oops! something went wrong');
+          alert(e);
       }
     });
   }
@@ -13322,14 +13327,14 @@ if (window.location.pathname === '/danh-sach-github/') {
       //   } 
       // }
 
-        $('.table-responsive').empty();
+        $('.git-content').empty();
         var filteredProducts = products.filter(function(product) {
             var mesMatch = filters.mes === '' || product.message.toString().toLowerCase().includes(filters.mes);
-            var nameMatch = filters.name === '' || product.Name.toLowerCase().indexOf(filters.name) > -1;
+            var nameMatch = filters.name === '' || product.email.toLowerCase().indexOf(filters.name) > -1;
             var dateMatch = filters.date === '' || product.commit_date.toString().toLowerCase().indexOf(filters.date) > -1;
-            // var mainMatch = filters.main === '' || product.TGroup_Status.toString().toLowerCase().indexOf(filters.main) > -1;
+            var mainMatch = filters.main === '' || product.main.toString().toLowerCase().indexOf(filters.main) > -1;
 
-            return mesMatch && nameMatch && dateMatch ;
+            return mesMatch && nameMatch && dateMatch && mainMatch;
           });
 
           if(filteredProducts !== null || filteredProducts !== '')
@@ -13339,9 +13344,7 @@ if (window.location.pathname === '/danh-sach-github/') {
 
         for (var i = (currentPage - 1) * itemsPerPage; i < currentPage * itemsPerPage && i < products.length; i++) {
           var product = products[i];
-          // Mã HTML bạn muốn chèn vào
-          $('.table-responsive').append('<div class="git-content">' +
-            '<div class="table-github">' +
+          $('.git-content').append('<div class="table-github">' +
             '<div class="line-1">' +
             '<table class="custom-table">' +
             '<thead>' +
@@ -13359,12 +13362,12 @@ if (window.location.pathname === '/danh-sach-github/') {
             '<td class="tr-table-th">'+product.message+'</td>' +
             '<td class="tr-table-th-fun"><li class="mdi mdi-check-circle btn-check-sucess"></li></td>' +
             '<td class="tr-table-th-fun">'+ (product.main == 'True' ? '<li class="mdi mdi-check-circle btn-check-sucess"></li></td>' : '<li class="mdi mdi-alert-outline btn-check-error"></li>')+'</td>' +
-            '<td data-sha="'+product.sha+'" class="toggle-btn tr-table-th-fun"><button type="button" class="btn btn-danger btn-icon-text toggle-line" id="toggle-line"><li class="ti-arrow-circle-down"></li></button></td>' +
+            '<td class="toggle-btn tr-table-th-fun"><button data-sha="'+product.sha+'" type="button" class="toggle-line" id="toggle-line"><li class="ti-arrow-circle-down"></li></button></td>' +
             '</tr>' +
             '</tbody>' +
             '</table>' +
             '</div>' +
-            '<div class="line-2" data-sha="'+product.sha+'">' +
+            '<div class="line-2" data-sha-container="'+product.sha+'">' +
             '<table class="custom-table">' +
             '<thead>' +
             '<tr class="tr-table-git">' +
@@ -13383,7 +13386,6 @@ if (window.location.pathname === '/danh-sach-github/') {
             '</tr>' +
             '</tbody>' +
             '</table>' +
-            '</div>' +
             '</div>');
             // Chèn mã HTML vào cuối .table-responsive
             // $('.table-responsive').append(gitContentHtml);
@@ -13447,296 +13449,84 @@ if (window.location.pathname === '/danh-sach-github/') {
           }
         });
         // Handle First and Last button click event - end
-        
-        //xử lý sự kiện update status
-        $(document).on('click', '.btn-group-status', function() {
-            var comp   = $(this);
-            var status = comp.attr('data-group-status');
-            var id     = comp.attr('data-group-id');
-            var status_new = (status === "true" ? "false" : "true");
-            if(status){
-              $.ajax({
-                url: '/cap-nhat-nhom/',
-                dataType: 'json',
-                method: 'POST',
-                data: {
-                  'status': (status === "true" ? "False" : "True"),
-                  'GroupID': id,
-                },
-                success: function(response) {
-                  if (response.success) {     
-                    var htmlStatus = '<button data-group-id="' + response.TGroup_ID + '" data-group-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-group-status">'+  
-                    (status_new === "true" ? 'Kích Hoạt' : 'Không Kích Hoạt' ) + 
-                    '</button>';
-
-                    var btn_status = document.querySelector('tr[data-product-id="' + response.TGroup_ID + '"]');
-                    var btn_status_column = btn_status.querySelector('td[data-column="status"]');
-                    var btn_status_button = btn_status_column.querySelector('button');
-                    if (btn_status_button) {
-                      btn_status_button.remove();
-                    }
-                    btn_status_column.insertAdjacentHTML('beforeend', htmlStatus);
-                    Swal.fire({
-                      icon: 'success',
-                      title: 'Thông Báo',
-                      timer: 1000,
-                      text: response.message,
-                    });
-                  } else {
-                    Swal.fire({
-                      icon: 'error',
-                      title: 'Oops...',
-                      text: response.message,
-                    });
-                  }
-                },
-                error: function(response) {
-                  Swal.fire({
-                    icon: 'error',
-                    title: 'Thông Báo Lỗi',
-                    text: response.message,
-                  });
-                }
-              });
-            }
-            else{
-              Swal.fire({
-                icon: 'error',
-                title: 'Thông Báo Lỗi', 
-                text: 'Không update được status',
-              })
-            }
-            
-          });
-        //xử lý sự kiện update status
 
         // Search data in textbox table - start
-        $('#search-GroupID, #search-GroupName, #search-GroupCreate,#search-GroupDate,#search-GroupTime,.db-status')
+        $('#search-CommitMes, #search-CommitName,#search-CommitDate,.db-CommitMain')
         .off('keydown')
         .on('keydown', function (event) {
           if (event.keyCode === 13) { // Nếu nhấn phím Enter
               event.preventDefault(); // Tránh việc reload lại trang
-              $('#search-GroupID').blur(); // Mất focus khỏi textbox tìm kiếm
-              $('#search-GroupName').blur();
-              $('#search-GroupCreate').blur();
+              $('#search-CommitMes').blur(); // Mất focus khỏi textbox tìm kiếm
+              $('#search-CommitName').blur();
               var formattedDate ="";
-              var date = $('#search-GroupDate').val();
+              var date = $('#search-CommitDate').val();
               if(date){
                 var parts = date.split("-");
                 formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0];
               }
               // Lấy giá trị của filters
               var filters = {
-                  id: $('#search-GroupID').val().toLowerCase().trim(),
-                  group: $('#search-GroupName').val().toLowerCase().trim(),
-                  create: $('#search-GroupCreate').val().toLowerCase().trim(),
-                  date: (formattedDate ? formattedDate : ''),
-                  time: $('#search-GroupTime').val().toLowerCase().trim(),
-                  status: $('.db-status').val().toLowerCase().trim(),
+                mes: $('#search-CommitMes').val().toLowerCase().trim(),
+                name: $('#search-CommitName').val().toLowerCase().trim(),             
+                date: $('#search-CommitDate').val().toLowerCase().trim(),
+                main: $('.db-CommitMain').val().toLowerCase().trim(),
               };
               if(data_temp){
-                display_Group(data_temp, currentPage, itemsPerPage, filters, data_temp);
+                display_Github(data_temp, currentPage, itemsPerPage, filters, data_temp);
               }
           }
         });
 
         $(document).off('click', '.btn-remove-filter').on('click', '.btn-remove-filter', function() {
-          $('#search-GroupID').val('');
-          $('#search-GroupName').val('');
-          $('#search-GroupCreate').val('');
-          $('#search-GroupDate').val('');
-          $('#search-GroupTime').val('');
-          $('.db-status').val('');
+          $('#search-CommitMes').val('');
+          $('#search-CommitName').val('');
+          $('#search-CommitDate').val('');
+          $('.db-CommitMain').val('');
           reset_data();  
         });
         
         function reset_data(){
           $('#search-GroupID').blur(); // Mất focus khỏi textbox tìm kiếm
-              $('#search-GroupName').blur();
-              $('#search-GroupCreate').blur();
+              $('#search-CommitMes').blur();
+              $('#search-CommitName').blur();
               var formattedDate ="";
-              var date = $('#search-GroupDate').val();
+              var date = $('#search-CommitDate').val();
               if(date){
                 var parts = date.split("-");
                 formattedDate = parts[2] + "/" + parts[1] + "/" + parts[0];
               }
               // Lấy giá trị của filters
               var filters = {
-                  id: $('#search-GroupID').val().toLowerCase().trim(),
-                  group: $('#search-GroupName').val().toLowerCase().trim(),
-                  create: $('#search-GroupCreate').val().toLowerCase().trim(),
-                  date: (formattedDate ? formattedDate : ''),
-                  time: $('#search-GroupTime').val().toLowerCase().trim(),
-                  status: $('.db-status').val().toLowerCase().trim(),
+                mes: $('#search-CommitMes').val().toLowerCase().trim(),
+                name: $('#search-CommitName').val().toLowerCase().trim(),             
+                date: $('#search-CommitDate').val().toLowerCase().trim(),
+                main: $('.db-CommitMain').val().toLowerCase().trim(),
               };
               if(data_temp){
-                display_Group(data_temp, currentPage, itemsPerPage, filters, data_temp);
+                display_Github(data_temp, currentPage, itemsPerPage, filters, data_temp);
               }
         }
         // Search data in textbox table - end
-
-        //function button status update  - start
-          var statusButtons = document.querySelectorAll('.btn-status');
-          statusButtons.forEach(function(button) {
-            button.addEventListener('click', function() {     
-                $('#StatusModal').modal('show');
-                if( $('#StatusModal').modal('show'))
-                {
-                  var value = this.getAttribute('status-value');
-                  var ticketID = this.getAttribute('data-ticket-status');
-                  var id = document.querySelector('.ticket-ID');
-                  id.textContent =  ticketID;    
-                  var statusOptions = document.querySelectorAll('#input_model_status option');
-                  statusOptions.forEach(function(option) {
-                    if (option.value === value) {
-                      option.setAttribute('selected', 'selected');
-                    } else {
-                      option.removeAttribute('selected');
-                    }
-                  });
-                }         
-            });
-          });
-
-          $('#status-button').click(function(event){
-            var ticket = document.querySelector('.ticket-ID');
-            if(ticket){
-              var ticketid = ticket.innerText;
-              var new_status = $('#input_model_status').val();
-              var new_name = $('#input_model_status option:selected').text();
-              ticket_update_status(ticketid, new_status, new_name);   
-              // auth_role();         
-            }            
-          });
-
-          function ticket_update_status(ticketid, new_status, new_name) {
-            $.ajax({
-              url: '/cap-nhat-ticket-status/',
-              dataType: 'json',
-              method: 'POST',
-              data: {
-                'ticketid': ticketid,
-                'new_status': new_status,
-              },
-              success: function(response) {
-                if (response.success) {
-                  $('#StatusModal').modal('hide');
-                  // Cập nhật lại giá trị status-value của button
-                  var btn_ticket = $('.btn-status[data-ticket-status="' + ticketid + '"]');
-                  btn_ticket.attr('status-value', new_status);
-                  btn_ticket.text(new_name);
-                  // Xóa tất cả các lớp hiện tại của nút
-                  btn_ticket.removeClass('btn-success btn-warning btn-primary btn-danger');
-
-                  // Thêm lớp mới dựa trên giá trị trạng thái
-                  if (new_status === '0') {
-                    btn_ticket.addClass('btn-success');
-                  } else if (new_status === '1') {
-                    btn_ticket.addClass('btn-primary');
-                  }
-                  else if (new_status === '2') {
-                    btn_ticket.addClass('btn-warning');
-                  }
-                  else if (new_status === '3') {
-                    btn_ticket.addClass('btn-danger');
-                  }
-
-                  Swal.fire({
-                    icon: 'success',
-                    title: 'Thông Báo',
-                    timer: 1000,
-                    text: response.message,
-                  });
-                } else {
-                  Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: response.message,
-                  });
-                }
-              },
-              error: function(response) {
-                Swal.fire({
-                  icon: 'error',
-                  title: 'Thông Báo Lỗi',
-                  text: response.message,
-                });
-              }
-            });
-          }    
-          //function button status update ticket - end  
       }
 
-    //xử lý sự kiện close modal
-      $('.close').click(function(event) {
-        $('#CreateGroupModal').modal('hide');
-        $('#UpdateGroupModal').modal('hide');
-      });
-    //xử lý sự kiện close modal
-
-    // Xử lý sự kiện khi người dùng chọn checkbox và nhấn nút Delete
-      $(document).on('click', '.delete-group', function() {
-        var GroupID = $(this).val();
-        const swalWithBootstrapButtons = Swal.mixin({
-          customClass: {
-            confirmButton: 'btn btn-success btn-success-cus',
-            cancelButton: 'btn btn-danger btn-danger-cus'
-          },
-          buttonsStyling: false
-        })
+      $(document).on('click', '.toggle-line', function() {
+        // Sử dụng $(this) để truy cập button được click
+        var shaValue = $(this).data('sha');
         
-        swalWithBootstrapButtons.fire({
-          title: 'Are you sure?',
-          text: "Bạn muốn xóa Nhóm "+ GroupID + " ?",
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'Yes, delete it!',
-          cancelButtonText: 'No, cancel!',
-          reverseButtons: true
-        }).then((result) => {
-          if (result.isConfirmed) {
-            event.preventDefault();          
-            var parentRow = $(this).closest('tr');
-            delete_Group(GroupID, parentRow);      
-          } 
-        })
-      });
-
-      function delete_Group(GroupID, parentRow){
-        $.ajax({
-          url: '/xoa-nhom/',
-          dataType: 'json',
-          method: 'POST',
-          data: {
-            'GroupID': GroupID,
-          },
-          success: function(response) {
-            if (response.success) {
-              parentRow.remove();
-              Swal.fire({
-                icon: 'success',
-                title: 'Thông Báo',
-                timer: 1000,
-                text: response.message,
-              });
+        // Sử dụng attribute selector để chọn các phần tử có attribute data-sha-container
+        var container = $('[data-sha-container]');
+        
+        container.each(function(index, row) {
+            var data = $(row).data('sha-container');
+            if (shaValue === data) {
+                // Sử dụng toggle để chuyển đổi giữa display block và none
+                $(row).toggle();
             } else {
-              Swal.fire({
-                icon: 'error',
-                title: 'Oops...',
-                text: response.message,
-              });
+                $(row).hide();
             }
-          },
-          error: function(response) {
-            Swal.fire({
-              icon: 'error',
-              title: 'Thông Báo Lỗi',
-              text: response.message,
-            });
-          }
         });
-      }
-    // Xử lý sự kiện khi người dùng chọn checkbox và nhấn nút Delete
+    });
+      
 
     // Xử lý sự kiện khi người dùng nhấn nút Create
     $(document).on('click', '.addGroup', function() {
@@ -13806,149 +13596,6 @@ if (window.location.pathname === '/danh-sach-github/') {
       '</tr>');
       }
     // Xử lý sự kiện khi người dùng nhấn nút Create
-
-
-    // Xử lý sự kiện khi người dùng nhấn nút Update
-    $(document).on('click', '.update-group', function() {
-      $('#UpdateGroupModal').modal('show');
-      if( $('#UpdateGroupModal').modal('show'))
-      {       
-        var GroupID = $(this).val();
-        LoadDataUpdate_Group(GroupID);           
-      }
-    });
-
-  // load data form update product
-    function LoadDataUpdate_Group(GroupID){    
-      $.ajax({
-        url: '/data-update-group/',
-        dataType: 'json',
-        method: 'POST',
-        data: {'GroupID': GroupID},
-        success: function(response) {
-          if(response.success){
-            var input = document.querySelector('#UpdateGroupModal');
-            var input_ID = input.querySelector('#input_group_id');
-            input_ID.value = response.Groups[0].TGroup_ID;
-            var input_Name = input.querySelector('#input_group_name');
-            input_Name.value = response.Groups[0].TGroup_Name;
-
-            var input_status = input.querySelectorAll('#input_group_status option');            
-            input_status.forEach(function(sta){
-              var status = sta.getAttribute('value');
-              var groupStatus = response.Groups[0].TGroup_Status;                         
-              if (status === String(groupStatus)) {
-                sta.setAttribute('selected', 'selected');
-              } else {
-                sta.removeAttribute('selected');
-              }
-            });
-          }
-          else{
-            Swal.fire({
-              icon: 'error',
-              title: 'Thông Báo Lỗi',
-              text: response.message,
-            });
-          }
-        },
-        error: function(rs, e) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Thông Báo Lỗi',
-            text: 'Lỗi',
-          });
-        }
-    });
-    }
-
-    $(document).on('click', '#Update-group-button', function() {
-    // $('#Update-company-button').click(function(event) {
-      // $(document).on('click', 'update-company-button', function() {
-      var modal = document.querySelector('#UpdateGroupModal');
-      var input_ID = modal.querySelector('#input_group_id').value;
-      var input_Name = modal.querySelector('#input_group_name').value;
-      var input_status = modal.querySelector('#input_group_status').value;
-    
-      if (input_ID && input_Name && input_status) {
-        update_group(input_ID, input_Name, input_status);  
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Thông Báo Lỗi', 
-          text: 'Nhập thông tin vào các trường có *',
-        });
-      }
-    });
-    
-
-    function update_group(GroupID, GroupName,status){
-      var status_new = (status == "true" ? "true" : "false")
-      $.ajax({
-            url: '/cap-nhat-nhom/',
-            dataType: 'json',
-            method: 'POST',
-            data: {
-              'GroupID': GroupID,
-              'status': (status == "true" ? "True" : "False"),
-              'GroupName': GroupName,
-            },
-            success: function(response) {
-              if (response.success) {
-                update_info_group(response, status_new);
-                $('#UpdateGroupModal').modal('hide');
-                  Swal.fire({
-                    icon: 'success',
-                    title: 'Thông Báo',
-                    timer: 1000,
-                    text: response.message,
-                  });
-              } else {
-                Swal.fire({
-                  icon: 'error',
-                  title: 'Oops...',
-                  text: response.message,
-                });
-              }
-            },
-            error: function(response) {
-              Swal.fire({
-                icon: 'error',
-                title: 'Thông Báo Lỗi',
-                text: response.message,
-              });
-            }
-          });
-    }
-
-    function update_info_group(Group_Data,status_new){
-      var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
-        // Lấy danh sách tất cả các phần tử tr có thuộc tính data-product-id
-        var productRows = document.querySelectorAll('tr[data-product-id]');
-
-        // Lặp qua từng phần tử tr
-        productRows.forEach(function(row) {
-          // Lấy giá trị của thuộc tính data-product-id
-          var GroupID = parseInt(row.getAttribute('data-product-id'));
-
-          // Kiểm tra xem productId có khớp với sản phẩm bạn đang quan tâm không
-          if (GroupID === Group_Data.TGroup_ID) {
-            // Cập nhật thông tin của phần tử
-            var groupElement = row.querySelector('[data-column="TGroup"]');
-            var statusElement = row.querySelector('[data-column="status"]');
-            groupElement.textContent =  Group_Data.TGroup_Name;
-            var htmlStatus = '<button data-group-id="' + Group_Data.TGroup_ID + '" data-group-status="' + status_new + '" type="button" class="btn btn-'+(status_new === "true" ? 'success' : 'danger' )+' btn-rounded btn-fw btn-group-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
-            (status_new === "true" ? 'Kích Hoạt' : 'Không Kích Hoạt' ) + 
-            '</button>';
-            var buttonStatusElement = statusElement.querySelector('button');
-            if (buttonStatusElement) {
-              buttonStatusElement.remove();
-            }
-            statusElement.insertAdjacentHTML('beforeend', htmlStatus);
-          }
-        });
-    }
-    // Xử lý sự kiện khi người dùng nhấn nút Update 
 }
 //########### Danh Sách Commit Github End ########### 
 
