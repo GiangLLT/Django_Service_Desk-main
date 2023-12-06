@@ -1603,3 +1603,8 @@ margin-left: -5px;
     border: none !important;
     height: 20px ;
 }
+.commitDev, .commitMain,.cmdGithub{
+  margin-bottom: 15px;
+  margin-top: -10px;
+  border-radius: 0 !important;
+}

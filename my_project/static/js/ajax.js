@@ -13272,12 +13272,26 @@ if (window.location.pathname === '/danh-sach-github/') {
               $('#spinnersModal').modal('hide');
             }, 1000);
         }
-        else{
-          alert(context.message);
+        else{       
+          Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: context.message,
+          });
+          setTimeout(function() {
+            $('#spinnersModal').modal('hide');
+          }, 1000);
         }
       },
       error: function(rs, e) {
-          alert(e);
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: e,
+        });
+        setTimeout(function() {
+          $('#spinnersModal').modal('hide');
+        }, 1000);
       }
     });
   }
@@ -13382,7 +13396,7 @@ if (window.location.pathname === '/danh-sach-github/') {
             '<td class="tr-table-l2"><img src="'+product.avatar+'"></td>' +
             '<td class="tr-table-l2">'+product.Name+'</td>' +
             '<td class="tr-table-l2">'+product.email+'</td>' +
-            '<td class="tr-table-l2">'+product.commit_date+'</td>' +
+            '<td class="tr-table-l2">'+product.commit_date_str+'</td>' +
             '</tr>' +
             '</tbody>' +
             '</table>' +
@@ -13525,8 +13539,75 @@ if (window.location.pathname === '/danh-sach-github/') {
                 $(row).hide();
             }
         });
-    });
+      });
       
+      $(document).on('click', '.commitDev', function() {
+        $.ajax({
+          url: '/github_auto_dev/',
+          dataType: 'json',
+          method: 'POST',
+          data: {
+            'isRun': "Commit",
+          },
+          success: function(response) {
+            if (response.success) {             
+              Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                timer: 1000,
+                text: response.message,
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Thông Báo Lỗi',
+                text: response.message,
+              });
+            }
+          },
+          error: function(response) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Thông Báo Lỗi',
+              text: response.message,
+            });
+          }
+        });
+      });
+
+      $(document).on('click', '.commitMain', function() {
+        $.ajax({
+          url: '/github_auto_main/',
+          dataType: 'json',
+          method: 'POST',
+          data: {
+            'isRun': "Commit",
+          },
+          success: function(response) {
+            if (response.success) {             
+              Swal.fire({
+                icon: 'success',
+                title: 'Thông Báo',
+                timer: 1000,
+                text: response.message,
+              });
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Thông Báo Lỗi',
+                text: response.message,
+              });
+            }
+          },
+          error: function(response) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Thông Báo Lỗi',
+              text: response.message,
+            });
+          }
+        });
+      });
 
     // Xử lý sự kiện khi người dùng nhấn nút Create
     $(document).on('click', '.addGroup', function() {

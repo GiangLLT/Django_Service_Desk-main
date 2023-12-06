@@ -233,86 +233,102 @@ def get_github_data_for_file(request):
         
 @csrf_exempt
 def push_to_dev(request):
-    try:
-        now_date = datetime.datetime.now()
-        commit_date = now_date.strftime('%d%m%Y')
-        commit_time = now_date.strftime('%H%M')
-        commit_name = f'Auto commit to Dev branch from Django - {commit_date} - {commit_time}'
+    if request.method == 'POST':
+        try:
+            isRun = request.POST.get('isRun')
+            if isRun:
+                now_date = datetime.datetime.now()
+                commit_date = now_date.strftime('%d%m%Y')
+                commit_time = now_date.strftime('%H%M')
+                commit_name = f'Auto commit to Dev branch from Django - {commit_date} - {commit_time}'
 
-        # Đường dẫn tới thư mục chứa repository Git của bạn
-        repo_path = 'C:\Data\Document\Another_Code\Python_helpdesk\Python_Django'
+                # Đường dẫn tới thư mục chứa repository Git của bạn
+                repo_path = 'C:\Data\Document\Another_Code\Python_helpdesk\Python_Django'
 
-        # Khởi tạo đối tượng Repo
-        repo = git.Repo(repo_path)
+                # Khởi tạo đối tượng Repo
+                repo = git.Repo(repo_path)
 
-        # Kiểm tra xem bạn đang ở nhánh nào
-        current_branch = repo.active_branch.name
+                # Kiểm tra xem bạn đang ở nhánh nào
+                current_branch = repo.active_branch.name
 
-        # Nếu không phải là nhánh Dev, chuyển đến nhánh Dev
-        if current_branch != 'Dev':
-            dev_branch = repo.branches['Dev']
-            dev_branch.checkout()
+                # Nếu không phải là nhánh Dev, chuyển đến nhánh Dev
+                if current_branch != 'Dev':
+                    dev_branch = repo.branches['Dev']
+                    dev_branch.checkout()
 
-        # Commit và push lên nhánh hiện tại (có thể là Dev hoặc đã chuyển về Dev trước đó)
-        repo.git.add(all=True)
-        repo.git.commit('-m', commit_name)
-        origin = repo.remote(name='origin')
-        origin.push()
-
-        return HttpResponse(f"Push to {current_branch} branch success!", status=200)
-    except Exception as e:
-        return HttpResponse(f"Error: {e}", status=500)
+                # Commit và push lên nhánh hiện tại (có thể là Dev hoặc đã chuyển về Dev trước đó)
+                repo.git.add(all=True)
+                repo.git.commit('-m', commit_name)
+                origin = repo.remote(name='origin')
+                origin.push()
+                return HttpResponse({'success': True, 'message': "Push to {current_branch} branch success!"})
+            else:
+                return HttpResponse({'success': False, 'message': "Push to {current_branch} branch Failed!"})
+            
+            # return HttpResponse(f"Push to {current_branch} branch success!", status=200)
+        except Exception as e:
+            return HttpResponse({'success': False, 'message': {e}})
+            # return HttpResponse(f"Error: {e}", status=500)
+    else:
+        # return HttpResponse("Method not allowed", status=405)
+        return HttpResponse({'success': False, 'message': "Method not allowed"})
     
 @csrf_exempt
 def push_to_main_and_merge(request):
-    # if request.method == 'POST':
+    if request.method == 'POST':
         try:
             # now_date = datetime.datetime.now()
             # commit_date = now_date.strftime('%d%m%Y')
             # commit_time = now_date.strftime('%H%M')
             # commit_name = f'Auto commit to Dev branch from Django - {commit_date} - {commit_time}'
             # Đường dẫn tới thư mục chứa repository Git của bạn
-            repo_path = 'C:\Data\Document\Another_Code\Python_helpdesk\Python_Django'
+            isRun = request.POST.get('isRun')
+            if isRun:
+                repo_path = 'C:\Data\Document\Another_Code\Python_helpdesk\Python_Django'
 
-            # Khởi tạo đối tượng Repo
-            repo = git.Repo(repo_path)
+                # Khởi tạo đối tượng Repo
+                repo = git.Repo(repo_path)
 
-            # Kiểm tra xem bạn đang ở nhánh nào
-            current_branch = repo.active_branch.name
+                # Kiểm tra xem bạn đang ở nhánh nào
+                current_branch = repo.active_branch.name
 
-            if current_branch != 'main':
-                # Chuyển đến nhánh Main
-                main_branch = repo.branches['main']
-                main_branch.checkout()
+                if current_branch != 'main':
+                    # Chuyển đến nhánh Main
+                    main_branch = repo.branches['main']
+                    main_branch.checkout()
 
-            # Merge từ nhánh Dev
-            dev_branch = repo.branches['Dev']
-            repo.git.merge(dev_branch)
+                # Merge từ nhánh Dev
+                dev_branch = repo.branches['Dev']
+                repo.git.merge(dev_branch)
 
-            # Commit và push lên nhánh Main
-            repo.git.add(all=True)
-            # repo.git.commit('-m', commit_name)
-            origin = repo.remote(name='origin')
-            origin.push('main')
+                # Commit và push lên nhánh Main
+                repo.git.add(all=True)
+                # repo.git.commit('-m', commit_name)
+                origin = repo.remote(name='origin')
+                origin.push('main')
 
-            dev_branch = repo.branches['Dev']
-            dev_branch.checkout()
-
-            return HttpResponse("Push to Main and merge with Dev success!", status=200)
+                dev_branch = repo.branches['Dev']
+                dev_branch.checkout()
+                # return HttpResponse("Push to Main and merge with Dev success!", status=200)
+                return HttpResponse({'success': True, 'message': "Push to Main and merge with Dev success!"})
+            else:
+                return HttpResponse({'success': False, 'message': "Push to Main and merge with Dev failed!"})
         except Exception as e:
-            return HttpResponse(f"Error: {e}", status=500)
-    # else:
-    #     return HttpResponse("Method not allowed", status=405)
+            # return HttpResponse(f"Error: {e}", status=500)
+            return HttpResponse({'success': False, 'message': {e}})
+    else:
+        # return HttpResponse("Method not allowed", status=405)
+        return HttpResponse({'success': False, 'message': "Method not allowed"})
 
 def github_file_list(request):
     github_username = 'GiangLLT'
     repo_name = 'Django_Service_Desk-main'
-    pat = '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'
+    token = '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'
     api_url_dev = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=Dev'
     api_url_main = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=main'
 
     headers = {
-        "Authorization": f"Bearer {pat}",
+        "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github.v3+json"
     }
 
@@ -352,6 +368,16 @@ def github_file_list(request):
              context = { 
             'success' : False,
             'message': 'No data'}                             
+
+    except requests.exceptions.HTTPError as err:
+        if err.response.status_code == 401:
+            context = { 
+            'success' : False,
+            'message': 'Token đã hết hạn hoặc không hợp lệ.'}
+        else:
+            context = { 
+            'success' : False,
+            'message': f"Lỗi khi gửi yêu cầu: {err}"}
 
     except requests.exceptions.RequestException as e:
         commits_dev_info = []
