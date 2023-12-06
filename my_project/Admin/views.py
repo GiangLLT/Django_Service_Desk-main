@@ -323,7 +323,7 @@ def push_to_main_and_merge(request):
 def github_file_list(request):
     github_username = 'GiangLLT'
     repo_name = 'Django_Service_Desk-main'
-    token = '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'
+    token = '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'
     api_url_dev = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=Dev'
     api_url_main = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=main'
 
