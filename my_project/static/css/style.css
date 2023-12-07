@@ -1608,3 +1608,9 @@ margin-left: -5px;
   margin-top: -10px;
   border-radius: 0 !important;
 }
+.func-github button{
+  margin-right: 5px;
+}
+.func-github button:last-child{
+  margin-right: 0px;
+}

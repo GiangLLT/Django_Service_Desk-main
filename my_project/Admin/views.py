@@ -5937,80 +5937,6 @@ def load_comment(request):
         return redirect('/')
 #FUNCTION LOAD AND PROCESS DATA COMMENT
 
-# #FUNCTION CREATE TICKET 
-# @csrf_exempt
-# def Create_Company(request):
-#     try:
-#         if request.method == 'POST':
-#             Company_Name = request.POST.get('Company_Name')
-
-#             userID =  request.session['UserInfo']['ID_user']
-#             user = Users.objects.get(ID_user = userID)
-               
-#             company = Company.objects.create(
-#                 Company_Name = Company_Name, 
-#                 ID_user  = user, 
-#                 Company_User_Name  = user.FullName, 
-#                 Company_Date  = datetime.datetime.now().date(),
-#                 Company_Time  = datetime.datetime.now().time(),
-#                 Company_Status = 1,
-#             )
-#             company.save()
-#             companyID = company.Company_ID
-#             return JsonResponse({
-#                     'success': True,
-#                     'message': 'Công Ty Tạo Thành Công!',
-#                     'Company_ID':           companyID,
-#                     'Company_Name':         company.Company_Name,
-#                     'ID_user':              user.ID_user,
-#                     'Company_User_Name':    user.FullName,
-#                     'Company_Date':         company.Company_Date.strftime('%d/%m/%Y'),
-#                     'Company_Time':         company.Company_Time.strftime('%H:%M'),
-#                     'Company_Status':       company.Company_Status,
-#                 })
-#         else:
-#             response = {'success': False, 'message': 'Invalid request method'}
-#             # return JsonResponse(response, status=405)
-#             return JsonResponse({
-#                 'success': False,
-#                 'message': 'Invalid request method'
-#                 })
-#     except Exception as ex:
-#         return JsonResponse({
-#             'success': False,
-#             'message': f'Lỗi: {str(ex)}',
-#         })
-# #FUNCTION CREATE TICKET 
-
-# #FUNCTION DELETE TICKET 
-# @csrf_exempt
-# def Delete_Company(request):
-#     try:
-#         if request.method == 'POST':
-#             CompanyID = request.POST.get('CompanyID')
-#             try:
-#                 company = Company.objects.get(Company_ID = CompanyID)
-#                 if(company):
-#                     company.delete()
-#                     return JsonResponse({'success': True,'message': 'Xóa yêu cầu thành công!',})
-#                 else:
-#                     return JsonResponse({'success': False, 'message': 'Company ID ' + CompanyID +' Không tôn tại'})
-#             except Exception as ex:
-#                 return JsonResponse({
-#                     'success': False,
-#                     'message': f'Lỗi: {str(ex)}',
-#                 })
-#             except Ticket.DoesNotExist:
-#                 return JsonResponse({'success': False, 'message': 'ID ' + CompanyID +' Không tôn tại'})
-#         else:
-#             return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
-#     except Exception as ex:
-#         return JsonResponse({
-#             'success': False,
-#             'message': f'Lỗi: {str(ex)}',
-#         })
-# #FUNCTION DELETE TICKET 
-
 # #FUNCTION UPDATE COMMENT 
 @csrf_exempt
 def Update_Comment(request):
@@ -7971,6 +7897,7 @@ def Auth_Role_Github(request):
             current_date = datetime.datetime.now()
             Dash_Role_Data = [
                 {'TCode': 'ZGH_LoadGithub','Role': 'Load','Status': 'False'},
+                {'TCode': 'ZGH_FuncGithub','Role': 'Function','Status': 'False'},
             ]
             Sing_Role = Role_Single.objects.filter(Role_Group_ID = 21, Role_Status = True)
             if Sing_Role:
@@ -8822,3 +8749,79 @@ def get_user_info_microsoft(access_token):
 #     return JsonResponse({'success': 'Success'}, status=200)
 #     # return redirect('/get-code/')
 
+
+
+
+# #FUNCTION CREATE TICKET 
+# @csrf_exempt
+# def Create_Company(request):
+#     try:
+#         if request.method == 'POST':
+#             Company_Name = request.POST.get('Company_Name')
+
+#             userID =  request.session['UserInfo']['ID_user']
+#             user = Users.objects.get(ID_user = userID)
+               
+#             company = Company.objects.create(
+#                 Company_Name = Company_Name, 
+#                 ID_user  = user, 
+#                 Company_User_Name  = user.FullName, 
+#                 Company_Date  = datetime.datetime.now().date(),
+#                 Company_Time  = datetime.datetime.now().time(),
+#                 Company_Status = 1,
+#             )
+#             company.save()
+#             companyID = company.Company_ID
+#             return JsonResponse({
+#                     'success': True,
+#                     'message': 'Công Ty Tạo Thành Công!',
+#                     'Company_ID':           companyID,
+#                     'Company_Name':         company.Company_Name,
+#                     'ID_user':              user.ID_user,
+#                     'Company_User_Name':    user.FullName,
+#                     'Company_Date':         company.Company_Date.strftime('%d/%m/%Y'),
+#                     'Company_Time':         company.Company_Time.strftime('%H:%M'),
+#                     'Company_Status':       company.Company_Status,
+#                 })
+#         else:
+#             response = {'success': False, 'message': 'Invalid request method'}
+#             # return JsonResponse(response, status=405)
+#             return JsonResponse({
+#                 'success': False,
+#                 'message': 'Invalid request method'
+#                 })
+#     except Exception as ex:
+#         return JsonResponse({
+#             'success': False,
+#             'message': f'Lỗi: {str(ex)}',
+#         })
+# #FUNCTION CREATE TICKET 
+
+# #FUNCTION DELETE TICKET 
+# @csrf_exempt
+# def Delete_Company(request):
+#     try:
+#         if request.method == 'POST':
+#             CompanyID = request.POST.get('CompanyID')
+#             try:
+#                 company = Company.objects.get(Company_ID = CompanyID)
+#                 if(company):
+#                     company.delete()
+#                     return JsonResponse({'success': True,'message': 'Xóa yêu cầu thành công!',})
+#                 else:
+#                     return JsonResponse({'success': False, 'message': 'Company ID ' + CompanyID +' Không tôn tại'})
+#             except Exception as ex:
+#                 return JsonResponse({
+#                     'success': False,
+#                     'message': f'Lỗi: {str(ex)}',
+#                 })
+#             except Ticket.DoesNotExist:
+#                 return JsonResponse({'success': False, 'message': 'ID ' + CompanyID +' Không tôn tại'})
+#         else:
+#             return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ'})
+#     except Exception as ex:
+#         return JsonResponse({
+#             'success': False,
+#             'message': f'Lỗi: {str(ex)}',
+#         })
+# #FUNCTION DELETE TICKET 

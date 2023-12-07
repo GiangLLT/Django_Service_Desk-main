@@ -11080,7 +11080,7 @@ if (window.location.pathname === '/danh-sach-quyen/') {
           function add_row_group(product){
             var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
             var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
-            $('#product-table tbody').append('<tr data-product-id="'+product.Role_ID+'">' +
+            $('#product-table tbody').prepend('<tr data-product-id="'+product.Role_ID+'">' +
             '<td data-column="id">#' + product.Role_ID + '</td>' +           
             '<td data-column="name">' + product.Role_Name + '</td>' +
             '<td data-column="groupname">' + product.Role_Group_ID +' - ' +product.Role_Group_Name +'</td>' +
@@ -13326,20 +13326,34 @@ if (window.location.pathname === '/danh-sach-github/') {
   }
 
     // Load data
-      function display_Github(products, currentPage, itemsPerPage, filters, data_temp) {
-      //   var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
-      //   var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
-      //   var isAddTrue = IsAdmin === true   ||  Dash_Role_Data[2].Status === 'True';
-      //   if (isAddTrue == true){
-      //   var addGroupButton = document.querySelector('.addGroup');
-      //   if (addGroupButton == null){
-      //     $('.top-title').append(
-      //       '<button type="button" class="btn btn-danger btn-icon-text addGroup" id="addGroup">'+
-      //       '<i class="ti-files btn-icon-prepend"></i>TẠO NHÓM '+
-      //       '</button>'
-      //     );
-      //   } 
-      // }
+    function display_Github(products, currentPage, itemsPerPage, filters, data_temp) {
+        var isFuncTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
+        if (isFuncTrue == true){
+          var DevButton = document.querySelector('.commitDev');
+          var MainButton = document.querySelector('.commitMain');
+          var CmdButton = document.querySelector('.cmdGithub');
+          if (DevButton == null){
+            $('.func-github').append(
+              '<button type="button" class="btn btn-warning btn-icon-text commitDev" id="commitDev">'+
+              '<i class="ti-github btn-icon-prepend"></i>COMMIT DEV '+
+              '</button>'
+            );
+          } 
+          if (MainButton == null ){
+            $('.func-github').append(
+              '<button type="button" class="btn btn-danger btn-icon-text commitMain" id="commitMain">'+
+              '<i class="ti-github btn-icon-prepend"></i>COMMIT MAIN '+
+              '</button>'
+            );
+          }
+          if (CmdButton == null){
+            $('.func-github').append(
+              '<button type="button" class="btn btn-success btn-icon-text cmdGithub" id="cmdGithub">'+
+              '<i class="ti-archive btn-icon-prepend"></i>RUN CMD GITHUB '+
+              '</button>'
+            );
+          }
+        }
 
         $('.git-content').empty();
         var filteredProducts = products.filter(function(product) {
@@ -13521,9 +13535,9 @@ if (window.location.pathname === '/danh-sach-github/') {
               }
         }
         // Search data in textbox table - end
-      }
+    }
 
-      $(document).on('click', '.toggle-line', function() {
+    $(document).on('click', '.toggle-line', function() {
         // Sử dụng $(this) để truy cập button được click
         var shaValue = $(this).data('sha');
         
@@ -13539,9 +13553,34 @@ if (window.location.pathname === '/danh-sach-github/') {
                 $(row).hide();
             }
         });
-      });
+    });
+    
+    $(document).on('click', '.commitDev', function() {
+      const swalWithBootstrapButtons = Swal.mixin({
+        customClass: {
+          confirmButton: 'btn btn-success btn-success-cus',
+          cancelButton: 'btn btn-danger btn-danger-cus'
+        },
+        buttonsStyling: false
+      })
       
-      $(document).on('click', '.commitDev', function() {
+      swalWithBootstrapButtons.fire({
+        title: 'Are you sure?',
+        text: "Bạn muốn commit Github - Branch Dev?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'No, cancel!',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          event.preventDefault();          
+          github_to_dev();      
+        } 
+      })
+    });
+
+    function github_to_dev(){
         $.ajax({
           url: '/github_auto_dev/',
           dataType: 'json',
@@ -13573,9 +13612,34 @@ if (window.location.pathname === '/danh-sach-github/') {
             });
           }
         });
-      });
+    };
 
-      $(document).on('click', '.commitMain', function() {
+    $(document).on('click', '.commitMain', function() {
+      const swalWithBootstrapButtons = Swal.mixin({
+        customClass: {
+          confirmButton: 'btn btn-success btn-success-cus',
+          cancelButton: 'btn btn-danger btn-danger-cus'
+        },
+        buttonsStyling: false
+      })
+      
+      swalWithBootstrapButtons.fire({
+        title: 'Are you sure?',
+        text: "Bạn muốn merge Github - Branch Main?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'No, cancel!',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          event.preventDefault();          
+          github_to_main();      
+        } 
+      })
+    });
+
+    function github_to_main(){
         $.ajax({
           url: '/github_auto_main/',
           dataType: 'json',
@@ -13607,7 +13671,7 @@ if (window.location.pathname === '/danh-sach-github/') {
             });
           }
         });
-      });
+    };
 
     // Xử lý sự kiện khi người dùng nhấn nút Create
     $(document).on('click', '.addGroup', function() {
