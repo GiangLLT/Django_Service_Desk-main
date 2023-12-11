@@ -7796,10 +7796,10 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
       for (var i = (currentPage - 1) * itemsPerPage; i < currentPage * itemsPerPage && i < products.length; i++) {
         var product = products[i];
         var des = product.Comment_Desc.replace(/src=["']file:\/\/\/[^"']*["']/g, '');
-        $('#product-table tbody').append('<tr data-product-id="'+product.Comment_ID+'">' +
+        $('#product-table tbody').append('<tr class="toggle-comment-tr" data-product-id="'+product.Comment_ID+'">' +
           '<td data-column="id">#' + product.Comment_ID + '</td>' +           
           '<td data-column="ticketid">#' + product.Ticket_ID + '</td>' +           
-          '<td data-column="desc" class="commentDesc">' + des + '</td>' +           
+          '<td data-column="desc" class="commentDesc Descomment">' + des + '</td>' +           
           '<td data-column="userid">' + product.ID_user + '</td>' +           
           '<td data-column="username">' + product.Comment_User_Name + '</td>' +        
           '<td data-column="date">' + product.Comment_Date + '</td>' +
@@ -7810,6 +7810,7 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
           '<td>' +
           (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-comment" name="Update[]" value="' + product.Comment_ID + '"><i class="ti-pencil text-danger"></i></button>': '') +
           (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-comment" name="delete[]" value="' + product.Comment_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
+          '<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon toggle-comment" name="delete[]" value="' + product.Comment_ID + '"><i class="ti-arrow-circle-down text-danger"></i></button>' +
           '</td>' +
         '</tr>');
       }
@@ -8320,6 +8321,35 @@ if (window.location.pathname === '/danh-sach-binh-luan/') {
           item.classList.remove('commentToggle');
           item.classList.add('commentDesc');
         }
+      });
+    });
+
+    $(document).on('click', '.toggle-comment', function() {
+      var idRow = $(this).val();
+      var trRows = $(this).closest('.toggle-comment-tr').toArray();
+      // var trRow = document.querySelector('tbody tr[data-product-id="' + idRow + '"]')
+      // var id = trRow[0].querySelector('td[data-column="id"]').textContent;
+      trRows.forEach(function (trRow) {    
+        var contentRows = trRow.querySelectorAll('td[data-column="desc"]');
+        var button = trRow.querySelector('.toggle-comment');
+        var changeButton = button.querySelector('i');
+        contentRows.forEach(function (item) {
+          if (item.classList.contains('Descomment')) {
+            changeButton.classList.remove('ti-arrow-circle-down');
+            changeButton.classList.add('ti-arrow-circle-up');
+        
+            item.classList.remove('Descomment');
+            item.classList.add('Togglecomment');
+            // $(trRow).css('vertical-align', 'unset');
+          } else if (item.classList.contains('Togglecomment')) {
+            changeButton.classList.remove('ti-arrow-circle-up');
+            changeButton.classList.add('ti-arrow-circle-down');
+        
+            item.classList.remove('Togglecomment');
+            item.classList.add('Descomment');
+            // $(trRow).css('vertical-align', 'bottom');
+          }
+        });
       });
     });
     
@@ -13673,74 +13703,64 @@ if (window.location.pathname === '/danh-sach-github/') {
         });
     };
 
-    // Xử lý sự kiện khi người dùng nhấn nút Create
-    $(document).on('click', '.addGroup', function() {
-      // $('.addGroup').click(function(event) {
-        $('#CreateGroupModal').modal('show');
-      });
-      $(document).on('click', '#create-group-button', function() {
-      // $('#create-group-button').click(function(event) {
-        event.preventDefault(); // Prevent default form submission      
-        var Group_Name = document.querySelector('#input_group_name').value;
-        create_group(Group_Name);
-      });
-      function create_group(Group_Name){
-        $.ajax({
-          url: '/tao-nhom/',
-          dataType: 'json',
-          method: 'POST',
-          data: {
-            'Group_Name': Group_Name,
-          },
-          success: function(response) {
-            if (response.success) {     
-              // var data_Company = document.querySelector('#product-table tbody').find('tr[data-product-id="' + response.Company_ID + '"]'); 
-              // var companyName =  data_Company.querySelector('td[data-column="company"]');
-              // companyName.textContent = response.Company_Name;
-              add_row_group(response);
-              $('#CreateGroupModal').modal('hide');           
-              Swal.fire({
-                icon: 'success',
-                title: 'Thông Báo',
-                timer: 1000,
-                text: response.message,
-              });
-            } else {
-              Swal.fire({
-                icon: 'error',
-                title: 'Oops...',
-                text: response.message,
-              });
-            }
-          },
-          error: function(response) {
+    $(document).on('click', '.cmdGithub', function() {
+      const swalWithBootstrapButtons = Swal.mixin({
+        customClass: {
+          confirmButton: 'btn btn-success btn-success-cus',
+          cancelButton: 'btn btn-danger btn-danger-cus'
+        },
+        buttonsStyling: false
+      })
+      
+      swalWithBootstrapButtons.fire({
+        title: 'Are you sure?',
+        text: "Bạn muốn merge Github - Branch Main?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'No, cancel!',
+        reverseButtons: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          event.preventDefault();          
+          github_run_cmd();      
+        } 
+      })
+    });
+
+    function github_run_cmd(){
+      $.ajax({
+        url: '/run_cmd_github-func/',
+        dataType: 'json',
+        method: 'POST',
+        data: {
+          'isRun': "Commit",
+        },
+        success: function(response) {
+          if (response.success) {             
+            Swal.fire({
+              icon: 'success',
+              title: 'Thông Báo',
+              timer: 1000,
+              text: response.message,
+            });
+          } else {
             Swal.fire({
               icon: 'error',
               title: 'Thông Báo Lỗi',
               text: response.message,
             });
           }
-        });
-      }
-      function add_row_group(product){
-        var isEditTrue = IsAdmin === true  ||  Dash_Role_Data[1].Status === 'True';
-        var isDellTrue = IsAdmin === true  ||  Dash_Role_Data[3].Status === 'True';
-        $('#product-table tbody').prepend('<tr data-product-id="'+product.TGroup_ID+'">' +
-        '<td data-column="id">#' + product.TGroup_ID + '</td>' +           
-        '<td data-column="TGroup">' + product.TGroup_Name + '</td>' +
-        '<td data-column="username">' + product.TGroup_User_Name + '</td>' +         
-        '<td data-column="date">' + product.TGroup_Date + '</td>' +
-        '<td data-column="time">' + product.TGroup_Time + '</td>' +
-        '<td data-column="status"><button data-group-id="' + product.TGroup_ID + '" data-group-status="' + product.TGroup_Status + '" type="button" class="btn btn-'+(product.TGroup_Status == 1 ? 'success' : 'danger' )+' btn-rounded btn-fw btn-group-status '+(isEditTrue ? '' : 'admin-button')+'">'+  
-        (product.TGroup_Status == 1 ? 'Kích Hoạt' : 'Không Kích Hoạt' )+
-        '</button></td>' +
-        '<td>' +
-        (isEditTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon update-group" name="Update[]" value="' + product.TGroup_ID + '"><i class="ti-pencil text-danger"></i></button>': '') +
-        (isDellTrue ?'<button type="button" class="btn btn-outline-secondary btn-rounded btn-icon delete-group" name="delete[]" value="' + product.TGroup_ID + '"><i class="ti-trash text-danger"></i></button>': '') +
-        '</td>' +
-      '</tr>');
-      }
-    // Xử lý sự kiện khi người dùng nhấn nút Create
+        },
+        error: function(response) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Thông Báo Lỗi',
+            text: response.message,
+          });
+        }
+      });
+  };
 }
 //########### Danh Sách Commit Github End ########### 
 

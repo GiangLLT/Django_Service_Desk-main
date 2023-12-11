@@ -110,8 +110,7 @@ def run_cmd_github_test(request):
         cmd = [
             ['cd', working_directory],
             ['git', 'status'],
-            ['git', 'fetch', 'origin', 'main'],
-            
+            ['git', 'fetch', 'origin', 'main'],           
             ['git', 'merge', 'origin/main']
         ]
         log_contents = ''
@@ -129,7 +128,7 @@ def run_cmd_github_test(request):
 
     except Exception as e:
         return HttpResponse(f"Error: {str(e)}", status=500)
-    
+  
 def run_cmd_github(request):
     try:
         sid = 'S-1-5-21-1716883635-4105501997-2570134539-1000'
@@ -149,6 +148,7 @@ def run_cmd_github(request):
 
             if process.returncode != 0:
                 return HttpResponse(f"Command failed with error: {stderr.decode('utf-8')}", status=500)
+                # return HttpResponse({'success': False, 'message': "Command failed with error:"+stderr.decode('utf-8')+""})
 
             log_contents += stdout.decode('utf-8')
 
@@ -157,9 +157,48 @@ def run_cmd_github(request):
         log_file_name = write_data(log_contents, file_name, file_path)
 
         return HttpResponse(f"Lệnh đã chạy thành công và nội dung đã được ghi vào tệp log: {log_file_name}")
+        # return HttpResponse({'success': True, 'message': "Lệnh đã chạy thành công và nội dung đã được ghi vào tệp log: "+{log_file_name}+""})
 
     except Exception as e:
         return HttpResponse(f"Error: {str(e)}", status=500)
+        # return HttpResponse({'success': False, 'message': "Error: "+ str(e)+""})
+    
+@csrf_exempt    
+def run_cmd_github_button(request):
+    try:
+        isRun = request.POST.get('isRun')
+        if isRun:
+            sid = 'S-1-5-21-1716883635-4105501997-2570134539-1000'
+            working_directory = 'C:\\inetpub\\wwwroot\\Django_Service_Desk-main'
+            commands = [
+                'cd /d {}'.format(working_directory),
+                'git status',
+                'git fetch origin main',
+                'git merge origin/main'
+            ]
+
+            log_contents = ''
+            for command in commands:
+                # Chạy lệnh với quyền của người dùng có SID
+                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                stdout, stderr = process.communicate()
+
+                if process.returncode != 0:
+                    # return HttpResponse(f"Command failed with error: {stderr.decode('utf-8')}", status=500)
+                    return JsonResponse({'success': False, 'message': "Command failed with error:"+stderr.decode('utf-8')+""})
+
+                log_contents += stdout.decode('utf-8')
+
+            file_name = '_log_file_github.txt'
+            file_path = 'my_project/Logs'
+            log_file_name = write_data(log_contents, file_name, file_path)
+
+            # return HttpResponse(f"Lệnh đã chạy thành công và nội dung đã được ghi vào tệp log: {log_file_name}")
+            return JsonResponse({'success': True, 'message': "Lệnh đã chạy thành công và nội dung đã được ghi vào tệp log: "+{log_file_name}+""})
+
+    except Exception as e:
+        # return HttpResponse(f"Error: {str(e)}", status=500)
+        return JsonResponse({'success': False, 'message': "Error: "+ str(e)+""})
 
 def read_bat_file(request):
     file_path = 'C:\\inetpub\\wwwroot\\Django_Service_Desk-main\\SDP.bat'
@@ -257,11 +296,21 @@ def push_to_dev(request):
                     dev_branch.checkout()
 
                 # Commit và push lên nhánh hiện tại (có thể là Dev hoặc đã chuyển về Dev trước đó)
-                repo.git.add(all=True)
-                repo.git.commit('-m', commit_name)
-                origin = repo.remote(name='origin')
-                origin.push('Dev')
-                return JsonResponse({'success': True, 'message': "Push to '"+current_branch+"' branch success!"})
+                # Kiểm tra xem có thay đổi chưa được commit không
+                if repo.is_dirty():
+                    # Nếu có thay đổi, thực hiện commit và push
+                    repo.git.add(all=True)
+                    repo.git.commit('-m', commit_name)
+                    origin = repo.remote(name='origin')
+                    origin.push('Dev')
+                    return JsonResponse({'success': True, 'message': f"Push to '{current_branch}' branch success!"})
+                else:
+                    return JsonResponse({'success': False, 'message': f"No changes to commit in '{current_branch}' branch!"})
+                # repo.git.add(all=True)
+                # repo.git.commit('-m', commit_name)
+                # origin = repo.remote(name='origin')
+                # origin.push('Dev')
+                # return JsonResponse({'success': True, 'message': "Push to '"+current_branch+"' branch success!"})
             else:
                 return JsonResponse({'success': False, 'message': "Push to "+current_branch+"' branch Failed!"})
             
@@ -320,15 +369,80 @@ def push_to_main_and_merge(request):
         # return HttpResponse("Method not allowed", status=405)
         return JsonResponse({'success': False, 'message': "Method not allowed"})
 
+# def get_new_token(client_id, client_secret, refresh_token):
+def get_new_token(client_id, client_secret, refresh_token):
+    token_url = 'https://github.com/login/oauth/access_token'
+
+    # Thực hiện yêu cầu POST để lấy token mới
+    response = requests.post(
+        token_url,
+        headers={'Accept': 'application/json'},
+        data={
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'refresh_token': refresh_token,
+            'grant_type': 'refresh_token'
+        }
+    )
+
+    if response.status_code == 200:
+        # Trích xuất token từ phản hồi JSON
+        token = response.json().get('access_token')
+        return token
+    else:
+        # Xử lý lỗi khi không thể lấy token mới
+        raise Exception(f"Failed to get new token. Status code: {response.status_code}, Response: {response.text}")
+
+def get_auto_login_url(request):
+    client_id = settings.GITHUB_CLIENT_ID
+    redirect_uri = settings.GITHUB_REDIRECT_URL
+    github_authorize_url = f'https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope=repo'
+    
+    # Thực hiện yêu cầu HTTP để kiểm tra xem URL có hợp lệ không
+    response = requests.get(github_authorize_url)
+    
+    # Kiểm tra xem yêu cầu đã thành công không
+    if response.status_code == 200:
+        return redirect(github_authorize_url)
+    else:
+        return redirect('/page-404/')
+
+@csrf_exempt
+def callback_github(request):
+    client_id = settings.GITHUB_CLIENT_ID
+    client_secret = settings.GITHUB_CLIENT_SECRECT
+    redirect_uri = settings.GITHUB_REDIRECT_URL
+    # Lấy mã từ callback
+    code = request.GET.get('code')
+
+    # Lấy token từ mã
+    token_url = 'https://github.com/login/oauth/access_token'
+    token_data = {
+        'client_id': client_id,
+        'client_secret': client_secret,
+        'code': code,
+        'redirect_uri': redirect_uri
+    }
+    token_response = requests.post(token_url, data=token_data, headers={'Accept': 'application/json'})
+    token_json = token_response.json()
+    access_token = token_json['access_token']
+
+    # Lưu token vào session (hoặc cơ sở dữ liệu, tùy thuộc vào yêu cầu của bạn)
+    request.session['access_token'] = access_token
+
+    # Redirect đến trang chính hoặc trang khác sau khi đăng nhập thành công
+    return redirect('/danh-sach-github/')
+
 def github_file_list(request):
     github_username = settings.GITHUB_USERNAME
     repo_name = settings.GITHUB_REPO_NAME
-    token = settings.GITHUB_TOKEN
+    # token = settings.GITHUB_TOKEN
+    access_token = request.session['access_token']
     api_url_dev = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=Dev'
     api_url_main = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=main'
 
     headers = {
-        "Authorization": f"Bearer {token}",
+        "Authorization": f"Bearer {access_token}",
         "Accept": "application/vnd.github.v3+json"
     }
 
@@ -394,11 +508,10 @@ def Load_Github(request):
         cookie_system_data     = GetCookie(request, 'cookie_system_data')
         cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
         if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
-            # status = check_document(request)
-            # if status == True:
+                if 'access_token' not in request.session:
+                    return redirect(get_auto_login_url())
+                
                 return render(request, 'Ticket_Github.html')
-            # else:
-            #     return redirect('/dashboard/')
         else:
             return redirect('/')
     except Exception as ex:

@@ -824,15 +824,63 @@
 .btn-MD{
   margin-top: 15px;
 }
-.delete-comment,.update-comment,.quote-comment {
+.delete-comment,.update-comment,.quote-comment,.toggle-comment {
     border-radius: 0 !important;
     border: none !important;
     padding: 10px !important;
     margin-left: -10px;
 }
-.delete-comment i,.update-comment i, .quote-comment i{
+.delete-comment i,.update-comment i, .quote-comment i, .toggle-comment i{
   font-size: 20px !important;
 }
+
+.toggle-comment-tr {
+  max-height: 100px !important;
+  overflow: hidden !important;
+  transition: max-width 0.5s ease;
+}
+.toggle-comment-tr td{
+  vertical-align: unset !important;
+}
+.Descomment img{
+  max-width: 100px !important;
+  overflow: hidden !important;
+  transition: max-width 0.5s ease;
+}
+
+.Descomment div{
+  max-height: 100px !important;
+  overflow: hidden !important;
+  /* white-space: nowrap !important;
+  text-overflow: ellipsis !important; */
+  transition: max-width 0.5s ease;
+}
+
+.Togglecomment img{
+  transition: max-width 0.5s ease;
+}
+
+.Togglecomment div{
+  /* vertical-align: unset; */
+  /* white-space: nowrap !important;
+  text-overflow: ellipsis !important; */
+  transition: max-width 0.5s ease;
+}
+
+/* .toggle-comment-tr {
+  max-height: 10px !important;
+  overflow-y: hidden !important;
+}
+
+.toggle-comment-tr td {
+  max-height: 10px !important;
+  overflow-y: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+.toggle-comment-tr .commentDesc img{
+  max-width: 50px;
+} */
 .content-ticket-title{
   display: flex;
   justify-content: space-between;
@@ -895,7 +943,7 @@ margin-left: -5px;
 }
 
 .commentDesc {
-  max-width: 200px !important;
+  max-width: 100px !important;
   overflow: hidden !important;
   transition: max-width 0.5s ease;
 }

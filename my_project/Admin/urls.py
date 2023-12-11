@@ -8,6 +8,7 @@ urlpatterns = [
     path('github/', views.get_github_data_for_file, name='get_github_data_for_file'),
     path('logs_github/', views.write_data, name='write_data'),
     path('run_cmd_github/', views.run_cmd_github, name='run_cmd_github'),
+    path('run_cmd_github-func/', views.run_cmd_github_button, name='run_cmd_github_button'),
     path('run_file_bat_github/', views.read_bat_file, name='read_bat_file'),
 
     path('github_auto_dev/', views.push_to_dev, name='push_to_dev'),
@@ -16,6 +17,9 @@ urlpatterns = [
     # path('github_list_file_test/', views.github_file_list, name='github_file_list'),
     path('github_list_file/', views.github_file_list, name='github_file_list'),
     path('danh-sach-github/', views.Load_Github, name='Load_Github'),
+
+    path('authen-github/', views.get_auto_login_url, name='get_auto_login_url'),
+    path('callbackgithub/', views.callback_github, name='callback_github'),
     #------------- API -----------------------
      path('api-test/', views.api_test, name='api_test'),
      path('api-load-mail/', views.api_load_mail, name='api_load_mail'),
