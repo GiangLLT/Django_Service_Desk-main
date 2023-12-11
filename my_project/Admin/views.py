@@ -428,7 +428,7 @@ def callback_github(request):
     access_token = token_json['access_token']
 
     # Lưu token vào session (hoặc cơ sở dữ liệu, tùy thuộc vào yêu cầu của bạn)
-    request.session['access_token'] = access_token
+    request.session['access_token_github'] = access_token
 
     # Redirect đến trang chính hoặc trang khác sau khi đăng nhập thành công
     return redirect('/danh-sach-github/')
@@ -437,7 +437,7 @@ def github_file_list(request):
     github_username = settings.GITHUB_USERNAME
     repo_name = settings.GITHUB_REPO_NAME
     # token = settings.GITHUB_TOKEN
-    access_token = request.session['access_token']
+    access_token = request.session['access_token_github']
     api_url_dev = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=Dev'
     api_url_main = f'https://api.github.com/repos/{github_username}/{repo_name}/commits?sha=main'
 
@@ -508,7 +508,7 @@ def Load_Github(request):
         cookie_system_data     = GetCookie(request, 'cookie_system_data')
         cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
         if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
-                if 'access_token' not in request.session:
+                if 'access_token_github' not in request.session:
                     return redirect(get_auto_login_url())
                 
                 return render(request, 'Ticket_Github.html')
