@@ -19,7 +19,7 @@ urlpatterns = [
     path('danh-sach-github/', views.Load_Github, name='Load_Github'),
 
     path('authen-github/', views.get_auto_login_url, name='get_auto_login_url'),
-    path('callbackgithub/', views.callback_github, name='callback_github'),
+    path('callback-github/', views.callback_github, name='callback_github'),
     #------------- API -----------------------
      path('api-test/', views.api_test, name='api_test'),
      path('api-load-mail/', views.api_load_mail, name='api_load_mail'),

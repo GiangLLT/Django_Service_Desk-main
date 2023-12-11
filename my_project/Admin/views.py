@@ -395,7 +395,9 @@ def get_new_token(client_id, client_secret, refresh_token):
 
 def get_auto_login_url(request):
     client_id = settings.GITHUB_CLIENT_ID
-    redirect_uri = settings.GITHUB_REDIRECT_URL
+    # redirect_uri = settings.GITHUB_REDIRECT_URL
+    full_host = request.build_absolute_uri('/')
+    redirect_uri = full_host + 'callback-github/'
     github_authorize_url = f'https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope=repo'
     
     # Thực hiện yêu cầu HTTP để kiểm tra xem URL có hợp lệ không
@@ -404,6 +406,7 @@ def get_auto_login_url(request):
     # Kiểm tra xem yêu cầu đã thành công không
     if response.status_code == 200:
         return redirect(github_authorize_url)
+        # return github_authorize_url
     else:
         return redirect('/page-404/')
 
@@ -411,7 +414,9 @@ def get_auto_login_url(request):
 def callback_github(request):
     client_id = settings.GITHUB_CLIENT_ID
     client_secret = settings.GITHUB_CLIENT_SECRECT
-    redirect_uri = settings.GITHUB_REDIRECT_URL
+    # redirect_uri = settings.GITHUB_REDIRECT_URL
+    full_host = request.build_absolute_uri('/')
+    redirect_uri = full_host + 'callback-github/'
     # Lấy mã từ callback
     code = request.GET.get('code')
 
@@ -509,7 +514,8 @@ def Load_Github(request):
         cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
         if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
                 if 'access_token_github' not in request.session:
-                    return redirect(get_auto_login_url())
+                    # github_authorize_url = get_auto_login_url(request)
+                    return redirect('/authen-github/')
                 
                 return render(request, 'Ticket_Github.html')
         else:
@@ -6626,8 +6632,22 @@ def load_Authorize_Json(request):
             }
             list_user.append(user_data)      
         ########################### GROUP ROLE DATA###########################
-        groups = Role_Group.objects.all().filter(Role_Group_Status = True)      
-        list_group = [{'Role_Group_ID': group.Role_Group_ID, 'Role_Group_Name': group.Role_Group_Name} for group in groups]
+        user_role = userinfo['Acc_type']
+        if user_role > 0:
+            #list role exclude
+            role_group_exclude = [
+                'List Github',
+                'Menu',
+                'Authorize Management',
+            ]
+            conditions = [Q(Role_Group_Name__icontains=value) for value in role_group_exclude]
+            combined_condition = reduce(lambda x, y: x | y, conditions)
+            groups = Role_Group.objects.all().filter(Role_Group_Status = True).exclude(combined_condition)     
+            b =list(groups) 
+            list_group = [{'Role_Group_ID': group.Role_Group_ID, 'Role_Group_Name': group.Role_Group_Name} for group in groups]
+        else:
+            groups = Role_Group.objects.all().filter(Role_Group_Status = True)      
+            list_group = [{'Role_Group_ID': group.Role_Group_ID, 'Role_Group_Name': group.Role_Group_Name} for group in groups]
         ########################### ROLE DATA###########################
         roles = Role_Single.objects.all().filter(Role_Status =  True)       
         list_role = [{'Role_ID': role.Role_ID, 'Role_Name': role.Role_Name, 'Role_Group_ID': role.Role_Group_ID.Role_Group_ID } for role in roles]
