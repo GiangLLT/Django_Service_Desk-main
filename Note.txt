@@ -42,7 +42,7 @@ Sau khi đã thực hiện xong thì các bạn dùng các lệnh add, commit v�
 git add file.csv
 git commit -m "Add data file"
 git push origin main
-.
+....................................................
 
 https://stackoverflow.com/questions/54824864/django-python-sql-server-pyodbc-isnt-an-available-database-backend 
 # pip uninstall django-pyodbc-azure 
