@@ -32,6 +32,18 @@ git ls-remote origin
 git clone -b main https://github.com/username/repository.git
 
 
+
+git lfs track "*.csv"
+Sau đó cập nhật lại cấu hình res bằng lệnh
+
+git add .gitattributes
+Sau khi đã thực hiện xong thì các bạn dùng các lệnh add, commit và push để đẩy các tập tin .csv lớn lên bình thường như thao tác trên git
+
+git add file.csv
+git commit -m "Add data file"
+git push origin main
+
+
 https://stackoverflow.com/questions/54824864/django-python-sql-server-pyodbc-isnt-an-available-database-backend 
 # pip uninstall django-pyodbc-azure 
 # pip uninstall django-mssql-backend 
