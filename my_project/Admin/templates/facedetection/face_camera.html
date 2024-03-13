@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Stream</title>
+</head>
+<body>
+    <video id="camera-stream" width="640" height="480" autoplay></video>
+
+    <script>
+        // Sử dụng navigator để truy cập camera
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function (stream) {
+                // Gán stream của camera vào thẻ video
+                var video = document.getElementById('camera-stream');
+                video.srcObject = stream;
+                video.onloadedmetadata = function (e) {
+                    video.play();
+                };
+            })
+            .catch(function (err) {
+                console.log("An error occurred: " + err);
+            });
+    </script>
+</body>
+</html>

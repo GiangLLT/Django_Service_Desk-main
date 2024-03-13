@@ -690,7 +690,6 @@ function statusChangeCallback(response) {
     });     
 
 });
-
 //################################################## PAGE TICKET HELPDESK - START ##################################################  
 
 //########### Menu Function ########### 
@@ -13763,6 +13762,411 @@ if (window.location.pathname === '/danh-sach-github/') {
   };
 }
 //########### Danh Sách Commit Github End ########### 
+
+//########### AI faceID ###########  
+if (window.location.pathname === '/cap-nhat-faceid/') {
+    // const video = document.getElementById('video');
+    // const cameraSelect = document.getElementById('cameraSelect');
+    
+    function startCamera() {
+        const selectedCamera = cameraSelect.value;
+      
+        navigator.mediaDevices.getUserMedia({ video: { deviceId: selectedCamera } })
+            .then(function (stream) {
+                video.srcObject = stream;
+            })
+            .catch(function (err) {
+                console.log("An error occurred: " + err);
+            });
+    }
+    
+    // navigator.mediaDevices.enumerateDevices()
+    //     .then(devices => {
+    //         devices.forEach(device => {
+    //             if (device.kind === 'videoinput') {
+    //               $('#cameraSelect').prepend('<option value='+device.deviceId+'>'+device.label+'</option>')
+    //                 // const option = document.createElement('option');
+    //                 // option.value = device.deviceId;
+    //                 // option.text = device.label || `Camera ${cameraSelect.length + 1}`;
+    //                 // cameraSelect.appendChild(option);
+    //             }
+    //         });
+    
+    //         startCamera();  // Start with the first available camera
+    //     })
+    //     .catch(function (err) {
+    //         console.log("An error occurred: " + err);
+    //     });
+    
+    // cameraSelect.addEventListener('change', startCamera);
+    
+  // video.addEventListener('play', function () {
+  //   setInterval(function () {
+  //       // Trực tiếp sử dụng video để nhận diện khuôn mặt
+  //       // Đặc điểm khuôn mặt có thể được vẽ trực tiếp lên video, không cần sử dụng canvas
+  //       var image_data = getFrameData(video);
+  //       sendImageToServer(image_data);
+  //   }, 1000); // Cập nhật mỗi 1 giây
+  // });
+
+//   function getFrameData(videoElement) {
+//     // Tạo một canvas tạm thời để lấy dữ liệu hình ảnh từ video
+//     var tempCanvas = document.createElement('canvas');
+    
+//     // Kiểm tra và cập nhật kích thước canvas tạm thời
+//     tempCanvas.width = videoElement.width;
+//     tempCanvas.height = videoElement.height;
+
+//     var tempContext = tempCanvas.getContext('2d');
+//     tempContext.drawImage(videoElement, 0, 0, tempCanvas.width, tempCanvas.height);
+
+//     // Lấy dữ liệu hình ảnh từ canvas tạm thời
+//     return tempCanvas.toDataURL('image/jpeg');
+//   }
+
+//   function sendImageToServer(image_data) {
+//     $('.detected-face').remove();
+//     if (image_data != null && image_data != "") {
+//         $.ajax({
+//             url: '/detect-face/',
+//             dataType: 'json',
+//             type: 'POST',
+//             data: { 'image_data': image_data },
+//             success: function(response) {
+//                 if (response.success) {
+//                     // Lặp qua danh sách các khuôn mặt đã nhận diện
+//                     for (var i = 0; i < response.frame.length; i++) {
+//                         var face = response.frame[i];
+
+//                         // Tạo một phần tử HTML để chứa thông tin khuôn mặt và thêm vào body
+//                         var faceElement = document.createElement('div');
+//                         faceElement.className = 'detected-face';
+//                         faceElement.style.position = 'absolute';
+//                         faceElement.style.top = face.top + 'px';
+//                         faceElement.style.left = face.left + 'px';
+//                         faceElement.style.width = (face.right - face.left) + 'px';
+//                         faceElement.style.height = (face.bottom - face.top) + 'px';
+//                         faceElement.style.border = '2px solid green';
+//                         faceElement.style.color = 'red';
+//                         faceElement.innerText = face.id;
+
+//                         document.body.appendChild(faceElement);
+//                     }
+//                 } else {
+//                     Swal.fire({
+//                         icon: 'error',
+//                         title: 'Oops...',
+//                         text: response.message,
+//                     });
+//                 }
+//             },
+//             error: function(xhr, status, error) {
+//                 console.log("AJAX Error: " + error); // Log lỗi vào console
+//                 Swal.fire({
+//                     icon: 'error',
+//                     title: 'Oops...',
+//                     text: "AJAX Error: " + error,
+//                 });
+//             }
+//         });
+//     } else {
+//         Swal.fire({
+//             icon: 'error',
+//             title: 'Oops...',
+//             text: "Frame is not exists",
+//         });
+//     }
+// }
+    // const video = document.getElementById('video');
+    // var canvas = document.getElementById('canvas');
+    // var context = canvas.getContext('2d');
+
+    // function startCamera() {
+    //     const selectedCamera = cameraSelect.value;
+  
+    //     navigator.mediaDevices.getUserMedia({ video: { deviceId: selectedCamera } })
+    //         .then(function (stream) {
+    //             video.srcObject = stream;
+    //         })
+    //         .catch(function (err) {
+    //             console.log("An error occurred: " + err);
+    //         });
+    // }
+  
+    // // const video = document.getElementById('video');  // Moved to the top
+    // const cameraSelect = document.getElementById('cameraSelect');
+  
+    // navigator.mediaDevices.enumerateDevices()
+    //     .then(devices => {
+    //         devices.forEach(device => {
+    //             if (device.kind === 'videoinput') {
+    //                 const option = document.createElement('option');
+    //                 option.value = device.deviceId;
+    //                 option.text = device.label || `Camera ${cameraSelect.length + 1}`;
+    //                 cameraSelect.appendChild(option);
+    //             }
+    //         });
+  
+    //         startCamera();  // Start with the first available camera
+    //     })
+    //     .catch(function (err) {
+    //         console.log("An error occurred: " + err);
+    //     });
+  
+    // cameraSelect.addEventListener('change', startCamera);
+
+    // video.addEventListener('play', function () {
+    //     setInterval(function () {
+    //         context.drawImage(video, 0, 0, 640, 480);
+    //         var image_data = canvas.toDataURL('image/jpeg');
+    //         sendImageToServer(image_data);
+    //     }, 1000); // Update every 1 second
+    // });
+    // function sendImageToServer(image_data) {
+    //     if (image_data != null || image_data != ""){
+    //       $.ajax({
+    //         url: '/detect-face/',
+    //         dataType: 'json',
+    //         type: 'POST',
+    //         data: { 'image_data': image_data },
+    //         success: function(response) {
+    //         if(response.success){
+    //           // Lặp qua danh sách các khuôn mặt đã nhận diện
+    //           for (var i = 0; i < response.frame.length; i++) {
+    //             var face = response.frame[i];
+
+    //             // Tạo một phần tử HTML để chứa thông tin khuôn mặt và thêm vào body
+    //             var faceElement = document.createElement('div');
+    //             faceElement.className = 'detected-face';
+    //             faceElement.style.position = 'absolute';
+    //             faceElement.style.top = face.top + 'px';
+    //             faceElement.style.left = face.left + 'px';
+    //             faceElement.style.width = (face.right - face.left) + 'px';
+    //             faceElement.style.height = (face.bottom - face.top) + 'px';
+    //             faceElement.style.border = '2px solid green';
+    //             faceElement.style.color = 'white';
+    //             faceElement.innerText = face.label;
+
+    //             document.body.appendChild(faceElement);
+                
+    //             // // Vẽ hình chữ nhật lên video
+    //             // context.beginPath();
+    //             // context.rect(face.left, face.top, face.right - face.left, face.bottom - face.top);
+    //             // context.lineWidth = 2;
+    //             // context.strokeStyle = 'green';
+    //             // context.fillStyle = 'green';
+    //             // context.stroke();
+    //             // context.font = '16px Arial';
+    //             // context.fillStyle = 'white';
+    //             // context.fillText(face.name, face.left, face.top - 5);
+    //           }
+    //             // Swal.fire({
+    //             //   icon: 'success',
+    //             //   title: 'Thống báo',
+    //             //   text: context.message,
+    //             // });
+    //           }
+    //           else{       
+    //             Swal.fire({
+    //               icon: 'error',
+    //               title: 'Oops...',
+    //               text: context.message,
+    //             });
+    //           }
+    //         },
+    //         // error: function(rs, e) {
+    //         //   Swal.fire({
+    //         //     icon: 'error',
+    //         //     title: 'Oops...',
+    //         //     text: e,
+    //         //   });
+    //         // }
+    //       });
+    //     }
+    //     else{
+    //       Swal.fire({
+    //         icon: 'error',
+    //         title: 'Oops...',
+    //         text: "Frame is not exits",
+    //       });
+    //     }
+    //   }
+
+// Khi người dùng nhấp vào một nút hoặc một sự kiện tương tự, chẳng hạn
+$('#btn-iphone').click(function() {
+  navigator.mediaDevices.enumerateDevices()
+    .then(devices => {
+      const videoInputDevices = devices.filter(device => device.kind === 'videoinput');
+      videoInputDevices.forEach(device => {
+        $('#cameraSelect').append(`<option data-id="${device.deviceId}">${device.label}</option>`);
+      });
+
+      startCamera();  // Start with the first available camera
+    })
+    .catch(function(err) {
+      console.log("An error occurred: " + err);
+    });
+});
+
+ 
+navigator.mediaDevices.enumerateDevices()
+.then(devices => {
+        const videoInputDevices = devices.filter(device => device.kind === 'videoinput');
+        let count = videoInputDevices.length;
+        videoInputDevices.forEach(device => {
+          if (device.label.toLowerCase().includes('webcam')) {
+              $('#cameraSelect').prepend('<option selected="selected" data-id='+ device.deviceId +' value="0">' + device.label + '</option>');
+          } else {
+              count = count - 1;
+              $('#cameraSelect').prepend('<option selected="selected" data-id='+ device.deviceId +' value="'+ count +'">' + device.label + '</option>');
+          }
+      });
+
+        startCamera();  // Start with the first available camera
+})
+.catch(function (err) {
+    console.log("An error occurred: " + err);
+});
+
+// navigator.mediaDevices.enumerateDevices()
+//   .then(devices => {
+//     const videoInputDevices = devices.filter(device => device.kind === 'videoinput');
+//     videoInputDevices.forEach(device => {
+//       $('#cameraSelect').append(`<option data-id="${device.deviceId}">${device.label}</option>`);
+//     });
+
+//     startCamera();  // Start with the first available camera
+//   })
+//   .catch(function(err) {
+//     console.log("An error occurred: " + err);
+//   });
+
+$(document).on('click', '.save-faceid', function() {
+  AI_Save_faceID();
+  // onOpenCvReady();
+});
+
+function onOpenCvReady() {
+    // Lấy thẻ video từ DOM
+    const video = document.getElementById('video-stream');
+    // Khởi tạo camera
+    const cap = new cv.VideoCapture(video); 
+
+  
+    // Hàm đọc và hiển thị frame từ camera
+    function processVideo(video) {
+      const frame = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+      cap.read(frame);
+        // Đọc frame từ camera
+        // cap.read(frame => {
+           // Kiểm tra xem frame có phải là đối tượng cv.Mat hay không
+              if (frame instanceof cv.Mat) {
+                // Chuyển đổi frame sang đồng cấp xám để sử dụng với bộ phát hiện khuôn mặt
+                const gray = new cv.Mat();
+                cv.cvtColor(frame, gray, cv.COLOR_RGBA2GRAY);
+
+                // var currentPath = 'c:\\Data\\Document\\Another_Code\\Python_helpdesk\\Python_Django\\static\\xml\\';
+                // // Xây dựng đường dẫn tương đối từ thư mục của script
+                // var relativePath = currentPath + 'haarcascade_frontalface_default.xml';
+                // var path = cv.data.haarcascades;
+                // Khởi tạo bộ phát hiện khuôn mặt
+                const faceCascade = new cv.CascadeClassifier();
+                // faceCascade.load('c:\\Data\\Document\\Another_Code\\Python_helpdesk\\Python_Django\\static\\xml\\haarcascade_frontalface_default.xml');
+
+                // Nhận diện khuôn mặt trong ảnh xám
+                const faces = new cv.RectVector();
+                // faceCascade.detectMultiScale(gray, faces, 1.3, 5);
+
+                // Vòng lặp qua tất cả các khuôn mặt được nhận diện
+                for (let i = 0; i < faces.size(); ++i) {
+                    const face = faces.get(i);
+                    
+                    // Vẽ hình chữ nhật quanh khuôn mặt trên frame
+                    const point1 = new cv.Point(face.x, face.y);
+                    const point2 = new cv.Point(face.x + face.width, face.y + face.height);
+                    cv.rectangle(frame, point1, point2, [255, 0, 0, 255]);
+                }
+
+                // Hiển thị frame đã được vẽ lên thẻ video
+                const dataUrl = 'data:image/jpeg;base64,' + cv.imencode('.jpg', frame).toString('base64');
+                video.src = dataUrl;
+
+                // Giải phóng bộ nhớ của các đối tượng cv.Mat đã tạo
+                gray.delete();
+                faces.delete();
+            }
+
+            
+              $.ajax({
+                  type: 'POST',
+                  url: '/luu-faceid/',
+                  data: {
+                      'image_data': base64Image
+                  },
+                  success: function(response) {
+                      console.log(response);
+                      // Xử lý phản hồi từ Django (response)
+                  },
+                  error: function(error) {
+                      console.error(error);
+                  }
+              });
+        
+          // Gọi lại hàm để xử lý frame tiếp theo
+          setTimeout(() => processVideo(video), 0);
+        // });
+    }
+
+    // Bắt đầu xử lý video
+    processVideo(video);
+}
+  // load data product
+function AI_Save_faceID(){
+      const cameraid = document.querySelector('#cameraSelect').value;
+      $.ajax({
+        url: '/luu-faceid/',
+        dataType: 'json',
+        type: 'POST',
+        data: {
+          'cameraid': cameraid,
+        },
+        success: function(context) {
+        if(context.success){
+            Swal.fire({
+              icon: 'success',
+              title: 'Thống báo',
+              text: context.message,
+            });
+              // setTimeout(function() {
+              //   $('#spinnersModal').modal('hide');
+              // }, 1000);
+          }
+          else{       
+            Swal.fire({
+              icon: 'error',
+              title: 'Oops...',
+              text: context.message,
+            });
+            // setTimeout(function() {
+            //   $('#spinnersModal').modal('hide');
+            // }, 1000);
+          }
+        },
+        error: function(rs, e) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: e,
+          });
+          // setTimeout(function() {
+          //   $('#spinnersModal').modal('hide');
+          // }, 1000);
+        }
+      });
+  }
+  
+}
+//########### AI faceID ###########  
 
 //########### Danh Sách Template - Document ###########  
 //################################################## PAGE TICKET HELPDESK - END ##################################################  
