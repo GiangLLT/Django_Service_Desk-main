@@ -8,7 +8,7 @@ from oauth2_provider.views.generic import ProtectedResourceView
 
 from django.core.paginator import Paginator
 from django.db.models import Count
-from .models import Product, Category, Users, Ticket, Company, TGroup, Comment, Attachment, TImage, Assign_User, Role_Group, Role_Single, Authorization_User, Menu, ReadComment, Ticket_Mapping
+from .models import Face, FaceID, Face_ID, Product, Category, Users, Ticket, Company, TGroup, Comment, Attachment, TImage, Assign_User, Role_Group, Role_Single, Authorization_User, Menu, ReadComment, Ticket_Mapping
 
 from django.shortcuts import render, redirect
 from django.conf import settings
@@ -70,13 +70,1117 @@ from subprocess import Popen, PIPE
 
 import git
 
+#face dectec AI
+import cv2
+from io import BytesIO
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from PIL import Image
+import face_recognition
+import dlib
+from PIL import Image
+import numpy as np
+import threading
+import pyodbc
+
+# AI machine learning
+from django.http import JsonResponse
+from .ml_model import predict
+
 # Create your views here.
 ############################################ PAGE TICKET HELPDESK - START ############################################################
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+################################################### AI FACE DETECTION ##################### 
+def AI_faceID_page(request):
+    cookie_system_data     = GetCookie(request, 'cookie_system_data')
+    cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
+    if cookie_microsoft_data or cookie_system_data or 'UserInfo' in request.session:
+        return render(request, 'Ticket_AI_FaceID.html')
+    else:
+        return redirect('/')
 
-#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+def list_available_cameras(request):
+    # Lấy danh sách các camera có sẵn
+    camera_list = []
+    for i in range(10):  # Thử kiểm tra 10 camera (số này có thể điều chỉnh)
+        cap = cv2.VideoCapture(i)
+        if cap.isOpened():
+            ret, _ = cap.read()
+            if ret:
+                # camera_list.append(i)
+                camera_list.append({'id': i, 'label': f'Camera {i + 1}'})
+            cap.release()
+    # print("Available Cameras:", camera_list)
+    return HttpResponse(f"danh sách camera: {camera_list}")
 
+def draw_lines(frame, points):
+    # Nối các điểm landmark bằng đoạn thẳng
+    for i in range(len(points) - 1):
+        # Đảm bảo rằng chỉ số là nguyên
+        x1, y1 = map(int, points[i])
+        x2, y2 = map(int, points[i + 1])
+        cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 1)
+
+    # Nối điểm đầu và cuối để hoàn thành chuỗi đoạn thẳng
+    x1, y1 = map(int, points[-1])
+    x2, y2 = map(int, points[0])
+    cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 1)
+
+# def draw_lines_and_points(frame, points, color):
+def draw_lines_and_points_test(frame, points, color):
+    # Nối các điểm landmark bằng đoạn thẳng và vẽ các điểm chấm tròn
+    for i in range(len(points) - 1):
+        x1, y1 = map(int, points[i])
+        x2, y2 = map(int, points[i + 1])
+        cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 1)
+
+        # Vẽ chấm tròn tại điểm landmark
+        cv2.circle(frame, (x1, y1), 2, color, 1)
+
+    # Nối điểm đầu và cuối để hoàn thành chuỗi đoạn thẳng và vẽ chấm tròn
+    x1, y1 = map(int, points[-1])
+    x2, y2 = map(int, points[0])
+    cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 1)
+    cv2.circle(frame, (x1, y1), 2, color, 1)
+
+def draw_lines_and_points(frame, points, color):
+    # Chuyển các điểm landmark thành numpy array để sử dụng với cv2.polylines
+    points = np.array(points, np.int32)
+    points = points.reshape((-1, 1, 2))
+
+    # Vẽ đường thẳng nối các điểm
+    cv2.polylines(frame, [points], isClosed=False, color=(255, 0, 0), thickness=1)
+
+    # Vẽ chấm tròn tại mỗi điểm landmark
+    for point in points:
+        for (x, y) in point:
+            cv2.circle(frame, (x, y), 2, color, -1)
+
+@csrf_exempt
+def AI_detected_face(request):
+    try:
+        # camera_id = int(request.POST.get('cameraid'))
+        # cap = cv2.VideoCapture(camera_id)
+        cap = cv2.VideoCapture(0)
+
+        if not cap.isOpened():
+            return JsonResponse({'success': False, 'message': "Error: Unable to capture frame from the camera."})
+
+        start_time = cv2.getTickCount()
+        known_faces = FaceID.objects.filter(FaceID_Status=True).values(
+            'FaceID_Image', 'ID_user__ID_user', 'ID_user__FullName')
+        face_detector = cv2.CascadeClassifier(
+            cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+        face_count = 0
+
+        while True:
+            ret, frame = cap.read()
+
+            if not ret or frame is None:
+                return JsonResponse({'success': False, 'message': "Error: Unable to capture frame from the camera."})
+
+            face_locations = face_recognition.face_locations(frame)
+
+            if face_locations:
+                face_location = face_locations[0]
+                top, right, bottom, left = face_location
+                face_landmarks = face_recognition.face_landmarks(frame, [face_location])
+
+                if 'left_eye' in face_landmarks[0] and 'right_eye' in face_landmarks[0] and \
+                   'nose_bridge' in face_landmarks[0] and 'chin' in face_landmarks[0]:
+                    if known_faces:
+                        face_encoding = face_recognition.face_encodings(frame, [face_location])[0]
+
+                        for known_face in known_faces:
+                            known_image = Image.open(
+                                os.path.join(settings.BASE_DIR, 'static/detect_image/', known_face['FaceID_Image']))
+                            known_image = np.array(known_image)
+
+                            known_face_encodings = face_recognition.face_encodings(known_image)[0]
+                            matches = face_recognition.compare_faces([known_face_encodings], face_encoding)
+
+                            if True in matches:
+                                background_color = (46, 42, 200)
+                                font = cv2.FONT_HERSHEY_TRIPLEX
+                                idUser = known_face['ID_user__ID_user']
+                                name = known_face['ID_user__FullName']
+
+                                for (top, right, bottom, left) in face_locations:
+                                    cv2.rectangle(frame, (left, top), (right, bottom), background_color, 2)
+                                    label = idUser
+                                    cv2.rectangle(frame, (left - 1, top), (right + 1, top - 40), background_color, -1)
+                                    cv2.putText(frame, label, (left, top - 10), font, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                                    label2 = name
+                                    cv2.rectangle(frame, (left - 1, bottom),
+                                                  (right + 1, bottom + 60), background_color, -1)
+                                    cv2.putText(frame, label2, (left, bottom + 20), font, 0.7, (255, 255, 255), 1,
+                                                cv2.LINE_AA)
+
+                                for face_landmark in face_landmarks:
+                                    draw_lines_and_points(frame, face_landmark['left_eye'], color=background_color)
+                                    draw_lines_and_points(frame, face_landmark['right_eye'], color=background_color)
+                                    draw_lines_and_points(frame, face_landmark['left_eyebrow'], color=background_color)
+                                    draw_lines_and_points(frame, face_landmark['right_eyebrow'], color=background_color)
+                                    draw_lines_and_points(frame, face_landmark['chin'], color=background_color)
+                                    draw_lines_and_points(frame, face_landmark['nose_bridge'] + face_landmark[
+                                        'nose_tip'], color=background_color)
+                                    draw_lines_and_points(frame, face_landmark['top_lip'] + face_landmark[
+                                        'bottom_lip'], color=background_color)
+
+                                cv2.imshow('Face Landmarks Dectected', frame)
+
+                                current_time = cv2.getTickCount()
+                                elapsed_time = (current_time - start_time) / cv2.getTickFrequency()
+
+                                if elapsed_time > 15:
+                                    cap.release()
+                                    cv2.destroyAllWindows()
+                                    return JsonResponse({'success': True, 'message': "FaceID is exits"})
+
+                                else:
+                                    # elapsed_time_int = int(elapsed_time)
+                                    text_data = "abc"
+                                    # cv2.putText(frame, text_data , (left, top), font, 0.7,
+                                    #                 (255, 255, 255), 1, cv2.LINE_AA)
+                                    cv2.putText(frame, text_data, (left, bottom + 20), font, 1, (255, 255, 255), 1,
+                                                cv2.LINE_AA)
+                            else:
+                                if face_count < 1:
+                                    faces = face_detector.detectMultiScale(
+                                        cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), scaleFactor=1.3, minNeighbors=5)
+
+                                    if len(faces) > 0:
+                                        for (x, y, w, h) in faces:
+                                            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                                            face_image = frame[y:y + h, x:x + w]
+                                            pil_image = Image.fromarray(cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB))
+                                            image_io = BytesIO()
+                                            pil_image.save(image_io, format='JPEG')
+                                            uploaded_image = InMemoryUploadedFile(
+                                                image_io, None, f'{User_ID.ID_user}.jpg', 'image/jpeg',
+                                                image_io.tell, None)
+
+                                            face = FaceID.objects.create(
+                                                ID_user=User_ID,
+                                                FaceID_Date=datetime.datetime.now().date(),
+                                                FaceID_Time=datetime.datetime.now().time(),
+                                                FaceID_Status=True
+                                            )
+                                            face.FaceID_Image.save(f'face_image.jpg', uploaded_image)
+                                        face_count += 1
+                                    else:
+                                        face_count = 0
+                                        cap.release()
+                                        cv2.destroyAllWindows()
+                                        break
+                                else:
+                                    face_count = 0
+                                    cap.release()
+                                    cv2.destroyAllWindows()
+                                    break
+                    else:
+                        if face_count < 1:
+                            faces = face_detector.detectMultiScale(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY),
+                                                                   scaleFactor=1.3, minNeighbors=5)
+
+                            if len(faces) > 0:
+                                for (x, y, w, h) in faces:
+                                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                                    face_image = frame[y:y + h, x:x + w]
+                                    pil_image = Image.fromarray(cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB))
+                                    image_io = BytesIO()
+                                    pil_image.save(image_io, format='JPEG')
+                                    uploaded_image = InMemoryUploadedFile(
+                                        image_io, None, f'face_image.jpg', 'image/jpeg', image_io.tell, None)
+
+                                    face = FaceID.objects.create(
+                                        ID_user=User_ID,
+                                        FaceID_Date=datetime.datetime.now().date(),
+                                        FaceID_Time=datetime.datetime.now().time(),
+                                        FaceID_Status=True
+                                    )
+                                    face.FaceID_Image.save(f'face_image.jpg', uploaded_image)
+                                face_count += 1
+                            else:
+                                face_count = 0
+                                cap.release()
+                                cv2.destroyAllWindows()
+                                break
+                        else:
+                            face_count = 0
+                            cap.release()
+                            cv2.destroyAllWindows()
+                            break
+                else:
+                    return JsonResponse({'success': False, 'message': "Face detected but not all features are visible. Look straight into the camera."})
+            else:
+                face_count = 0
+
+            if cv2.waitKey(1) & 0xFF == ord('x'):
+                cap.release()
+                cv2.destroyAllWindows()
+
+        return JsonResponse({'success': True, 'message': "FaceID detected success!!!"})
+
+    except Exception as ex:
+        return JsonResponse({'success': False, 'message': f'Error: {str(ex)}'})
+
+@csrf_exempt
+def AI_save_face(request):
+    try:
+        userID = request.session['UserInfo']['ID_user']
+        camera_id = int(request.POST.get('cameraid'))
+        cap = cv2.VideoCapture(camera_id)
+
+        if not cap.isOpened():
+            return JsonResponse({'success': False, 'message': "Error: Unable to capture frame from the camera."})
+
+        start_time = cv2.getTickCount()
+        known_faces = FaceID.objects.filter(ID_user=userID, FaceID_Status=True).values(
+            'FaceID_Image', 'ID_user__ID_user', 'ID_user__FullName')
+        User_ID = Users.objects.get(ID_user=userID)
+        face_detector = cv2.CascadeClassifier(
+            cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+        face_count = 0
+
+        while True:
+            ret, frame = cap.read()
+
+            if not ret or frame is None:
+                return JsonResponse({'success': False, 'message': "Error: Unable to capture frame from the camera."})
+
+            face_locations = face_recognition.face_locations(frame)
+
+            if face_locations:
+                face_location = face_locations[0]
+                top, right, bottom, left = face_location
+                face_landmarks = face_recognition.face_landmarks(frame, [face_location])
+
+                if 'left_eye' in face_landmarks[0] and 'right_eye' in face_landmarks[0] and \
+                   'nose_bridge' in face_landmarks[0] and 'chin' in face_landmarks[0]:
+                    if known_faces:
+                        face_encoding = face_recognition.face_encodings(frame, [face_location])[0]
+
+                        for known_face in known_faces:
+                            known_image = Image.open(
+                                os.path.join(settings.BASE_DIR, 'static/detect_image/', known_face['FaceID_Image']))
+                            known_image = np.array(known_image)
+
+                            known_face_encodings = face_recognition.face_encodings(known_image)[0]
+                            matches = face_recognition.compare_faces([known_face_encodings], face_encoding)
+
+                            if True in matches:
+                                background_color = (46, 42, 200)
+                                font = cv2.FONT_HERSHEY_TRIPLEX
+                                idUser = known_face['ID_user__ID_user']
+                                name = known_face['ID_user__FullName']
+
+                                for (top, right, bottom, left) in face_locations:
+                                    cv2.rectangle(frame, (left, top), (right, bottom), background_color, 2)
+                                    label = idUser
+                                    cv2.rectangle(frame, (left - 1, top), (right + 1, top - 40), background_color, -1)
+                                    cv2.putText(frame, label, (left, top - 10), font, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                                    label2 = name
+                                    cv2.rectangle(frame, (left - 1, bottom),
+                                                  (right + 1, bottom + 60), background_color, -1)
+                                    cv2.putText(frame, label2, (left, bottom + 20), font, 0.7, (255, 255, 255), 1,
+                                                cv2.LINE_AA)
+
+                                for face_landmark in face_landmarks:
+                                    draw_lines_and_points(frame, face_landmark['left_eye'], color=background_color)
+                                    draw_lines_and_points(frame, face_landmark['right_eye'], color=background_color)
+                                    draw_lines_and_points(frame, face_landmark['left_eyebrow'], color=background_color)
+                                    draw_lines_and_points(frame, face_landmark['right_eyebrow'], color=background_color)
+                                    draw_lines_and_points(frame, face_landmark['chin'], color=background_color)
+                                    draw_lines_and_points(frame, face_landmark['nose_bridge'] + face_landmark[
+                                        'nose_tip'], color=background_color)
+                                    draw_lines_and_points(frame, face_landmark['top_lip'] + face_landmark[
+                                        'bottom_lip'], color=background_color)
+
+                                cv2.imshow('Face Landmarks Dectected', frame)
+
+                                current_time = cv2.getTickCount()
+                                elapsed_time = (current_time - start_time) / cv2.getTickFrequency()
+
+                                if elapsed_time > 15:
+                                    cap.release()
+                                    cv2.destroyAllWindows()
+                                    return JsonResponse({'success': True, 'message': "FaceID is exits"})
+
+                                else:
+                                    # elapsed_time_int = int(elapsed_time)
+                                    text_data = "abc"
+                                    # cv2.putText(frame, text_data , (left, top), font, 0.7,
+                                    #                 (255, 255, 255), 1, cv2.LINE_AA)
+                                    cv2.putText(frame, text_data, (left, bottom + 20), font, 1, (255, 255, 255), 1,
+                                                cv2.LINE_AA)
+                            else:
+                                if face_count < 1:
+                                    faces = face_detector.detectMultiScale(
+                                        cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), scaleFactor=1.3, minNeighbors=5)
+
+                                    if len(faces) > 0:
+                                        for (x, y, w, h) in faces:
+                                            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                                            face_image = frame[y:y + h, x:x + w]
+                                            pil_image = Image.fromarray(cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB))
+                                            image_io = BytesIO()
+                                            pil_image.save(image_io, format='JPEG')
+                                            uploaded_image = InMemoryUploadedFile(
+                                                image_io, None, f'{User_ID.ID_user}.jpg', 'image/jpeg',
+                                                image_io.tell, None)
+
+                                            face = FaceID.objects.create(
+                                                ID_user=User_ID,
+                                                FaceID_Date=datetime.datetime.now().date(),
+                                                FaceID_Time=datetime.datetime.now().time(),
+                                                FaceID_Status=True
+                                            )
+                                            face.FaceID_Image.save(f'face_image.jpg', uploaded_image)
+                                        face_count += 1
+                                    else:
+                                        face_count = 0
+                                        cap.release()
+                                        cv2.destroyAllWindows()
+                                        break
+                                else:
+                                    face_count = 0
+                                    cap.release()
+                                    cv2.destroyAllWindows()
+                                    break
+                    else:
+                        if face_count < 1:
+                            faces = face_detector.detectMultiScale(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY),
+                                                                   scaleFactor=1.3, minNeighbors=5)
+
+                            if len(faces) > 0:
+                                for (x, y, w, h) in faces:
+                                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                                    face_image = frame[y:y + h, x:x + w]
+                                    pil_image = Image.fromarray(cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB))
+                                    image_io = BytesIO()
+                                    pil_image.save(image_io, format='JPEG')
+                                    uploaded_image = InMemoryUploadedFile(
+                                        image_io, None, f'face_image.jpg', 'image/jpeg', image_io.tell, None)
+
+                                    face = FaceID.objects.create(
+                                        ID_user=User_ID,
+                                        FaceID_Date=datetime.datetime.now().date(),
+                                        FaceID_Time=datetime.datetime.now().time(),
+                                        FaceID_Status=True
+                                    )
+                                    face.FaceID_Image.save(f'face_image.jpg', uploaded_image)
+                                face_count += 1
+                            else:
+                                face_count = 0
+                                cap.release()
+                                cv2.destroyAllWindows()
+                                break
+                        else:
+                            face_count = 0
+                            cap.release()
+                            cv2.destroyAllWindows()
+                            break
+                else:
+                    return JsonResponse({'success': False, 'message': "Face detected but not all features are visible. Look straight into the camera."})
+            else:
+                face_count = 0
+
+            if cv2.waitKey(1) & 0xFF == ord('x'):
+                cap.release()
+                cv2.destroyAllWindows()
+
+        return JsonResponse({'success': True, 'message': "FaceID detected success!!!"})
+
+    except Exception as ex:
+        return JsonResponse({'success': False, 'message': f'Error: {str(ex)}'})
+
+@csrf_exempt
+def AI_save_face_final2(request):
+    try:
+        userID = request.session['UserInfo']['ID_user']
+        camera_id = 0
+        cap = cv2.VideoCapture(camera_id)
+
+        if not cap.isOpened():
+            return JsonResponse({
+                'success': False,
+                'message': f"Unable to connect to camera with ID: {camera_id}",
+            })
+
+        known_faces = FaceID.objects.filter(ID_user=userID, FaceID_Status=True).values('FaceID_Image', 'ID_user__ID_user', 'ID_user__FullName')
+        User_ID = Users.objects.get(ID_user=userID)
+        face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+        face_count = 0
+
+        def process_frame(frame):
+            nonlocal face_count
+            face_locations = face_detector.detectMultiScale(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), scaleFactor=1.3, minNeighbors=5)
+            if len(face_locations) > 0:
+                face_location = face_locations[0]
+
+                top, right, bottom, left = face_location
+                face_landmarks = face_recognition.face_landmarks(frame, [face_location])
+
+                if 'left_eye' in face_landmarks[0] and 'right_eye' in face_landmarks[0] and \
+                        'nose_bridge' in face_landmarks[0] and 'chin' in face_landmarks[0]:
+
+                    if known_faces:
+                        for (top, right, bottom, left) in face_locations:
+                            face_encoding = face_recognition.face_encodings(frame, [(top, right, bottom, left)])[0]
+
+                            for known_face in known_faces:
+                                relative_path = known_face['FaceID_Image'].replace("/","\\")
+                                known_image_path = os.path.join(settings.BASE_DIR, 'static', relative_path)
+                                known_image = Image.open(known_image_path)
+                                known_image = np.array(known_image)
+
+                                known_face_encodings = face_recognition.face_encodings(known_image)
+                                if known_face_encodings:
+                                    known_face_encoding = known_face_encodings[0]
+                                else:
+                                    continue
+
+                                matches = face_recognition.compare_faces([known_face_encoding], face_encoding)
+
+                                if True in matches:
+                                    background_color = (46, 42, 200)
+                                    font = cv2.FONT_HERSHEY_TRIPLEX
+                                    idUser = known_face['ID_user__ID_user']
+                                    name = known_face['ID_user__FullName']
+
+                                    for (top, right, bottom, left) in face_locations:
+                                        cv2.rectangle(frame, (left, top), (right, bottom), background_color, 2)
+                                        label = idUser
+                                        cv2.rectangle(frame, (left - 1, top), (right + 1, top - 40), background_color, -1)
+                                        cv2.putText(frame, label, (left, top - 10), font, 0.7, (255, 255, 255), 1,
+                                                    cv2.LINE_AA)
+                                        label2 = name
+                                        cv2.rectangle(frame, (left - 1, bottom), (right + 1, bottom + 40), background_color,
+                                                      -1)
+                                        cv2.putText(frame, label2, (left, bottom + 20), font, 0.7, (255, 255, 255), 1,
+                                                    cv2.LINE_AA)
+
+                                    # for face_landmark in face_landmarks:
+                                    #     draw_lines_and_points(frame, face_landmark['left_eye'], color=background_color)
+                                    #     draw_lines_and_points(frame, face_landmark['right_eye'], color=background_color)
+                                    #     draw_lines_and_points(frame, face_landmark['left_eyebrow'],
+                                    #                           color=background_color)
+                                    #     draw_lines_and_points(frame, face_landmark['right_eyebrow'],
+                                    #                           color=background_color)
+                                    #     draw_lines_and_points(frame, face_landmark['chin'], color=background_color)
+                                    #     draw_lines_and_points(frame,
+                                    #                           face_landmark['nose_bridge'] + face_landmark['nose_tip'],
+                                    #                           color=background_color)
+                                    #     draw_lines_and_points(frame,
+                                    #                           face_landmark['top_lip'] + face_landmark['bottom_lip'],
+                                    #                           color=background_color)
+
+                                    cv2.imshow('Face Landmarks Dectected', frame)
+                                    # cv2.waitKey(10)
+
+                                else:
+                                    if face_count < 1:
+                                        faces = face_detector.detectMultiScale(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY),
+                                                                             scaleFactor=1.3, minNeighbors=5)
+                                        if len(faces) > 0:
+                                            for (x, y, w, h) in faces:
+                                                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                                                face_image = frame[y:y + h, x:x + w]
+
+                                                pil_image = Image.fromarray(cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB))
+
+                                                image_io = BytesIO()
+                                                pil_image.save(image_io, format='JPEG')
+
+                                                uploaded_image = InMemoryUploadedFile(
+                                                    image_io, None, f'face_image.jpg', 'image/jpeg', image_io.tell, None)
+
+                                                face = FaceID.objects.create(
+                                                    ID_user=User_ID,
+                                                    FaceID_Date=datetime.datetime.now().date(),
+                                                    FaceID_Time=datetime.datetime.now().time(),
+                                                    FaceID_Status=True
+                                                )
+                                                face.FaceID_Image.save(f'face_image.jpg', uploaded_image)
+                                            face_count += 1
+                                            cap.release()
+                                            cv2.destroyAllWindows()
+                                            return JsonResponse({
+                                                'success': True,
+                                                'message': "FaceID detected success!!!",
+                                            })
+                                        else:
+                                            face_count = 0
+                                    else:
+                                        face_count = 0
+                    else:
+                        if face_count < 1:
+                            faces = face_detector.detectMultiScale(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY),
+                                                                 scaleFactor=1.3, minNeighbors=5)
+                            if len(faces) > 0:
+                                for (x, y, w, h) in faces:
+                                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                                    face_image = frame[y:y + h, x:x + w]
+
+                                    pil_image = Image.fromarray(cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB))
+
+                                    image_io = BytesIO()
+                                    pil_image.save(image_io, format='JPEG')
+
+                                    uploaded_image = InMemoryUploadedFile(
+                                        image_io, None, f'face_image.jpg', 'image/jpeg', image_io.tell, None)
+
+                                    face = FaceID.objects.create(
+                                        ID_user=User_ID,
+                                        FaceID_Date=datetime.datetime.now().date(),
+                                        FaceID_Time=datetime.datetime.now().time(),
+                                        FaceID_Status=True
+                                    )
+                                    face.FaceID_Image.save(f'face_image.jpg', uploaded_image)
+                                face_count += 1
+                                cap.release()
+                                cv2.destroyAllWindows()
+                                return JsonResponse({
+                                    'success': True,
+                                    'message': "FaceID detected success!!!",
+                                })
+                            else:
+                                face_count = 0
+                        else:
+                            face_count = 0
+                else:
+                    face_count = 0
+
+        while True:
+            ret, frame = cap.read()
+            if not ret or frame is None:
+                return JsonResponse({
+                    'success': False,
+                    'message': "Error: Unable to capture frame from the camera.",
+                })
+
+            process_thread = threading.Thread(target=process_frame, args=(frame,))
+            process_thread.start()
+
+            # cap.release()
+            # cv2.destroyAllWindows()
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                cap.release()
+                cv2.destroyAllWindows()
+
+        return JsonResponse({
+            'success': True,
+            'message': "FaceID detected success!!!",
+        })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error: {str(ex)}',
+        })
+
+@csrf_exempt  
+def AI_save_face_final(request):
+    try:
+        userID =  request.session['UserInfo']['ID_user']
+        # Khởi tạo camera
+        camera_id = request.POST.get('cameraid')
+        cap = cv2.VideoCapture(int(camera_id))  # 0 là ID của camera, có thể sửa nếu bạn có nhiều camera
+        
+        if not cap.isOpened():
+           return JsonResponse({
+                        'success': False,
+                        'message': "Error: Unable to capture frame from the camera.",
+                    })
+        else:
+            start_time = cv2.getTickCount()
+            known_faces = FaceID.objects.filter(ID_user = userID, FaceID_Status=True).values('FaceID_Image','ID_user__ID_user','ID_user__FullName')
+            User_ID = Users.objects.get(ID_user = userID)
+            # Load pre-trained face detector from dlib
+            face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+            # Biến đếm số lượng khuôn mặt đã quét được
+            face_count = 0
+        
+            while True:
+                # Đọc khung hình từ camera
+                ret, frame = cap.read()
+                if not ret or frame is None:
+                    # print("Error: Unable to capture frame from the camera.")
+                    return JsonResponse({
+                        'success': False,
+                        'message': "Error: Unable to capture frame from the camera.",
+                    })
+
+                # Nhận diện khuôn mặt
+                face_locations = face_recognition.face_locations(frame)
+
+                # Kiểm tra xem có khuôn mặt nào đã được phát hiện không
+                if face_locations:
+                    # Chỉ sử dụng một khuôn mặt đầu tiên (nếu có nhiều khuôn mặt)
+                    face_location = face_locations[0]
+
+                    # Kiểm tra xem khuôn mặt có đầy đủ các bộ phận hay không
+                    top, right, bottom, left = face_location
+                    face_landmarks = face_recognition.face_landmarks(frame, [face_location])
+
+                    if 'left_eye' in face_landmarks[0] and 'right_eye' in face_landmarks[0] and \
+                    'nose_bridge' in face_landmarks[0] and 'chin' in face_landmarks[0]:
+                        if known_faces:
+                        # Kiểm tra xem có khuôn mặt nào đã lưu trong CSDL không
+                            for (top, right, bottom, left) in face_locations:
+                                face_encoding = face_recognition.face_encodings(frame, [(top, right, bottom, left)])[0]
+
+                                for known_face in known_faces:
+                                    # Đọc hình ảnh từ đường dẫn trong CSDL
+                                    # relative_path = known_face.FaceID_Image.name
+                                    # relative_path = known_face['FaceID_Image']
+                                    # known_image_path = os.path.join(settings.BASE_DIR, 'static/detect_image/', known_face['FaceID_Image'])
+                                    # known_image = Image.open(known_image_path)
+                                    known_image = Image.open(os.path.join(settings.BASE_DIR, 'static/detect_image/', known_face['FaceID_Image']))
+                                    known_image = np.array(known_image)
+
+                                    # Chuyển đổi hình ảnh sang grayscale
+                                    known_face_encodings = face_recognition.face_encodings(known_image)[0]
+                                    # if known_face_encodings:
+                                    #     known_face_encoding = known_face_encodings[0]
+                                    # else:
+                                    #     continue
+
+                                    # So sánh khuôn mặt với các khuôn mặt đã lưu trong CSDL
+                                    matches = face_recognition.compare_faces([known_face_encodings], face_encoding)
+
+                                    if True in matches:
+                                        # Lấy thông tin từ CSDL
+                                        background_color = (46, 42, 200)
+                                        font = cv2.FONT_HERSHEY_TRIPLEX
+                                        idUser = known_face['ID_user__ID_user']
+                                        name = known_face['ID_user__FullName']
+                                        # Vẽ hình chữ nhật quanh khuôn mặt 
+                                        for (top, right, bottom, left) in face_locations:
+                                            cv2.rectangle(frame, (left, top), (right, bottom), background_color, 2)
+                                            # Hiển thị tên và tuổi lên frame
+                                            label = idUser
+                                            cv2.rectangle(frame, (left - 1, top), (right + 1, top - 40 ), background_color, -1)
+                                            cv2.putText(frame, label, (left, top - 10), font, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                                            # label2 = f"Name: {name}"
+                                            label2 = name
+                                            cv2.rectangle(frame, (left - 1, bottom), (right + 1, bottom + 40 ), background_color, -1)
+                                            cv2.putText(frame, label2, (left, bottom + 20 ), font, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+
+                                        for face_landmark in face_landmarks:
+                                            draw_lines_and_points(frame, face_landmark['left_eye'], color=background_color)
+                                            draw_lines_and_points(frame, face_landmark['right_eye'], color=background_color)
+                                            draw_lines_and_points(frame, face_landmark['left_eyebrow'], color=background_color)
+                                            draw_lines_and_points(frame, face_landmark['right_eyebrow'], color=background_color)
+                                            draw_lines_and_points(frame, face_landmark['chin'], color=background_color)
+                                            draw_lines_and_points(frame, face_landmark['nose_bridge'] + face_landmark['nose_tip'], color=background_color)
+                                            draw_lines_and_points(frame, face_landmark['top_lip'] + face_landmark['bottom_lip'], color=background_color)                                        
+                                                
+                                        cv2.imshow('Face Landmarks Dectected', frame)
+                                        # Tính thời gian đã trôi qua từ lúc bắt đầu
+                                        current_time = cv2.getTickCount()
+                                        elapsed_time = (current_time - start_time) / cv2.getTickFrequency()
+
+                                        # Nếu đã qua 10 giây, thoát khỏi vòng lặp
+                                        if elapsed_time > 15:
+                                            cap.release()
+                                            cv2.destroyAllWindows()
+                                            return JsonResponse({
+                                                'success': True,
+                                                'message': "FaceID is exits",
+                                            })
+                                        else:
+                                            elapsed_time_int = int(elapsed_time)
+                                            for i in (range(elapsed_time_int)):
+                                                # cv2.putText(frame, "",  (left, bottom + 20 ), font, 0.7, (0, 0, 0), 1, cv2.LINE_AA)
+                                                cv2.putText(frame, f"{elapsed_time_int} seconds",  (left, top ), font, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                                    else:
+                                        if face_count < 1:                
+                                            # Vẽ hình chữ nhật quanh khuôn mặt
+                                            faces = face_detector.detectMultiScale(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), scaleFactor=1.3, minNeighbors=5)
+                                            if len(faces) > 0:
+                                                for (x, y, w, h) in faces:
+                                                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                                                    # Lưu ảnh khuôn mặt
+                                                    face_image = frame[y:y + h, x:x + w]
+
+                                                    # Chuyển đổi ndarray sang đối tượng PIL Image
+                                                    pil_image = Image.fromarray(cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB))
+
+                                                    # Tạo một đối tượng BytesIO để lưu trữ ảnh
+                                                    image_io = BytesIO()
+                                                    pil_image.save(image_io, format='JPEG')
+
+                                                    # Tạo một đối tượng InMemoryUploadedFile từ BytesIO
+                                                    uploaded_image = InMemoryUploadedFile(
+                                                        image_io, None, f'{User_ID.ID_user}.jpg', 'image/jpeg', image_io.tell, None)
+
+                                                   # Tạo một đối tượng Face và lưu ảnh vào trường image
+                                                    face = FaceID.objects.create(
+                                                        ID_user=User_ID,  # Thay thế user bằng đối tượng User cụ thể
+                                                        FaceID_Date=datetime.datetime.now().date(),
+                                                        FaceID_Time=datetime.datetime.now().time(),
+                                                        FaceID_Status=True
+                                                    )
+                                                    face.FaceID_Image.save(f'face_image.jpg', uploaded_image)   
+                                                # Nếu khuôn mặt có đầy đủ các bộ phận, tăng biến đếm
+                                                face_count += 1              
+                                            else:
+                                                face_count = 0
+                                                cap.release()
+                                                cv2.destroyAllWindows() 
+                                                break
+                                        else:
+                                            face_count = 0
+                                            cap.release()
+                                            cv2.destroyAllWindows() 
+                                            break
+
+                        else:
+                            if face_count < 1:                
+                                # Vẽ hình chữ nhật quanh khuôn mặt
+                                faces = face_detector.detectMultiScale(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), scaleFactor=1.3, minNeighbors=5)
+                                if len(faces) > 0:
+                                    for (x, y, w, h) in faces:
+                                        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                                        # Lưu ảnh khuôn mặt
+                                        face_image = frame[y:y + h, x:x + w]
+
+                                        # Chuyển đổi ndarray sang đối tượng PIL Image
+                                        pil_image = Image.fromarray(cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB))
+
+                                        # Tạo một đối tượng BytesIO để lưu trữ ảnh
+                                        image_io = BytesIO()
+                                        pil_image.save(image_io, format='JPEG')
+
+                                        # Tạo một đối tượng InMemoryUploadedFile từ BytesIO
+                                        uploaded_image = InMemoryUploadedFile(
+                                            image_io, None, f'face_image.jpg', 'image/jpeg', image_io.tell, None)
+
+                                        # Tạo một đối tượng Face và lưu ảnh vào trường image
+                                        face = FaceID.objects.create(
+                                            ID_user=User_ID,  # Thay thế user bằng đối tượng User cụ thể
+                                            FaceID_Date=datetime.datetime.now().date(),
+                                            FaceID_Time=datetime.datetime.now().time(),
+                                            FaceID_Status=True
+                                        )
+                                        face.FaceID_Image.save(f'face_image.jpg', uploaded_image)
+                                    # Nếu khuôn mặt có đầy đủ các bộ phận, tăng biến đếm
+                                    face_count += 1              
+                                else:
+                                    face_count = 0
+                                    cap.release()
+                                    cv2.destroyAllWindows() 
+                                    break
+                            else:
+                                face_count = 0
+                                cap.release()
+                                cv2.destroyAllWindows() 
+                                break
+                    else:
+                        # Nếu khuôn mặt không đầy đủ các bộ phận, thông báo
+                        return JsonResponse({
+                            'success': False,
+                            'message': "Face detected but not all features are visible. Look straight into the camera.",
+                        })
+                else:
+                    # Nếu không có khuôn mặt được phát hiện, reset biến đếm
+                    face_count = 0
+
+                # Nhấn phím 'q' để thoát
+                if cv2.waitKey(1) & 0xFF == ord('x'):
+                    # Giải phóng camera và đóng cửa sổ
+                    cap.release()
+                    cv2.destroyAllWindows()
+
+            # Hiển thị khung hình trong trình duyệt
+                # for (top, right, bottom, left) in face_locations:
+                #      cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                #      # Hiển thị tên và tuổi lên frame
+                #      label = f"{idUser}, {name}"
+                #      cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                #      cv2.imshow('Face Detection', frame)
+                #     #  cap.release()
+                #     #  cv2.destroyAllWindows()
+
+        return JsonResponse({
+            'success': True,
+            'message': "FaceID detected success!!!",
+        })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error: {str(ex)}',
+        })
+
+@csrf_exempt  
+def AI_save_face_final_1(request):
+    try:
+        userID =  request.session['UserInfo']['ID_user']
+        # Khởi tạo camera
+        camera_id = 0
+        cap = cv2.VideoCapture(camera_id)  # 0 là ID của camera, có thể sửa nếu bạn có nhiều camera
+        
+        if not cap.isOpened():
+            print(f"Không thể kết nối đến camera có ID: {camera_id}")
+        else:
+            known_faces = FaceID.objects.filter(ID_user = userID).values('FaceID_Image','ID_user__ID_user','ID_user__FullName')
+            User_ID = Users.objects.get(ID_user = userID)
+            # Load pre-trained face detector from dlib
+            face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+            # Biến đếm số lượng khuôn mặt đã quét được
+            face_count = 0
+        
+            while True:
+                # Đọc khung hình từ camera
+                ret, frame = cap.read()
+                if not ret or frame is None:
+                    # print("Error: Unable to capture frame from the camera.")
+                    return JsonResponse({
+                        'success': False,
+                        'message': "Error: Unable to capture frame from the camera.",
+                    })
+
+                # Nhận diện khuôn mặt
+                face_locations = face_recognition.face_locations(frame)
+
+                # Kiểm tra xem có khuôn mặt nào đã được phát hiện không
+                if face_locations:
+                    # Chỉ sử dụng một khuôn mặt đầu tiên (nếu có nhiều khuôn mặt)
+                    face_location = face_locations[0]
+
+                    # Kiểm tra xem khuôn mặt có đầy đủ các bộ phận hay không
+                    top, right, bottom, left = face_location
+                    face_landmarks = face_recognition.face_landmarks(frame, [face_location])
+
+                    if 'left_eye' in face_landmarks[0] and 'right_eye' in face_landmarks[0] and \
+                    'nose_bridge' in face_landmarks[0] and 'chin' in face_landmarks[0]:
+                        if known_faces:
+                        # Kiểm tra xem có khuôn mặt nào đã lưu trong CSDL không
+                            for (top, right, bottom, left) in face_locations:
+                                face_encoding = face_recognition.face_encodings(frame, [(top, right, bottom, left)])[0]
+
+                                for known_face in known_faces:
+                                    # Đọc hình ảnh từ đường dẫn trong CSDL
+                                    # relative_path = known_face.FaceID_Image.name
+                                    relative_path = known_face['FaceID_Image']
+                                    known_image_path = os.path.join(settings.BASE_DIR, 'static', relative_path)
+                                    known_image = Image.open(known_image_path)
+                                    known_image = np.array(known_image)
+
+                                    # Chuyển đổi hình ảnh sang grayscale
+                                    known_face_encodings = face_recognition.face_encodings(known_image)
+                                    if known_face_encodings:
+                                        known_face_encoding = known_face_encodings[0]
+                                    else:
+                                        continue
+
+                                    # So sánh khuôn mặt với các khuôn mặt đã lưu trong CSDL
+                                    matches = face_recognition.compare_faces([known_face_encoding], face_encoding)
+
+                                    if True in matches:
+                                        # Lấy thông tin từ CSDL
+                                        # name = "lE LOC TRUONG GIANG"
+                                        # age = "1990"
+                                        # background_color = (0, 0, 255)
+                                        background_color = (46, 42, 200)
+                                        font = cv2.FONT_HERSHEY_TRIPLEX
+                                        idUser = known_face['ID_user__ID_user']
+                                        name = known_face['ID_user__FullName'].split(' ')[0]
+                                        # Vẽ hình chữ nhật quanh khuôn mặt 
+                                        for (top, right, bottom, left) in face_locations:
+                                            # cv2.rectangle(frame, (left, top), (right, bottom), (220, 20, 60), 1)
+                                            cv2.rectangle(frame, (left, top), (right, bottom), background_color, 2)
+                                            # Hiển thị tên và tuổi lên frame
+                                            # label = f"UserID: {idUser}"
+                                            label = idUser
+                                            cv2.rectangle(frame, (left - 1, top), (right + 1, top - 40 ), background_color, -1)
+                                            cv2.putText(frame, label, (left, top - 10), font, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+                                            # label2 = f"Name: {name}"
+                                            label2 = name
+                                            cv2.rectangle(frame, (left - 1, bottom), (right + 1, bottom + 40 ), background_color, -1)
+                                            # cv2.putText(frame, label2, (left, top + 240 ), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+                                            cv2.putText(frame, label2, (left, bottom + 20 ), font, 0.7, (255, 255, 255), 1, cv2.LINE_AA)
+
+
+                                        for face_landmark in face_landmarks:
+                                            draw_lines_and_points(frame, face_landmark['left_eye'], color=background_color)
+                                            draw_lines_and_points(frame, face_landmark['right_eye'], color=background_color)
+                                            draw_lines_and_points(frame, face_landmark['left_eyebrow'], color=background_color)
+                                            draw_lines_and_points(frame, face_landmark['right_eyebrow'], color=background_color)
+                                            draw_lines_and_points(frame, face_landmark['chin'], color=background_color)
+                                            draw_lines_and_points(frame, face_landmark['nose_bridge'] + face_landmark['nose_tip'], color=background_color)
+                                            draw_lines_and_points(frame, face_landmark['top_lip'] + face_landmark['bottom_lip'], color=background_color)
+                                            # Vẽ đường thẳng và chấm tròn cho khuôn mặt
+                                            # draw_lines_and_points(frame, face_landmark['face'], color=(200, 42, 46))
+
+                                            # # Vẽ đường thẳng và chấm tròn cho mắt
+                                            # draw_lines_and_points(frame, face_landmark['left_eye'],color=background_color)
+                                            # draw_lines_and_points(frame, face_landmark['right_eye'],color=background_color)
+
+                                            # draw_lines_and_points(frame, face_landmark['left_eyebrow'],color=background_color)
+                                            # draw_lines_and_points(frame, face_landmark['right_eyebrow'],color=background_color)
+
+                                            # draw_lines_and_points(frame, face_landmark['chin'],color=background_color)
+
+                                            # # Vẽ đường thẳng và chấm tròn cho mũi
+                                            # draw_lines_and_points(frame, face_landmark['nose_bridge'] + face_landmark['nose_tip'],color=background_color)
+
+                                            # # Vẽ đường thẳng và chấm tròn cho miệng
+                                            # draw_lines_and_points(frame, face_landmark['top_lip'] + face_landmark['bottom_lip'],color=background_color)
+                                           
+                                            # # Vẽ mắt
+                                            # draw_lines(frame, face_landmark['left_eye'])
+                                            # draw_lines(frame, face_landmark['right_eye'])
+
+                                            # # Vẽ mũi
+                                            # draw_lines(frame, face_landmark['nose_bridge'] + face_landmark['nose_tip'])
+
+                                            # # Vẽ miệng
+                                            # draw_lines(frame, face_landmark['top_lip'] + face_landmark['bottom_lip'])
+                                            # # Vẽ mắt
+                                            # for (x, y) in face_landmark['left_eye'] + face_landmark['right_eye']:
+                                            #     cv2.circle(frame, (x, y), 1, (0, 255, 0), -1)
+
+                                            # # Vẽ mũi
+                                            # for (x, y) in face_landmark['nose_bridge'] + face_landmark['nose_tip']:
+                                            #     cv2.circle(frame, (x, y), 1, (0, 255, 0), -1)
+
+                                            # # Vẽ miệng
+                                            # for (x, y) in face_landmark['top_lip'] + face_landmark['bottom_lip']:
+                                            #     cv2.circle(frame, (x, y), 1, (0, 255, 0), -1)
+
+                                        cv2.imshow('Face Landmarks Dectected', frame)
+                                        # cv2.waitKey(10)
+                                        # cap.release()
+                                        # cv2.destroyAllWindows()
+                                    else:
+                                        if face_count < 3:                
+                                            # Vẽ hình chữ nhật quanh khuôn mặt
+                                            faces = face_detector.detectMultiScale(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), scaleFactor=1.3, minNeighbors=5)
+                                            if len(faces) > 0:
+                                                for (x, y, w, h) in faces:
+                                                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                                                    # Lưu ảnh khuôn mặt
+                                                    face_image = frame[y:y + h, x:x + w]
+
+                                                    # Chuyển đổi ndarray sang đối tượng PIL Image
+                                                    pil_image = Image.fromarray(cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB))
+
+                                                    # Tạo một đối tượng BytesIO để lưu trữ ảnh
+                                                    image_io = BytesIO()
+                                                    pil_image.save(image_io, format='JPEG')
+
+                                                    # Tạo một đối tượng InMemoryUploadedFile từ BytesIO
+                                                    uploaded_image = InMemoryUploadedFile(
+                                                        # image_io, None, f'face_image_{face_count}.jpg', 'image/jpeg', image_io.tell, None)
+                                                        image_io, None, f'face_image.jpg', 'image/jpeg', image_io.tell, None)
+
+                                                   # Tạo một đối tượng Face và lưu ảnh vào trường image
+                                                    face = FaceID.objects.create(
+                                                        ID_user=User_ID,  # Thay thế user bằng đối tượng User cụ thể
+                                                        FaceID_Date=datetime.datetime.now().date(),
+                                                        FaceID_Time=datetime.datetime.now().time(),
+                                                        FaceID_Status=True
+                                                    )
+                                                    # face.image.save(f'face_image_{face_count}.jpg', uploaded_image)
+                                                    face.FaceID_Image.save(f'face_image.jpg', uploaded_image)   
+                                                # Nếu khuôn mặt có đầy đủ các bộ phận, tăng biến đếm
+                                                face_count += 1              
+                                            else:
+                                                face_count = 0
+                                                break
+                        else:
+                            if face_count < 3:                
+                                # Vẽ hình chữ nhật quanh khuôn mặt
+                                faces = face_detector.detectMultiScale(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), scaleFactor=1.3, minNeighbors=5)
+                                if len(faces) > 0:
+                                    for (x, y, w, h) in faces:
+                                        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                                        # Lưu ảnh khuôn mặt
+                                        face_image = frame[y:y + h, x:x + w]
+
+                                        # Chuyển đổi ndarray sang đối tượng PIL Image
+                                        pil_image = Image.fromarray(cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB))
+
+                                        # Tạo một đối tượng BytesIO để lưu trữ ảnh
+                                        image_io = BytesIO()
+                                        pil_image.save(image_io, format='JPEG')
+
+                                        # Tạo một đối tượng InMemoryUploadedFile từ BytesIO
+                                        uploaded_image = InMemoryUploadedFile(
+                                            # image_io, None, f'face_image_{face_count}.jpg', 'image/jpeg', image_io.tell, None)
+                                            image_io, None, f'face_image.jpg', 'image/jpeg', image_io.tell, None)
+
+                                        # Tạo một đối tượng Face và lưu ảnh vào trường image
+                                        face = FaceID.objects.create(
+                                            ID_user=User_ID,  # Thay thế user bằng đối tượng User cụ thể
+                                            FaceID_Date=datetime.datetime.now().date(),
+                                            FaceID_Time=datetime.datetime.now().time(),
+                                            FaceID_Status=True
+                                        )
+                                        # face.image.save(f'face_image_{face_count}.jpg', uploaded_image)
+                                        face.FaceID_Image.save(f'face_image.jpg', uploaded_image)
+                                        # print(f"Face {face_count} detected with all features.")      
+                                    # Nếu khuôn mặt có đầy đủ các bộ phận, tăng biến đếm
+                                    face_count += 1              
+                                else:
+                                    face_count = 0
+                                    break
+                    else:
+                        # Nếu khuôn mặt không đầy đủ các bộ phận, thông báo
+                        # print("Face detected but not all features are visible. Look straight into the camera.")
+                        return JsonResponse({
+                            'success': False,
+                            'message': "Face detected but not all features are visible. Look straight into the camera.",
+                        })
+                else:
+                    # Nếu không có khuôn mặt được phát hiện, reset biến đếm
+                    face_count = 0
+                
+                # Hiển thị khung hình trong trình duyệt
+                # for (top, right, bottom, left) in face_locations:
+                #      cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                #      # Hiển thị tên và tuổi lên frame
+                #      label = f"{idUser}, {name}"
+                #      cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                #      cv2.imshow('Face Detection', frame)
+                #     #  time.sleep(5)
+                #     #  cap.release()
+                #     #  cv2.destroyAllWindows()
+
+                # Nhấn phím 'q' để thoát
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    # Giải phóng camera và đóng cửa sổ
+                    cap.release()
+                    cv2.destroyAllWindows()
+
+
+        # Giải phóng camera và đóng cửa sổ
+        # cap.release()
+        # cv2.destroyAllWindows()
+        # return render(request, 'facedetection/detect_face.html')
+        return JsonResponse({
+            'success': True,
+            'message': "FaceID detected success!!!",
+        })
+    except Exception as ex:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error: {str(ex)}',
+        })
+
+################################################### AI FACE DETECTION #####################
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------# 
 ################################################### GITHUB ##################### 
 def write_data(file_content,file_name,file_path):
     # Tạo một đối tượng FileSystemStorage để quản lý việc lưu trữ
@@ -4020,7 +5124,7 @@ def load_User_Json(request):
             return HttpResponse(json.dumps(context, default=date_handler, ensure_ascii=False), content_type='application/json')
     else:
         return redirect('/')
-    
+
 def load_User(request):
     cookie_system_data     = GetCookie(request, 'cookie_system_data')
     cookie_microsoft_data  = GetCookie(request, 'cookie_microsoft_data')
@@ -4543,7 +5647,7 @@ def Update_Pass_User(request):
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 ################################################### PAGE IMPORT - EXPORT DATA #########################
 @csrf_exempt
-def import_excel_user(request):
+def import_excel_user(request):                 
     if request.method == 'POST':
         excel_file = request.FILES.get('excel_file')
         if excel_file and excel_file.name.endswith('.xlsx'):
@@ -8958,3 +10062,867 @@ def get_user_info_microsoft(access_token):
 #             'message': f'Lỗi: {str(ex)}',
 #         })
 # #FUNCTION DELETE TICKET 
+from sklearn.neighbors import KDTree
+
+
+def face_camera(request):
+    #load template in folder teamplates
+    template =  loader.get_template('facedetection/face_camera.html')
+    return HttpResponse(template.render())
+
+def save_face(request):
+    # Khởi tạo camera
+    cap = cv2.VideoCapture(0)  # 0 là ID của camera, có thể sửa nếu bạn có nhiều camera
+
+    # Load pre-trained face detector from dlib
+    face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+    # Biến đếm số lượng khuôn mặt đã quét được
+    face_count = 0
+
+    while True:
+        # Đọc khung hình từ camera
+        ret, frame = cap.read()
+        if not ret or frame is None:
+            print("Error: Unable to capture frame from the camera.")
+
+        # Nhận diện khuôn mặt
+        face_locations = face_recognition.face_locations(frame)
+
+        # Kiểm tra xem có khuôn mặt nào đã được phát hiện không
+        if face_locations:
+            # Chỉ sử dụng một khuôn mặt đầu tiên (nếu có nhiều khuôn mặt)
+            face_location = face_locations[0]
+
+            # Kiểm tra xem khuôn mặt có đầy đủ các bộ phận hay không
+            top, right, bottom, left = face_location
+            face_landmarks = face_recognition.face_landmarks(frame, [face_location])
+
+            if 'left_eye' in face_landmarks[0] and 'right_eye' in face_landmarks[0] and \
+               'nose_bridge' in face_landmarks[0] and 'chin' in face_landmarks[0]:
+                if face_count < 3:  
+                    # Vẽ hình chữ nhật quanh khuôn mặt
+                    faces = face_detector.detectMultiScale(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), scaleFactor=1.3, minNeighbors=5)
+                    if len(faces) > 0:
+                        for (x, y, w, h) in faces:
+                            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                            # Lưu ảnh khuôn mặt
+                            face_image = cv2.resize(frame[y:y+h, x:x+w], (100, 100))
+
+                            # Chuyển đổi ndarray sang đối tượng PIL Image
+                            pil_image = Image.fromarray(cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB))
+
+                            # Tạo một đối tượng BytesIO để lưu trữ ảnh
+                            image_io = BytesIO()
+                            pil_image.save(image_io, format='JPEG')
+
+                            # Tạo một đối tượng InMemoryUploadedFile từ BytesIO
+                            uploaded_image = InMemoryUploadedFile(
+                                # image_io, None, f'face_image_{face_count}.jpg', 'image/jpeg', image_io.tell, None)
+                                image_io, None, f'face_image.jpg', 'image/jpeg', image_io.tell, None)
+
+                            # Tạo một đối tượng Face và lưu ảnh vào trường image
+                            face_encodings = face_recognition.face_encodings(frame, face_locations)[0]   
+                            face_vector_data = np.array(face_encodings, dtype=np.float32)        
+                            face_vector_bytes = face_vector_data.tobytes()              
+                            face = Face_ID.objects.create(
+                                # image_Code = pyodbc.Binary(image_bytes),
+                                image_Code = face_vector_bytes,
+                            )
+                            # face.image.save(f'face_image_{face_count}.jpg', uploaded_image)
+                            face.image.save(f'face_image.jpg', uploaded_image)
+
+                            # update_face = Face_ID.objects.get(ID_Image = face.ID_Image)
+                            # known_image = Image.open(os.path.join(settings.BASE_DIR, 'static\\detect_image\\',update_face.image.name))
+                            # known_image = np.array(known_image)
+                            # face_encoding = face_recognition.face_encodings(known_image)[0]
+                            # _, image_array = cv2.imencode('.jpg', face_encoding)
+                            # image_bytes = image_array.tobytes()
+                            # update_face.image_Code = face_encoding
+                            # update_face.save()
+                            print(f"Face {face_count} detected with all features.")      
+                        # Nếu khuôn mặt có đầy đủ các bộ phận, tăng biến đếm
+                        face_count += 1              
+                else:
+                    face_count = 0
+                    break
+            else:
+                # Nếu khuôn mặt không đầy đủ các bộ phận, thông báo
+                print("Face detected but not all features are visible. Look straight into the camera.")
+        else:
+            # Nếu không có khuôn mặt được phát hiện, reset biến đếm
+            face_count = 0
+        
+        # Hiển thị khung hình trong trình duyệt
+        cv2.imshow('Face Detection', frame)
+
+        # Nhấn phím 'q' để thoát
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Giải phóng camera và đóng cửa sổ
+    cap.release()
+    cv2.destroyAllWindows()
+    return render(request, 'facedetection/detect_face.html')
+
+@csrf_exempt
+def detect_face(request):
+    cap = cv2.VideoCapture(0)  # 0 là ID của camera, có thể sửa nếu bạn có nhiều camera
+
+    # known_faces = FaceID.objects.filter(FaceID_Status=True).values('FaceID_Image', 'ID_user__ID_user', 'ID_user__FullName')
+    # known_face_encodings = []
+
+    # for known_face in known_faces:
+    #     known_image = Image.open(os.path.join(settings.BASE_DIR, 'static\\detect_image\\', known_face['FaceID_Image']))
+    #     known_image = np.array(known_image)
+        
+    #     face_encoding = face_recognition.face_encodings(known_image)
+    #     if face_encoding:
+    #         known_face_encodings.append(face_encoding[0])
+    # Load embedding vectors từ cơ sở dữ liệu
+    embedding_vector =[]
+    id_list = []
+    face_data_objects = Face_ID.objects.all()
+    for data in face_data_objects:
+        hex_data = data.image_Code
+        # byte_data = bytes.fromhex(hex_data)
+        vector_data = np.frombuffer(hex_data, dtype=np.float32)
+        embedding_vector.append(vector_data)
+        id_data =  data.ID_Image
+        id_list.append(id_data)
+
+    embedding_matrix = np.array(embedding_vector)
+    kdtree = KDTree(embedding_matrix)  
+
+    while True:
+        ret, frame = cap.read()
+        if not ret or frame is None:
+            print("Error: Unable to capture frame from the camera.")
+            break
+
+        face_locations = face_recognition.face_locations(frame)
+        face_encodings = face_recognition.face_encodings(frame, face_locations)
+        
+        for face_encoding, face_location in zip(face_encodings, face_locations):
+            top, right, bottom, left = face_location
+
+            # Khởi tạo biến đánh dấu
+            face_found = False
+            # Tìm kiếm hàng xóm gần nhất trong K-D tree
+            _, indices = kdtree.query([face_encoding], k=1)
+            if indices:
+                cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                label = id_list[0]
+                cv2.putText(frame, str(label), (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1,
+                            cv2.LINE_AA)
+                face_found = True
+                break
+            else:
+                cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                label = "No data"
+                cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1,
+                            cv2.LINE_AA)
+
+            # Lấy thông tin người dùng tương ứng với vector gần nhất
+            # nearest_user_name = id_list[indices[0]]
+            # print(nearest_user_name)
+
+            # # f1 =  Face_ID.objects.all()
+            # f1 =  Face_ID.objects.filter(ID_Image = 35).first()
+            # for f in f1:
+            #     vector_data = np.frombuffer(f.image_Code, dtype=np.float32)
+            #     if len(vector_data) != len(face_encoding):
+            #         continue
+
+            #     # face_1 = np.array(vector_data)
+            #     # print(face_1)
+            #     # print("============================================")
+            #     # face_2 = np.array(face_encoding)
+            #     # print(face_2)
+            #     # list_array = face_1 - face_2
+            #     # print(list_array)
+            #     # print(list_array <= 0.1)
+            #     matches = face_recognition.compare_faces([vector_data], face_encoding, tolerance=0.6)  # Tolerance là độ chính xác
+            #     if all(matches):
+            #         cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+            #         label = f.ID_Image
+            #         cv2.putText(frame, str(label), (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1,
+            #                     cv2.LINE_AA)
+            #         face_found = True
+            #         break
+            #     else:
+            #         cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+            #         label = "No data"
+            #         cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1,
+            #                     cv2.LINE_AA)
+
+            # face = Face_ID.objects.filter(image_Code= b).first()
+            # a = face['image_Code']
+            # if face:
+            #     a = face['image_Code']
+            # for known_face_encoding, known_face in zip(known_face_encodings, known_faces):
+            #     matches = face_recognition.compare_faces([known_face_encoding], face_encoding, tolerance=0.5)  # Tolerance là độ chính xác
+
+            #     if all(matches):
+            #         cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+            #         label = known_face['ID_user__ID_user']
+            #         cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1,
+            #                     cv2.LINE_AA)
+            #         face_found = True
+            #         break
+
+            # if not face_found:
+            #     cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+            #     label = "No data"
+            #     cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1,
+            #                 cv2.LINE_AA)
+
+        cv2.imshow('Face Detection', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+    return render(request, 'facedetection/detect_face.html')
+
+
+
+def detect_face_test1(request):
+    # Khởi tạo camera
+    cap = cv2.VideoCapture(0)  # 0 là ID của camera, có thể sửa nếu bạn có nhiều camera
+
+    # Load pre-trained face detector from dlib
+    face_detector = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+
+    while True:
+        # Đọc khung hình từ camera
+        ret, frame = cap.read()
+        if not ret or frame is None:
+            print("Error: Unable to capture frame from the camera.")
+
+        # Nhận diện khuôn mặt
+        face_locations = face_recognition.face_locations(frame)
+
+        # Kiểm tra xem có khuôn mặt nào đã được phát hiện không
+        if face_locations:
+            # Chỉ sử dụng một khuôn mặt đầu tiên (nếu có nhiều khuôn mặt)
+            face_location = face_locations[0]
+
+            # Kiểm tra xem khuôn mặt có đầy đủ các bộ phận hay không
+            top, right, bottom, left = face_location
+            face_landmarks = face_recognition.face_landmarks(frame, [face_location])
+
+            if 'left_eye' in face_landmarks[0] and 'right_eye' in face_landmarks[0] and \
+               'nose_bridge' in face_landmarks[0] and 'chin' in face_landmarks[0]:
+                # Vẽ hình chữ nhật quanh khuôn mặt
+                faces = face_detector.detectMultiScale(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), scaleFactor=1.3, minNeighbors=5)
+                if len(faces) > 0:
+                    for (x, y, w, h) in faces:
+                        cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                        # Lưu ảnh khuôn mặt
+                        face_image = cv2.resize(frame[y:y+h, x:x+w], (100, 100))
+                        # face = Face_ID.objects.all()
+                        # for f in face:
+                        #     print(f.ID_Image)
+                        #     print(f.image_Code)
+                        #     print('===========================================================================')
+                        # Tạo một đối tượng Face và lưu ảnh vào trường image
+                        _, image_array = cv2.imencode('.jpg', face_image)
+                        image_bytes = image_array.tobytes()
+                        # sha1_hash = hashlib.sha1(face1.image_Code).hexdigest()
+                        # Thực hiện truy vấn sử dụng model Face
+                        try:
+                            # face = Face_ID.objects.filter(image_Code =pyodbc.Binary(image_bytes)).first()
+                            face = Face_ID.objects.filter(image_Code = image_bytes).first()
+                            if face:
+                                name = face['ID_Image']
+                                cv2.putText(frame, name, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                            else:
+                                nodata = 'No data'
+                                cv2.putText(frame, nodata, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                        except Face.DoesNotExist:
+                            # Xử lý khi không tìm thấy khuôn mặt
+                            pass
+                else:
+                    # Nếu khuôn mặt không đầy đủ các bộ phận, thông báo
+                    print("Face detected but not all features are visible. Look straight into the camera.")
+        else:
+            # Nếu không có khuôn mặt được phát hiện, reset biến đếm
+            face_count = 0
+        
+        # Hiển thị khung hình trong trình duyệt
+        cv2.imshow('Face Detection', frame)
+
+        # Nhấn phím 'q' để thoát
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Giải phóng camera và đóng cửa sổ
+    cap.release()
+    cv2.destroyAllWindows()
+    return render(request, 'facedetection/detect_face.html')
+
+
+
+
+@csrf_exempt
+def detect_face_1(request):
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades +  'haarcascade_frontalface_default.xml')
+    video_capture = cv2.VideoCapture(0)
+    while True:
+        ret, frame = video_capture.read()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
+
+        for (x, y, w, h) in faces:
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+            face_image = cv2.resize(gray[y:y+h, x:x+w], (100, 100))
+            # face_image = frame[y:y + h, x:x + w]
+            # face_bytes = pyodbc.Binary(face_image)
+            _, face_array = cv2.imencode('.jpg', face_image)
+            face_bytes = face_array.tobytes()
+
+            # Thực hiện truy vấn sử dụng model Face
+            try:
+                face = Face_ID.objects.filter(image_Code =pyodbc.Binary(face_bytes)).first()
+                if face:
+                    name = face['ID_Image']
+                    cv2.putText(frame, name, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+                else:
+                    nodata = 'No data'
+                    cv2.putText(frame, nodata, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            except Face.DoesNotExist:
+                # Xử lý khi không tìm thấy khuôn mặt
+                pass
+
+        cv2.imshow('Face Recognition', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    video_capture.release()
+    cv2.destroyAllWindows()
+    return render(request, 'myapp/detect_faces.html')
+
+@csrf_exempt
+def detect_face_new_final(request):
+    cap = cv2.VideoCapture(0)  # 0 là ID của camera, có thể sửa nếu bạn có nhiều camera
+
+    known_faces = FaceID.objects.filter(FaceID_Status=True).values('FaceID_Image', 'ID_user__ID_user', 'ID_user__FullName')
+    known_face_encodings = []
+
+    for known_face in known_faces:
+        known_image = Image.open(os.path.join(settings.BASE_DIR, 'static\\detect_image\\', known_face['FaceID_Image']))
+        known_image = np.array(known_image)
+        
+        face_encoding = face_recognition.face_encodings(known_image)
+        if face_encoding:
+            known_face_encodings.append(face_encoding[0])
+
+    while True:
+        ret, frame = cap.read()
+        if not ret or frame is None:
+            print("Error: Unable to capture frame from the camera.")
+            break
+
+        face_locations = face_recognition.face_locations(frame)
+        face_encodings = face_recognition.face_encodings(frame, face_locations)
+
+        for face_encoding, face_location in zip(face_encodings, face_locations):
+            top, right, bottom, left = face_location
+
+            # Khởi tạo biến đánh dấu
+            face_found = False
+
+            for known_face_encoding, known_face in zip(known_face_encodings, known_faces):
+                matches = face_recognition.compare_faces([known_face_encoding], face_encoding, tolerance=0.5)  # Tolerance là độ chính xác
+
+                if all(matches):
+                    cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                    label = known_face['ID_user__ID_user']
+                    cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1,
+                                cv2.LINE_AA)
+                    face_found = True
+                    break
+
+            if not face_found:
+                cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                label = "No data"
+                cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1,
+                            cv2.LINE_AA)
+
+        cv2.imshow('Face Detection', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+    return render(request, 'facedetection/detect_face.html')
+
+@csrf_exempt
+def detect_face_new(request):
+    cap = cv2.VideoCapture(0)  # 0 là ID của camera, có thể sửa nếu bạn có nhiều camera
+
+    known_faces = FaceID.objects.filter(FaceID_Status=True).values('FaceID_Image', 'ID_user__ID_user', 'ID_user__FullName')
+
+    while True:
+        ret, frame = cap.read()
+        if not ret or frame is None:
+            print("Error: Unable to capture frame from the camera.")
+            break
+
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        face_locations = face_recognition.face_locations(gray_frame)
+        if len(face_locations) > 0:
+            for face_location in face_locations:
+                top, right, bottom, left = face_location
+                face_encoding = face_recognition.face_encodings(gray_frame, [face_location])[0]
+
+                for known_face in known_faces:
+                    relative_path = known_face['FaceID_Image'].replace("/", "\\")
+                    known_image_path = os.path.join(settings.BASE_DIR, 'static', relative_path)
+                    known_image = Image.open(known_image_path)
+                    known_image = np.array(known_image)
+
+                    known_face_encodings = face_recognition.face_encodings(known_image)
+                    if known_face_encodings:
+                        known_face_encoding = known_face_encodings[0]
+                    else:
+                        continue
+
+                    matches = face_recognition.compare_faces([known_face_encoding], face_encoding)
+
+                    if all(matches):
+                        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                        label = known_face['ID_user__ID_user']
+                        cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1,
+                                    cv2.LINE_AA)
+                        break
+                    else:
+                        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                        label = "No data"
+                        cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1,
+                                    cv2.LINE_AA)
+                        break
+
+            cv2.imshow('Face Detection', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+    return render(request, 'facedetection/detect_face.html')
+
+def detect_face_test(request):
+    # full_host = request.build_absolute_uri('/')
+    # Khởi tạo camera
+    cap = cv2.VideoCapture(0)  # 0 là ID của camera, có thể sửa nếu bạn có nhiều camera
+
+    # Load các khuôn mặt đã lưu trong CSDL
+    # known_faces = Face.objects.all()
+    known_faces = Face.objects.all()
+
+    while True:
+        # Đọc khung hình từ camera
+        ret, frame = cap.read()
+        if not ret or frame is None:
+            print("Error: Unable to capture frame from the camera.")
+
+        # Nhận diện khuôn mặt
+        face_locations = face_recognition.face_locations(frame)
+        
+        # Kiểm tra xem có khuôn mặt nào đã lưu trong CSDL không
+        for (top, right, bottom, left) in face_locations:
+            face_encoding = face_recognition.face_encodings(frame, [(top, right, bottom, left)])[0]
+
+            for known_face in known_faces:
+                # Đọc hình ảnh từ đường dẫn trong CSDL
+                relative_path = known_face.image.name.replace("/","\\")
+                known_image_path = os.path.join(settings.BASE_DIR, 'static', relative_path)
+                known_image = Image.open(known_image_path)
+                known_image = np.array(known_image)
+
+                # Chuyển đổi hình ảnh sang grayscale
+                # known_face_encoding = face_recognition.face_encodings(known_image)[0]
+                known_face_encodings = face_recognition.face_encodings(known_image)
+                if known_face_encodings:
+                    known_face_encoding = known_face_encodings[0]
+                else:
+                    continue
+
+                # So sánh khuôn mặt với các khuôn mặt đã lưu trong CSDL
+                matches = face_recognition.compare_faces([known_face_encoding], face_encoding)
+
+                if True in matches:
+                    for (top, right, bottom, left) in face_locations:
+                        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                        label = known_face.ID_user.ID_user
+                        cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                    # print(f"Detected face of {known_face.ID_Image}.")
+                    break
+                else:
+                    for (top, right, bottom, left) in face_locations:
+                        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                        label = "No data"
+                        cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                    # print(f"Detected face not math.")
+                    
+                    # Thực hiện hành động cần thiết khi phát hiện khuôn mặt
+                    # Ví dụ: lưu vào một bảng nhật ký, gửi thông báo, vv.
+
+        # Vẽ hình chữ nhật quanh khuôn mặt
+        # for (top, right, bottom, left) in face_locations:
+        #     cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+
+        # Hiển thị khung hình trong trình duyệt
+        cv2.imshow('Face Detection', frame)
+
+        # Nhấn phím 'q' để thoát
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Giải phóng camera và đóng cửa sổ
+    cap.release()
+    cv2.destroyAllWindows()
+
+    return render(request, 'facedetection/detect_face.html')
+
+def detect_face_22222(request):
+    # full_host = request.build_absolute_uri('/')
+    # Khởi tạo camera
+    cap = cv2.VideoCapture(0)  # 0 là ID của camera, có thể sửa nếu bạn có nhiều camera
+
+    # Load các khuôn mặt đã lưu trong CSDL
+    # known_faces = Face.objects.all()
+    known_faces = FaceID.objects.filter(FaceID_Status=True).values('FaceID_Image','ID_user__ID_user','ID_user__FullName')
+
+    while True:
+        # Đọc khung hình từ camera
+        ret, frame = cap.read()
+        if not ret or frame is None:
+            print("Error: Unable to capture frame from the camera.")
+
+        # Nhận diện khuôn mặt
+        face_locations = face_recognition.face_locations(frame)
+        # Kiểm tra xem có khuôn mặt nào đã lưu trong CSDL không
+        if len(face_locations) > 0:
+            # Lặp qua các vị trí khuôn mặt được phát hiện
+            for (top, right, bottom, left) in face_locations:
+                # Nhận diện và mã hóa khuôn mặt từ khung hình
+                face_encoding = face_recognition.face_encodings(frame, [(top, right, bottom, left)])
+                
+                # Kiểm tra xem có khuôn mặt nào đã lưu trong CSDL không
+                for known_face in known_faces:
+                    # Đọc hình ảnh từ đường dẫn trong CSDL
+                    relative_path = known_face['FaceID_Image'].replace("/", "\\")
+                    known_image_path = os.path.join(settings.BASE_DIR, 'static', relative_path)
+                    known_image = Image.open(known_image_path)
+                    known_image = np.array(known_image)
+
+                    # Chuyển đổi hình ảnh sang grayscale
+                    known_face_encodings = face_recognition.face_encodings(known_image)
+                    if known_face_encodings:
+                        known_face_encoding = known_face_encodings[0]
+                    else:
+                        continue
+
+                    # So sánh khuôn mặt với các khuôn mặt đã lưu trong CSDL
+                    for i in range(len(face_encoding)):
+                        matches = face_recognition.compare_faces([known_face_encoding], face_encoding[i])
+
+                        # Kiểm tra xem có kết quả so sánh thành công hay không
+                        if all(matches):
+                            # Hiển thị thông tin khuôn mặt được nhận diện
+                            # cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                            # label = known_face['ID_user__ID_user']
+                            # cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                            break
+                        else:
+                            # Hiển thị thông báo khi không có dữ liệu
+                            # cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                            # label = "No data"
+                            # cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                            break
+
+
+            # Vẽ hình chữ nhật quanh khuôn mặt
+            # for (top, right, bottom, left) in face_locations:
+            #     cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+
+            # Hiển thị khung hình trong trình duyệt
+            cv2.imshow('Face Detection', frame)
+
+        # Nhấn phím 'q' để thoát
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Giải phóng camera và đóng cửa sổ
+    cap.release()
+    cv2.destroyAllWindows()
+
+    return render(request, 'facedetection/detect_face.html')
+
+def detect_face_1(request):
+    # full_host = request.build_absolute_uri('/')
+    # Khởi tạo camera
+    cap = cv2.VideoCapture(0)  # 0 là ID của camera, có thể sửa nếu bạn có nhiều camera
+
+    # Load các khuôn mặt đã lưu trong CSDL
+    # known_faces = Face.objects.all()
+    known_faces = FaceID.objects.all()
+
+    while True:
+        # Đọc khung hình từ camera
+        ret, frame = cap.read()
+        if not ret or frame is None:
+            print("Error: Unable to capture frame from the camera.")
+
+        # Nhận diện khuôn mặt
+        face_locations = face_recognition.face_locations(frame)
+        if len(face_locations) > 0:
+        # Kiểm tra xem có khuôn mặt nào đã lưu trong CSDL không
+            for (top, right, bottom, left) in face_locations:
+                face_encodings = face_recognition.face_encodings(frame, [(top, right, bottom, left)])
+
+                for face_encoding in face_encodings:
+                    for known_face in known_faces:
+                        # Đọc hình ảnh từ đường dẫn trong CSDL
+                        relative_path = known_face.FaceID_Image.name.replace("/","\\")
+                        known_image_path = os.path.join(settings.BASE_DIR, 'static', relative_path)
+                        known_image = Image.open(known_image_path)
+                        known_image = np.array(known_image)
+
+                        # Chuyển đổi hình ảnh sang grayscale
+                        # known_face_encoding = face_recognition.face_encodings(known_image)[0]
+                        known_face_encodings = face_recognition.face_encodings(known_image)
+                        if known_face_encodings:
+                            known_face_encoding = known_face_encodings
+                        else:
+                            continue
+
+                        # So sánh khuôn mặt với các khuôn mặt đã lưu trong CSDL
+                        matches = face_recognition.compare_faces([known_face_encoding], face_encoding)
+
+                        if all(matches):
+                            for (top, right, bottom, left) in face_locations:
+                                cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                                label = known_face.ID_user.ID_user
+                                cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                            # print(f"Detected face of {known_face.ID_Image}.")
+                            break
+                        else:
+                            for (top, right, bottom, left) in face_locations:
+                                cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                                label = "No data"
+                                cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                            break
+
+            # Vẽ hình chữ nhật quanh khuôn mặt
+            # for (top, right, bottom, left) in face_locations:
+            #     cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+
+            # Hiển thị khung hình trong trình duyệt
+            cv2.imshow('Face Detection', frame)
+
+        # Nhấn phím 'q' để thoát
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Giải phóng camera và đóng cửa sổ
+    cap.release()
+    cv2.destroyAllWindows()
+
+    return render(request, 'facedetection/detect_face.html')
+
+def detect_face333333333(request):
+    # Khởi tạo camera
+    cap = cv2.VideoCapture(0)  # 0 là ID của camera, có thể sửa nếu bạn có nhiều camera
+
+    # Load các khuôn mặt đã lưu trong CSDL
+    # known_faces = Face.objects.all()
+    known_faces = FaceID.objects.filter(FaceID_Status=True).values('FaceID_Image','ID_user__ID_user','ID_user__FullName')
+
+    while True:
+        # Đọc khung hình từ camera
+        ret, frame = cap.read()
+        if not ret or frame is None:
+            print("Error: Unable to capture frame from the camera.")
+
+        # Nhận diện khuôn mặt
+        face_locations = face_recognition.face_locations(frame)
+        # Kiểm tra xem có khuôn mặt nào đã lưu trong CSDL không
+        if len(face_locations) > 0:
+            # Lặp qua các vị trí khuôn mặt được phát hiện
+            for (top, right, bottom, left) in face_locations:
+                # Nhận diện và mã hóa khuôn mặt từ khung hình
+                face_encoding = face_recognition.face_encodings(frame, [(top, right, bottom, left)])
+                
+                # Kiểm tra xem có khuôn mặt nào đã lưu trong CSDL không
+                for known_face in known_faces:
+                    # Đọc hình ảnh từ đường dẫn trong CSDL
+                    # known_image_path = os.path.join(settings.BASE_DIR, 'static/detect_image/', known_face['FaceID_Image'])
+                    known_image = Image.open(os.path.join(settings.BASE_DIR, 'static/detect_image/', known_face['FaceID_Image']))
+                    known_image = np.array(known_image)
+
+                    # Chuyển đổi hình ảnh sang grayscale
+                    known_face_encodings = face_recognition.face_encodings(known_image)
+                    if known_face_encodings:
+                        known_face_encoding = known_face_encodings[0]
+                    else:
+                        continue
+
+                    # So sánh khuôn mặt với các khuôn mặt đã lưu trong CSDL
+                    for i in range(len(face_encoding)):
+                        matches = face_recognition.compare_faces([known_face_encoding], face_encoding[i])
+
+                        # Kiểm tra xem có kết quả so sánh thành công hay không
+                        if all(matches):
+                            # Hiển thị thông tin khuôn mặt được nhận diện
+                            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                            label = known_face['ID_user__ID_user']
+                            cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                            break
+                        else:
+                            # Hiển thị thông báo khi không có dữ liệu
+                            # cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+                            # label = "No data"
+                            # cv2.putText(frame, label, (left, top - 10), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+                            break
+
+
+            # Vẽ hình chữ nhật quanh khuôn mặt
+            # for (top, right, bottom, left) in face_locations:
+            #     cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+
+            # Hiển thị khung hình trong trình duyệt
+            cv2.imshow('Face Detection', frame)
+
+        # Nhấn phím 'q' để thoát
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Giải phóng camera và đóng cửa sổ
+    cap.release()
+    cv2.destroyAllWindows()
+
+    return render(request, 'facedetection/detect_face.html')
+
+@csrf_exempt
+def detect_face_js(request):
+    if request.method == 'POST':
+        detected_faces = []
+        image_data = request.POST.get('image_data', '')
+        image_data = image_data.split(",")[1]  # Extract base64 image data
+        img_binary = base64.b64decode(image_data)
+        img_np = np.frombuffer(img_binary, dtype=np.uint8)
+        img = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
+
+        # Example: Encode known face
+        known_image = Image.open(os.path.join(settings.BASE_DIR, 'static\\detect_image\\', 'face_image.jpg'))
+        known_image = np.array(known_image)
+        known_face_encoding = face_recognition.face_encodings(known_image)[0]
+
+        # Example: Recognize face in the current frame
+        face_locations = face_recognition.face_locations(img)
+        face_encodings = face_recognition.face_encodings(img, face_locations)
+
+        for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
+            # Compare with known face encoding
+            matches = face_recognition.compare_faces([known_face_encoding], face_encoding)
+
+            if all(matches):
+                detected_faces.append({
+                    'top': top,
+                    'right': right,
+                    'bottom': bottom,
+                    'left': left,
+                    'id': "U0000000001",
+                    'name': "Giang Lê",
+                })
+                return JsonResponse({
+                    'success': True,
+                    'frame': detected_faces,
+                    'message': 'Detected Faces Success!!!',
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Detected Faces Failed!!!',
+                })
+
+    # return render(request, 'your_app/detect_face.html')
+
+@csrf_exempt
+def detect_face_load(request):
+    # Đường dẫn đến thư mục chứa ảnh của người dùng
+    user_images_dir = os.path.join(settings.BASE_DIR, 'static\\detect_image')
+    # user_images_dir = 'path/to/user/images'
+
+    # Tạo danh sách để lưu trữ embedding vectors và thông tin định danh
+    known_faces = []
+    known_names = []
+
+    # Duyệt qua toàn bộ ảnh trong thư mục
+    for filename in os.listdir(user_images_dir):
+        if filename.endswith(".jpg") or filename.endswith(".png"):
+            # Đường dẫn đầy đủ đến ảnh
+            image_path = os.path.join(user_images_dir, filename)
+
+            # Đọc ảnh
+            image = face_recognition.load_image_file(image_path)
+
+            # Tìm khuôn mặt trong ảnh
+            face_locations = face_recognition.face_locations(image)
+
+            if len(face_locations) == 1:
+                # Tạo embedding vector cho khuôn mặt
+                face_encoding = face_recognition.face_encodings(image, face_locations)[0]
+
+                # Lấy tên của người dùng từ tên file ảnh (giả sử tên file là tên của người dùng)
+                user_name = os.path.splitext(filename)[0]
+
+                # Lưu trữ embedding vector và thông tin định danh
+                known_faces.append(face_encoding)
+                known_names.append(user_name)
+
+    # Lưu trữ danh sách embedding vectors và thông tin định danh vào cơ sở dữ liệu
+    # (Ở đây bạn có thể sử dụng Django ORM hoặc một cơ sở dữ liệu khác)
+    # Ví dụ đơn giản: Lưu vào một file pickle
+    np.save('known_faces.npy', known_faces)
+    np.save('known_names.npy', known_names)
+
+    print("Dữ liệu đã được lưu trữ thành công.")
+
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+
+############################################ AI MACHINE LEARNING ############################################################
+def predict_view(request):
+    if request.method == 'GET':
+        # Lấy dữ liệu đầu vào từ request.GET
+        # input_data = [float(request.GET.get(f'feature_{i}')) for i in range(4)]
+        input_data = [request.GET.get(f'feature_{i}') for i in range(4)]
+
+        # Dự đoán bằng mô hình ML
+        prediction = predict(input_data)
+
+        # Trả về kết quả dưới dạng JSON
+        return JsonResponse({'prediction': prediction})
+    else:
+        return JsonResponse({'error': 'Invalid request method'})
+
+def power_bi_report(request):
+    return render(request, 'PowerBI/report_template.html')
+
+
+        

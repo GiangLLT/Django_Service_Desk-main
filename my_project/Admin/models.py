@@ -222,5 +222,29 @@ class Ticket_Mapping(models.Model):
     class Meta:
         db_table = 'Ticket_Mapping'
 
+class FaceID(models.Model):
+    FaceID = models.AutoField(primary_key=True)
+    ID_user = models.ForeignKey(Users, on_delete=models.CASCADE, db_column='ID_user')
+    FaceID_Image = models.ImageField(upload_to='')
+    FaceID_Date = models.DateField()
+    FaceID_Time = models.TimeField()
+    FaceID_Status = models.BooleanField()
+    class Meta:
+        db_table = 'FaceID'
+
+class Face(models.Model):
+    ID_Image = models.AutoField(primary_key=True)
+    image = models.ImageField(upload_to='detect_image/')
+    class Meta:
+        db_table = 'Face'
+
+class Face_ID(models.Model):
+    ID_Image = models.AutoField(primary_key=True)
+    image = models.ImageField(upload_to='')
+    image_Code = models.BinaryField(max)
+    class Meta:
+        db_table = 'Face_ID'
+
+
 
 

@@ -284,3 +284,20 @@ CREATE TABLE Ticket_Mapping (
 	FOREIGN KEY (Ticket_ID) REFERENCES Ticket(Ticket_ID),
 );
 GO
+
+CREATE TABLE Face (
+    FaceID		int PRIMARY KEY IDENTITY(1,1) NOT NULL ,
+	FaceID_Image					nvarchar(MAX),
+);
+GO
+
+CREATE TABLE FaceID (
+    FaceID		int PRIMARY KEY IDENTITY(1,1) NOT NULL ,
+	ID_user					nvarchar(20),
+	FaceID_Image					nvarchar(MAX),
+	FaceID_Date		date,
+	FaceID_Time		time,
+	FaceID_Status	bit,
+	FOREIGN KEY (ID_User) REFERENCES User_System(ID_User),
+);
+GO

@@ -3,6 +3,21 @@ from . import views
 from oauth2_provider.views import AuthorizationView, TokenView
 
 urlpatterns = [
+
+    #------------------- AI MACHINE LEARNING -----------------------
+    path('predict/', views.predict_view, name='predict'),
+    #------------------- AI MACHINE LEARNING -----------------------
+
+    #------------------- AI DETECT FACE -----------------------
+    path('cap-nhat-faceid/', views.AI_faceID_page, name='AI_faceID_page'),
+    path('luu-faceid/', views.AI_save_face, name='AI_save_face'),
+    path('list-camera/', views.list_available_cameras, name='list_available_cameras'),
+
+    path('save-face/', views.save_face, name='save_face'),
+    path('detect-face/', views.detect_face_new_final, name='detect_face'),
+    path('camera-face/', views.face_camera, name='face_camera'),
+    #------------------- AI DETECT FACE -----------------------
+
     #Helpdesk
     #------------- GITHUB -----------------------
     path('github/', views.get_github_data_for_file, name='get_github_data_for_file'),
@@ -250,5 +265,9 @@ urlpatterns = [
     #------------- otther------------------------
     
     path('trang-chu-new/', views.Trangchu, name='Trangchu'),
+
+    #------------- power BI IFrame------------------------
+    path('power_bi_report/', views.power_bi_report, name='power_bi_report'),
+    #------------- power BI IFrame------------------------
 
 ]
