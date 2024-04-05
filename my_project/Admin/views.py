@@ -3128,7 +3128,7 @@ def load_dashboard_Json(request):
                 for item in ticket_counts_month_status:
                     if item['month'] == month_name:
                         if status == 0:
-                            item['Done'] += count
+                            item['Done'] += count 
                             break
                         elif status == 1:
                             item['Inprogress'] += count
