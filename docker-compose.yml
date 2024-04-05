@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  django:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    environment:
+      - DEBUG=True
+      - DATABASE_ENGINE=mssql
+      - DATABASE_NAME=BCG_HelDesk
+      - DATABASE_USER=sa
+      - DATABASE_PASSWORD=Abc@123
+      - DATABASE_HOST=db
+      # - DATABASE_PORT=1433
+      - DATABASE_OPTIONS=driver=ODBC\ Driver\ 17\ for\ SQL\ Server
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Abc@123
+      - MSSQL_PID=Express

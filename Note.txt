@@ -19,6 +19,7 @@ git checkout Development
 git merge origin/main
 
 git add Note.txt
+
 git commit -m "Update Note.txt"
 
 git push
