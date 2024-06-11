@@ -156,3 +156,4 @@ Reference : https://sap.github.io/PyRFC/install.html
 P.S I faced a similar issue earlier and fixed it similar way .
 
 Here is my question - Python - pyrfc 1.9.5 - importerror while calling from IIS hosted .NET Core api
+test 1
