@@ -316,10 +316,10 @@ def AI_detected_face(request):
                 else:
                     return JsonResponse({'success': False, 'message': "Face detected but not all features are visible. Look straight into the camera."})
             else:
-                face_count = 0
+                face_count = 0                                                                                                                                                                      
 
             if cv2.waitKey(1) & 0xFF == ord('x'):
-                cap.release()
+                cap.release()                  
                 cv2.destroyAllWindows()
 
         return JsonResponse({'success': True, 'message': "FaceID detected success!!!"})
@@ -606,7 +606,7 @@ def AI_save_face_final2(request):
                                                     FaceID_Time=datetime.datetime.now().time(),
                                                     FaceID_Status=True
                                                 )
-                                                face.FaceID_Image.save(f'face_image.jpg', uploaded_image)
+                                                face.FaceID_Image.save(f'ư.jpg', uploaded_image)
                                             face_count += 1
                                             cap.release()
                                             cv2.destroyAllWindows()
@@ -1673,13 +1673,15 @@ def api_load_mail(request):
             if data:          
                 Mail_ID = data.get('Mail_ID')
                 Status = data.get('Status')
+                Today = data.get('Load_Today')
                 if Status:
                     request.session['mail_id'] = Mail_ID
                     access_token = get_authorization_code_API()
                     if access_token:
                         request.session['mail_id'] = {
                             'Mail_ID' : Mail_ID,
-                            'access_token' : access_token
+                            'access_token' : access_token,
+                            'Today' : Today,
                         }
                         response = call_graph_api(request)
                         response_data = response.content.decode('utf-8')  # Giải mã dữ liệu từ bytes sang str
@@ -2150,6 +2152,7 @@ def get_access_token(authorization_code,full_host):
 # Sử dụng mã truy cập để gọi Microsoft Graph API
 def call_graph_api(request):    
     mailid = ''
+    load_today = ''
     emails = []
     authorization_code = request.GET.get('code')
     full_host = request.build_absolute_uri('/') 
@@ -2158,6 +2161,7 @@ def call_graph_api(request):
     if session_data:
         mailid = session_data.get('Mail_ID')
         access_token = session_data.get('access_token')
+        load_today = session_data.get('Today')
     else:
         # mailid = request.session.get('mail_id')  
         access_token = get_access_token(authorization_code,full_host)
@@ -2188,12 +2192,21 @@ def call_graph_api(request):
         folder_mail_sub = 'SDP'
         folderID = folder_email(access_token,folder_mail,folder_mail_sub)
         if folderID:
-            response = requests.get(
-                # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
-                # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
-                f'https://graph.microsoft.com/v1.0/me/mailFolders/{folderID}/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
-                headers={'Authorization': f'Bearer {access_token}'}
-            )
+            if load_today == 'True':
+                response = requests.get(
+                    # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+                    # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+                    f'https://graph.microsoft.com/v1.0/me/mailFolders/{folderID}/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+                    headers={'Authorization': f'Bearer {access_token}'}
+                )
+            else:
+                response = requests.get(
+                    # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and subject eq \'{prefix}\' and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+                    # f'https://graph.microsoft.com/v1.0/me/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+                    # f'https://graph.microsoft.com/v1.0/me/mailFolders/{folderID}/messages?$filter=isRead eq false and contains(subject, \'{prefix}\') and (sentDateTime ge {yesterday.isoformat()} or receivedDateTime ge {yesterday.isoformat()}) and (sentDateTime lt {today.isoformat()} or receivedDateTime ge {today.isoformat()})',
+                    f'https://graph.microsoft.com/v1.0/me/mailFolders/{folderID}/messages?$filter=isRead eq false and contains(subject, \'{prefix}\')',
+                    headers={'Authorization': f'Bearer {access_token}'}
+                )
             emails = response.json().get('value', [])   
     if emails:
         folder_mail_sub_move = 'DONE'
