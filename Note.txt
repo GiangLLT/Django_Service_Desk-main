@@ -11,6 +11,18 @@ py C:\Data\Document\Another_Code\Python_Ex\Python_Django\my_project\manage.py ru
 py C:\Data\Document\Another_Code\Python_Ex\Python_Django\my_project\manage.py startapp members
 
 
+git remote -v => xem remote hiện tại
+git remote rm origin => xóa remote repons hiện tại
+git remote origin "link github" => lấy lại remote khác
+
+git branch -D "branch name" => xóa branch trên local
+
+git checkout -b "branch name" => tạo branch mới.
+git checkout -b "branch name" "SHA" =>restore branch đã xóa.
+git reflog => xem log
+git log --oneline => hiện thị log trực quan
+
+git cherry-pick "SHA"
 
 Switched to branch 'master'
 
@@ -32,6 +44,7 @@ git ls-remote origin
 
 git clone -b main https://github.com/username/repository.git
 
+pip install --upgrade pip
 
 
 git lfs track "*.csv"
@@ -43,6 +56,16 @@ Sau khi đã thực hiện xong thì các bạn dùng các lệnh add, commit v�
 git add file.csv
 git commit -m "Add data file"
 git push origin main
+
+git --amend
+fit push origin "name commit" -f => push lần thứ 2
+
+git pull =>kéo về
+git rebase master ==> lấy dữ liệu chưa có từ branch master
+
+git --force
+=> Tạo Commit xong chưa Push thì ghi đè --Amend bao nhiêu lần rồi Push không sao.
+=> Tạo Commit xong và Push rồi, thì ghi đè --Amend ở Local xong phải ghi đè --Force ở Remote.
 ....................................................
 
 https://stackoverflow.com/questions/54824864/django-python-sql-server-pyodbc-isnt-an-available-database-backend 
@@ -91,3 +114,45 @@ End Sub
 
 
 pip install face_recognition
+
+============================================================
+Docker:
+docker build -t my_django_app .
+docker run -d -p 8000:8000 my_django_app
+
+============================================================
+Sap Note:
+https://stackoverflow.com/questions/66368467/unable-to-install-pyrfc-2-0-4
+
+You are getting this error because probably you have not downloaded the SAP NW RFC SDK or maybe you have not added the path of the SDK in your PATH variable.
+
+Follow the below steps before running pip install pyrfc
+
+Download the SDK from the below URL-
+https://support.sap.com/en/product/connectors/nwrfcsdk.html
+
+Create the SAP NW RFC SDK home directory, e.g. c:\nwrfcsdk
+
+Set the SAPNWRFC_HOME env variable: SAPNWRFC_HOME=c:\nwrfcsdk
+
+Unpack the SAP NW RFC SDK archive to it, e.g. c:\nwrfcsdk\lib shall exist.
+
+Include the lib directory to the library search path on Windows, i.e. extend the PATH environment variable.
+
+For example- Add c:\nwrfcsdk\lib to PATH.
+
+Reboot your system
+
+Download the .whl file from this URL - https://github.com/SAP/PyRFC/releases/download/2.0.0/pyrfc-2.0.0-cp38-cp38-win_amd64.whl
+
+Install pyrfc by running the below command as Administrator from the same folder location where you downloaded the .whl file.
+
+command - pip install pyrfc-2.0.0-cp38-cp38-win_amd64.whl
+
+If you have followed the above steps in the given order it should work now.
+
+Reference : https://sap.github.io/PyRFC/install.html
+
+P.S I faced a similar issue earlier and fixed it similar way .
+
+Here is my question - Python - pyrfc 1.9.5 - importerror while calling from IIS hosted .NET Core api

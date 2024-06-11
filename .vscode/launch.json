@@ -6,6 +6,10 @@
     "configurations": [
 
 
+    
+    
+
+
 
 
         
@@ -75,7 +79,7 @@
             "program": "${workspaceFolder}\\my_project\\manage.py",
             "args": [
                 "runsslserver",
-                // "192.168.16.30:8000"
+                // "192.168.16.32:8000"
             ],
             "django": true
         },
