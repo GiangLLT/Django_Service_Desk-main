@@ -30,5 +30,6 @@ urlpatterns = [
 if settings.DEBUG:
     #offline
     urlpatterns+=static(settings.STATIC_URL,document_root=settings.STATICFILES_DIRS) 
+else:
     #online
-    # urlpatterns+=static(settings.STATIC_URL,document_root=settings.STATIC_ROOT)
+    urlpatterns+=static(settings.STATIC_URL,document_root=settings.STATIC_ROOT)
